@@ -81,10 +81,33 @@ menu_install_packages () {
 
 menu_package_select () {
   printf "\n"
+  # PACKAGES_ARRAY - JSON objects containing individual package details.
+  PACKAGES_ARRAY=();
+  # MENU_ITEMS_ARRAY - Items as they'll be displayed for installation.
+  MENU_ITEMS_ARRAY=();
+  # For every category,
   for ARG in "$@"; do
-    printf "$ARG\n"
-    jq -r --arg CATEGORY "$ARG" '.categories | map(select(.category_name == $CATEGORY))[0].packages' packages.json
+    # Create an array of packages in category,
+    CATEGORY=$(jq -r --arg CATEGORY "$ARG" '.categories | map(select(.category_name == $CATEGORY))[0].packages' packages.json)
+    # And if the array isn't empty,
+    if ! [[ "$CATEGORY" == "null" ]]; then
+      # Add each package JSON object within to the `PACKAGES_ARRAY`.
+      for (( i=0; i<$(echo "$CATEGORY" | jq 'length'); i++ )); do
+        PACKAGE=$(echo "$CATEGORY" | jq --argjson INDEX $i '.[$INDEX]');
+        PACKAGES_ARRAY+=("$PACKAGE");
+        PACKAGE_NAME=$(echo "$PACKAGE" | jq -r '.name');
+        PACKAGE_DESCRIPTION=$(echo "$PACKAGE" | jq -r '.description');
+        MENU_ITEM="$(gum style --bold "$PACKAGE_NAME") » $PACKAGE_DESCRIPTION"
+        echo $MENU_ITEM;
+        MENU_ITEMS_ARRAY+=("$MENU_ITEM");
+        #IFS="»" read -ra parts <<< "$MENU_ITEM"
+        #echo "${parts[0]}"
+      done
+    fi
   done
+  #echo "$PACKAGES_ARRAY";
+  #echo "${#PACKAGES_ARRAY[@]}"
+  #echo "${#MENU_ITEMS_ARRAY[@]}"
   printf "$(gum style --bold 'Install Packages')\n";
   printf "$(gum style --italic 'Press ')";
   printf "$(gum style --bold --foreground '#E60000' 'x')";
@@ -95,6 +118,7 @@ menu_package_select () {
   printf "$(gum style --italic 'press ')"
   printf "$(gum style --bold --foreground '#E60000' 'enter')"
   printf "$(gum style --italic ' to confirm your selection:')\n"
+  PACKAGES_TO_INSTALL=$(gum choose --no-limit "${MENU_ITEMS_ARRAY[@]}");
 }
 
 # OS Detection #################################################################
