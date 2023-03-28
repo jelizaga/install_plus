@@ -33,6 +33,10 @@ package_is_installed () {
   fi
 } 
 
+# Menus ########################################################################
+# `instally`'s system of interactive menus.
+
+# Main menu presented on start-up and at the completion of certain tasks.
 menu_main () {
   print_title
   print_os
@@ -50,10 +54,13 @@ menu_main () {
   fi
 }
 
+# Settings menu where `instally` can be configured.
 menu_settings () {
   msg_error "to be done";
 }
 
+# Menu used to select categories of packages for installation.
+# Invokes `menu_package_select` upon selection of categories.
 menu_install_packages () {
   check_packages_file;
   printf "$(gum style --bold 'Select Categories')\n";
@@ -79,6 +86,7 @@ menu_install_packages () {
   fi
 }
 
+# Menu used to select packages for installation.
 menu_package_select () {
   printf "\n"
   # PACKAGES_ARRAY - JSON objects containing individual package details.
@@ -97,8 +105,7 @@ menu_package_select () {
         PACKAGES_ARRAY+=("$PACKAGE");
         PACKAGE_NAME=$(echo "$PACKAGE" | jq -r '.name');
         PACKAGE_DESCRIPTION=$(echo "$PACKAGE" | jq -r '.description');
-        MENU_ITEM="$(gum style --bold "$PACKAGE_NAME") » $PACKAGE_DESCRIPTION"
-        echo $MENU_ITEM;
+        MENU_ITEM="$(gum style --bold "$PACKAGE_NAME »") $PACKAGE_DESCRIPTION"
         MENU_ITEMS_ARRAY+=("$MENU_ITEM");
         #IFS="»" read -ra parts <<< "$MENU_ITEM"
         #echo "${parts[0]}"
@@ -119,6 +126,15 @@ menu_package_select () {
   printf "$(gum style --bold --foreground '#E60000' 'enter')"
   printf "$(gum style --italic ' to confirm your selection:')\n"
   PACKAGES_TO_INSTALL=$(gum choose --no-limit "${MENU_ITEMS_ARRAY[@]}");
+  PACKAGES_TO_INSTALL_ARRAY=();
+  readarray -t PACKAGES_TO_INSTALL_ARRAY <<< "$PACKAGES_TO_INSTALL"
+  # Check if no packages are selected:
+  if [ "${#PACKAGES_TO_INSTALL_ARRAY[@]}" -eq 1 ] && [[ ${PACKAGES_TO_INSTALL_ARRAY[0]} == "" ]]; then
+    printf "No packages selected.\n"
+    menu_main
+  else
+    echo "YES"
+  fi
 }
 
 # OS Detection #################################################################
