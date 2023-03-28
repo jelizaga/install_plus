@@ -1,0 +1,91 @@
+{
+  "categories": [
+    {
+      "category_name": "⚙️ Utilities",
+      "packages": [
+        {
+          "name": "Syncthing",
+          "description": "continuous file synchronization",
+          "apt": {
+            "id": "syncthing"
+          }
+        }
+      ]
+    },
+    {
+      "category_name": "💻 Software Engineering",
+      "packages": [
+        {
+          "name": "Git",
+          "description": "distributed version control",
+          "apt": {
+            "id": "git"
+          }
+        },
+        {
+          "name": "Vim",
+          "description": "the superior text editor",
+          "apt": {
+            "id": "gvim"
+          }
+        },
+        {
+          "name": "Visual Studio Code",
+          "description": "Microsoft's open-source IDE",
+          "apt": {
+            "id": "code"
+          }
+        }
+      ]
+    },
+    {
+      "category_name": "🔒 Security",
+      "packages": [
+        {
+          "name": "pass",
+          "description": "the standard Unix password manager",
+          "apt": {
+            "id": "pass"
+          }
+        }, 
+        {
+          "name": "Tomb",
+          "description": "",
+          "apt": {
+            "id": "tomb"
+          }
+        }
+      ]
+    },
+    {
+      "category_name": "✨ Media"
+    },
+    {
+      "category_name": "💬 Communication",
+      "packages": [
+        {
+          "name": "Zoom",
+          "description": "conferencing software",
+          "flatpak": {
+            "id": "us.zoom.Zoom"
+          }
+        }
+      ]
+    },
+    {
+      "category_name": "🎨 Creativity"
+    },
+    {
+      "category_name": "📚 Knowledge Work",
+      "packages": [
+        {
+          "name": "Anki",
+          "description": "spaced-repetition flash cards",
+          "flatpak": {
+            "id": "net.ankiweb.Anki"
+          }
+        }
+      ] 
+    }
+  ]
+}
