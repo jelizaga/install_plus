@@ -95,11 +95,12 @@ menu_package_select () {
   MENU_ITEMS_ARRAY=();
   # For every category,
   for ARG in "$@"; do
-    # Create an array of packages in category,
+    # Create an array of packages in that category,
     CATEGORY=$(jq -r --arg CATEGORY "$ARG" '.categories | map(select(.category_name == $CATEGORY))[0].packages' packages.json)
     # And if the array isn't empty,
     if ! [[ "$CATEGORY" == "null" ]]; then
-      # Add each package JSON object within to the `PACKAGES_ARRAY`.
+      # Add each package JSON object within to the `PACKAGES_ARRAY`
+      # and its menu item to `MENU_ITEMS_ARRAY`.
       for (( i=0; i<$(echo "$CATEGORY" | jq 'length'); i++ )); do
         PACKAGE=$(echo "$CATEGORY" | jq --argjson INDEX $i '.[$INDEX]');
         PACKAGES_ARRAY+=("$PACKAGE");
@@ -112,9 +113,6 @@ menu_package_select () {
       done
     fi
   done
-  #echo "$PACKAGES_ARRAY";
-  #echo "${#PACKAGES_ARRAY[@]}"
-  #echo "${#MENU_ITEMS_ARRAY[@]}"
   printf "$(gum style --bold 'Install Packages')\n";
   printf "$(gum style --italic 'Press ')";
   printf "$(gum style --bold --foreground '#E60000' 'x')";
@@ -133,7 +131,7 @@ menu_package_select () {
     printf "No packages selected.\n"
     menu_main
   else
-    echo "YES"
+    echo "$PACKAGES_TO_INSTALL_ARRAY"
   fi
 }
 
