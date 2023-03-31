@@ -56,7 +56,7 @@ menu_main () {
 
 # Settings menu where `instally` can be configured.
 menu_settings () {
-  msg_error "to be done";
+  msg_error "To be complete.";
 }
 
 # Menu used to select categories of packages for installation.
@@ -108,8 +108,6 @@ menu_package_select () {
         PACKAGE_DESCRIPTION=$(echo "$PACKAGE" | jq -r '.description');
         MENU_ITEM="$(gum style --bold "$PACKAGE_NAME »") $PACKAGE_DESCRIPTION"
         MENU_ITEMS_ARRAY+=("$MENU_ITEM");
-        #IFS="»" read -ra parts <<< "$MENU_ITEM"
-        #echo "${parts[0]}"
       done
     fi
   done
@@ -125,13 +123,13 @@ menu_package_select () {
   printf "$(gum style --italic ' to confirm your selection:')\n"
   PACKAGES_TO_INSTALL=$(gum choose --no-limit "${MENU_ITEMS_ARRAY[@]}");
   PACKAGES_TO_INSTALL_ARRAY=();
-  readarray -t PACKAGES_TO_INSTALL_ARRAY <<< "$PACKAGES_TO_INSTALL"
+  readarray -t PACKAGES_TO_INSTALL_ARRAY <<< "$PACKAGES_TO_INSTALL";
   # Check if no packages are selected:
   if [ "${#PACKAGES_TO_INSTALL_ARRAY[@]}" -eq 1 ] && [[ ${PACKAGES_TO_INSTALL_ARRAY[0]} == "" ]]; then
     printf "No packages selected.\n"
     menu_main
   else
-    echo "$PACKAGES_TO_INSTALL_ARRAY"
+    install_packages "${PACKAGES_TO_INSTALL_ARRAY[@]}"
   fi
 }
 
@@ -252,11 +250,26 @@ msg_packages_installed () {
 }
 
 msg_error () {
-  printf "🐛 $(gum style --bold 'Error:') $1\n"
+  printf "🐛 $(gum style --bold 'Error:') $1\n";
+}
+
+msg_warning () {
+  printf "⚠️ $(gum style --bold 'Warning:') $1\n";
 }
 
 # Package Installation  ########################################################
 # Functions related to installing packages.
+
+# Installs packages given an array of packages to install.
+# Args:
+#   $1 - Array of packages to install.
+install_packages () {
+  local PACKAGES=("$@");
+  for PACKAGE in "${PACKAGES[@]}"; do
+    PACKAGE_NAME=$(echo "$PACKAGE" | awk -F " »" '{print $1}')
+    echo "$PACKAGE_NAME";
+  done
+}
 
 # Installs a package if it's missing.
 # Args:
