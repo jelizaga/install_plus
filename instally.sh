@@ -129,7 +129,9 @@ menu_package_select () {
     printf "No packages selected.\n"
     menu_main
   else
-    install_packages "${PACKAGES_TO_INSTALL_ARRAY[@]}"
+    echo "${#PACKAGES_TO_INSTALL_ARRAY[@]}"
+    echo "${#PACKAGES_ARRAY[@]}"
+    install_packages "${PACKAGES_TO_INSTALL_ARRAY[@]}" "${PACKAGES_ARRAY[@]}"
   fi
 }
 
@@ -264,10 +266,13 @@ msg_warning () {
 # Args:
 #   $1 - Array of packages to install.
 install_packages () {
-  local PACKAGES=("$@");
-  for PACKAGE in "${PACKAGES[@]}"; do
+  local PACKAGES_TO_INSTALL=("$1");
+  local PACKAGES=("$2");
+  echo "${#PACKAGES[@]}"
+  echo "${#PACKAGES_TO_INSTALL[@]}"
+  for PACKAGE in "${PACKAGES_TO_INSTALL[@]}"; do
     PACKAGE_NAME=$(echo "$PACKAGE" | awk -F " »" '{print $1}')
-    echo "$PACKAGE_NAME";
+    echo $PACKAGE_NAME
   done
 }
 
