@@ -133,22 +133,18 @@ menu_install_packages () {
   printf "$(gum style --italic 'press ')"
   printf "$(gum style --bold --foreground '#E60000' 'enter')"
   printf "$(gum style --italic ' to confirm your selection:')\n"
+  # User selects packages to install.
   PACKAGES_TO_INSTALL=$(gum choose --no-limit "${MENU_ITEMS_ARRAY[@]}");
+  # Packages are rolled in an array, `PACKAGES_TO_INSTALL_ARRAY`.
   PACKAGES_TO_INSTALL_ARRAY=();
   readarray -t PACKAGES_TO_INSTALL_ARRAY <<< "$PACKAGES_TO_INSTALL";
-  # Return to main menu if no packages are selected:
+  # Return to main menu if no packages were selected:
   if [ "${#PACKAGES_TO_INSTALL_ARRAY[@]}" -eq 1 ] && [[ ${PACKAGES_TO_INSTALL_ARRAY[0]} == "" ]]; then
     printf "No packages selected.\n"
-    menu_main
+    menu_main;
   # Otherwise, install selected packages.
   else
-    for PACKAGE in "${PACKAGES_TO_INSTALL_ARRAY[@]}"; do
-      PACKAGE_NAME=$(echo "$PACKAGE" | sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g" | awk -F " »" '{print $1}');
-      echo "Package name is $PACKAGE_NAME";
-      PACKAGE_DATA=$(jq --arg PACKAGE_NAME "$PACKAGE_NAME" '.categories[] | select(.packages != null) | .packages[] | select(.name == $PACKAGE_NAME)' packages.json);
-      echo "$PACKAGE_NAME data:"
-      echo "$PACKAGE_DATA";
-    done
+    install_packages "${PACKAGES_TO_INSTALL_ARRAY[@]}";
   fi
 }
 
@@ -283,13 +279,13 @@ msg_warning () {
 # Args:
 #   $1 - Array of packages to install.
 install_packages () {
-  local PACKAGES_TO_INSTALL=("$1");
-  local PACKAGES=("$2");
-  echo "${#PACKAGES[@]}"
-  echo "${#PACKAGES_TO_INSTALL[@]}"
-  for PACKAGE in "${PACKAGES_TO_INSTALL[@]}"; do
-    PACKAGE_NAME=$(echo "$PACKAGE" | awk -F " »" '{print $1}')
-    echo $PACKAGE_NAME
+  local PACKAGES_TO_INSTALL=("$@");
+  for PACKAGE in "${PACKAGES_TO_INSTALL_ARRAY[@]}"; do
+    PACKAGE_NAME=$(echo "$PACKAGE" | sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g" | awk -F " »" '{print $1}');
+    echo "Package name is $PACKAGE_NAME";
+    PACKAGE_DATA=$(jq --arg PACKAGE_NAME "$PACKAGE_NAME" '.categories[] | select(.packages != null) | .packages[] | select(.name == $PACKAGE_NAME)' packages.json);
+    echo "$PACKAGE_NAME data:"
+    echo "$PACKAGE_DATA";
   done
 }
 
