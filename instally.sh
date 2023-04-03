@@ -46,7 +46,7 @@ menu_main () {
   "Settings" \
   "Quit");
   if [[ $SELECTED == "Install Packages" ]]; then
-    menu_install_packages
+    menu_select_categories
   elif [[ $SELECTED == "Settings" ]]; then
     menu_settings
   elif [[ $SELECTED == "Quit" ]]; then
@@ -61,7 +61,7 @@ menu_settings () {
 
 # Menu used to select categories of packages for installation.
 # Invokes `menu_package_select` upon selection of categories.
-menu_install_packages () {
+menu_select_categories () {
   check_packages_file;
   printf "$(gum style --bold 'Select Categories')\n";
   printf "$(gum style --italic 'Press ')";
@@ -82,28 +82,39 @@ menu_install_packages () {
     printf "No package categories selected.\n"
     menu_main
   else
-    menu_package_select "${PACKAGE_CATEGORIES_ARRAY[@]}"
+    menu_install_packages "${PACKAGE_CATEGORIES_ARRAY[@]}"
   fi
 }
 
 # Menu used to select packages for installation.
-menu_package_select () {
-  printf "\n"
+menu_install_packages () {
+  local CATEGORIES_ARRAY=("$@");
   # PACKAGES_ARRAY - JSON objects containing individual package details.
   PACKAGES_ARRAY=();
   # MENU_ITEMS_ARRAY - Items as they'll be displayed for installation.
   MENU_ITEMS_ARRAY=();
   # For every category,
-  for ARG in "$@"; do
+  echo "CATEGORIES: ${#CATEGORIES_ARRAY[@]}";
+  CATEGORY_COUNT=0;
+  for CATEGORY in "${CATEGORIES_ARRAY[@]}"; do
+    ((CATEGORY_COUNT++))
     # Create an array of packages in that category,
-    CATEGORY=$(jq -r --arg CATEGORY "$ARG" '.categories | map(select(.category_name == $CATEGORY))[0].packages' packages.json)
+    PACKAGES_IN_CATEGORY=$(jq -r --arg CATEGORY "$CATEGORY" '.categories | map(select(.category_name == $CATEGORY))[0].packages' packages.json);
     # And if the array isn't empty,
-    if ! [[ "$CATEGORY" == "null" ]]; then
+    if ! [[ "$PACKAGES_IN_CATEGORY" == "null" ]]; then
       # Add each package JSON object within to the `PACKAGES_ARRAY`
       # and its menu item to `MENU_ITEMS_ARRAY`.
-      for (( i=0; i<$(echo "$CATEGORY" | jq 'length'); i++ )); do
-        PACKAGE=$(echo "$CATEGORY" | jq --argjson INDEX $i '.[$INDEX]');
-        PACKAGES_ARRAY+=("$PACKAGE");
+      PACKAGES_IN_CATEGORY_LENGTH=$(echo "$PACKAGES_IN_CATEGORY" | jq 'length');
+      echo $PACKAGES_IN_CATEGORY_LENGTH;
+      for (( i=0; i<$PACKAGES_IN_CATEGORY_LENGTH; i++ )); do
+        PACKAGE=$(echo "$PACKAGES_IN_CATEGORY" | jq --argjson INDEX $i '.[$INDEX]');
+        echo "Category #: $CATEGORY_COUNT / Total categories: ${#CATEGORIES_ARRAY[@]}"
+        echo "i: $i / Total packages: $PACKAGES_IN_CATEGORY_LENGTH";
+        if (( $CATEGORY_COUNT==${#CATEGORIES_ARRAY[@]} )) && (( $i==$PACKAGES_IN_CATEGORY_LENGTH - 1)); then
+          PACKAGES_ARRAY+=("$PACKAGE");
+        else
+          PACKAGES_ARRAY+=("$PACKAGE,");
+        fi
         PACKAGE_NAME=$(echo "$PACKAGE" | jq -r '.name');
         PACKAGE_DESCRIPTION=$(echo "$PACKAGE" | jq -r '.description');
         MENU_ITEM="$(gum style --bold "$PACKAGE_NAME »") $PACKAGE_DESCRIPTION"
@@ -111,6 +122,7 @@ menu_package_select () {
       done
     fi
   done
+  printf "\n"
   printf "$(gum style --bold 'Install Packages')\n";
   printf "$(gum style --italic 'Press ')";
   printf "$(gum style --bold --foreground '#E60000' 'x')";
@@ -124,14 +136,19 @@ menu_package_select () {
   PACKAGES_TO_INSTALL=$(gum choose --no-limit "${MENU_ITEMS_ARRAY[@]}");
   PACKAGES_TO_INSTALL_ARRAY=();
   readarray -t PACKAGES_TO_INSTALL_ARRAY <<< "$PACKAGES_TO_INSTALL";
-  # Check if no packages are selected:
+  # Return to main menu if no packages are selected:
   if [ "${#PACKAGES_TO_INSTALL_ARRAY[@]}" -eq 1 ] && [[ ${PACKAGES_TO_INSTALL_ARRAY[0]} == "" ]]; then
     printf "No packages selected.\n"
     menu_main
+  # Otherwise, install selected packages.
   else
-    echo "${#PACKAGES_TO_INSTALL_ARRAY[@]}"
-    echo "${#PACKAGES_ARRAY[@]}"
-    install_packages "${PACKAGES_TO_INSTALL_ARRAY[@]}" "${PACKAGES_ARRAY[@]}"
+    for PACKAGE in "${PACKAGES_TO_INSTALL_ARRAY[@]}"; do
+      PACKAGE_NAME=$(echo "$PACKAGE" | sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g" | awk -F " »" '{print $1}');
+      echo "Package name is $PACKAGE_NAME";
+      PACKAGE_DATA=$(jq --arg PACKAGE_NAME "$PACKAGE_NAME" '.categories[] | select(.packages != null) | .packages[] | select(.name == $PACKAGE_NAME)' packages.json);
+      echo "$PACKAGE_NAME data:"
+      echo "$PACKAGE_DATA";
+    done
   fi
 }
 
