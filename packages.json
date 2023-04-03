@@ -66,6 +66,7 @@
         {
           "name": "Zoom",
           "description": "conferencing software",
+          "prefer": "flatpak",
           "flatpak": {
             "id": "us.zoom.Zoom"
           }

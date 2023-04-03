@@ -251,7 +251,11 @@ msg_installed () {
 }
 
 msg_cannot_install () {
-  printf "❗ $(gum style --bold $1) could not be installed.\n"
+  if [ -n "$2" ]; then
+    printf "❗ $(gum style --bold $1) could not be installed: $2\n"
+  else
+    printf "❗ $(gum style --bold $1) could not be installed.\n"
+  fi
 }
 
 msg_packages_installed () {
@@ -272,46 +276,132 @@ msg_warning () {
   printf "⚠️ $(gum style --bold 'Warning:') $1\n";
 }
 
+msg_todo () {
+  if [ -n "$1" ]; then
+    printf "🚧 $1 is under construction.\n";
+  else
+    printf "🚧 Under construction.\n";
+  fi
+}
+
 # Package Installation  ########################################################
 # Functions related to installing packages.
 
-# Installs packages given an array of packages to install.
+# Installs packages given an array of package names.
 # Args:
-#   $1 - Array of packages to install.
+#   $@ - Array of packages to install.
 install_packages () {
   local PACKAGES_TO_INSTALL=("$@");
+  # For every PACKAGE...
   for PACKAGE in "${PACKAGES_TO_INSTALL_ARRAY[@]}"; do
+    # Capture the actual `PACKAGE_NAME` from the array and remove styling.
     PACKAGE_NAME=$(echo "$PACKAGE" | sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g" | awk -F " »" '{print $1}');
-    echo "Package name is $PACKAGE_NAME";
+    # Get the JSON `PACKAGE_DATA` for the matching `PACKAGE_NAME` from the
+    # packages file.
     PACKAGE_DATA=$(jq --arg PACKAGE_NAME "$PACKAGE_NAME" '.categories[] | select(.packages != null) | .packages[] | select(.name == $PACKAGE_NAME)' packages.json);
-    echo "$PACKAGE_NAME data:"
-    echo "$PACKAGE_DATA";
+    # Install the package.
+    install_package "$PACKAGE_DATA";
   done
 }
 
-# Installs a package if it's missing.
-# Args:
-#   $1 - Package id.
-#   $2 - Package manager or method to use to install package.
 install_package () {
-  if [ $2 == apt ]; then
-    gum spin --spinner globe --title "Installing $(gum style --bold $1)..." -- sudo apt install -y $1
-  elif [ $2 == flatpak ]; then
-    gum spin --spinner globe --title "Installing $(gum style --bold $1)..." -- flatpak install -y $1 
-  elif [ $2 == snap ]; then
-    #gum spin --spinner globe --title "Installing $1..." -- snap install $1
-    snap install $1
-  elif [ $2 == npm ]; then
-    gum spin --spinner globe --title "Installing $(gum style --bold $1)..." npm install $1
-    #npm install $1 >& /dev/null
-    printf "🎁 $1 installed.\n"
+  local PACKAGE_DATA="$1";
+  echo "$PACKAGE_DATA";
+  # If the package has a preferred install method, use that to install the
+  # package.
+  PREFERRED_INSTALL_METHOD=$(echo "$PACKAGE_DATA" | jq 'has("prefer")');
+  if [ "$PREFERRED_INSTALL_METHOD" = "true" ]; then
+    PREFERRED_INSTALL_METHOD=$(echo "$PACKAGE_DATA" | jq '.prefer');
+    # If the preferred install method is a command, execute the command;
+    if [ "$PREFERRED_INSTALL_METHOD" = "command" ]; then
+      COMMAND=$(echo "$PACKAGE_DATA" | jq '.command'); 
+      install_package_command "$PACKAGE_NAME" "$COMMAND";
+    # Otherwise, use the preferred install method.
+    else
+      PACKAGE_ID=$(echo "$PACKAGE_DATA" | jq --arg PREFERRED_INSTALL_METHOD "$PREFERRED_INSTALL_METHOD" ".[$PREFERRED_INSTALL_METHOD].id")
+      echo "Package manager: $PREFERRED_INSTALL_METHOD / Package ID: $PACKAGE_ID";
+      if [ "$PREFERRED_INSTALL_METHOD" = "apt" ]; then
+        install_package_apt "$PACKAGE_ID";
+      elif [ "$PREFERRED_INSTALL_METHOD" = "dnf" ]; then
+        install_package_dnf "$PACKAGE_ID";
+      elif [ "$PREFERRED_INSTALL_METHOD" = "flatpak" ]; then
+        install_package_flatpak "$PACKAGE_ID";
+      elif [ "$PREFERRED_INSTALL_METHOD" = "npm" ]; then
+        install_package_npm "$PACKAGE_ID";
+      elif [ "$PREFERRED_INSTALL_METHOD" = "pip" ]; then
+        install_package_pip "$PACKAGE_ID";
+      elif [ "$PREFERRED_INSTALL_METHOD" = "yum" ]; then
+        install_package_yum "$PACKAGE_ID";
+      elif [ "$PREFERRED_INSTALL_METHOD" = "zypper" ]; then
+        install_package_zypper "$PACKAGE_ID";
+      fi
+    fi
+  # If not—find a valid install method and use it to install the package
+  # instead.
+  else 
+    APT=$(echo "$PACKAGE_DATA" | jq 'has("apt")');
+    FLATPAK=$(echo "$PACKAGE_DATA" | jq 'has("flatpak")');
+    SNAP=$(echo "$PACKAGE_DATA" | jq 'has("snap")');
+    NPM=$(echo "$PACKAGE_DATA" | jq 'has("npm")');
+    PIP=$(echo "$PACKAGE_DATA" | jq 'has("pip")');
+    if $OS_IS_DEBIAN_BASED; then
+      msg_todo "Debian installation";
+      if [ "$APT" = "true" ]; then
+        install_package_apt;
+    elif $OS_IS_RHEL_BASED; then
+      msg_todo "RHEL installation";
+    elif $OS_IS_SUSE_BASED; then
+      msg_todo "SUSE installation";
+    fi
   fi
+}
+
+install_package_apt () {
+  #gum spin --spinner globe --title "Installing $(gum style --bold $1)..." -- sudo apt install -y $1;
   if [ $? == 0 ]; then
     msg_installed $1
-    packages_installed=$(($packages_installed + 1))
-  else
-    msg_cannot_install $1
+    $((PACKAGES_INSTALLED++));
   fi
+}
+
+install_package_dnf () {
+  msg_todo "dnf installation";
+}
+
+install_package_yum () {
+  msg_todo "yum installation";
+}
+
+install_package_flatpak () {
+  msg_todo "flatpak installation";
+  #gum spin --spinner globe --title "Installing $(gum style --bold $1)..." -- flatpak install -y $1 
+}
+
+install_package_snap () {
+  msg_todo "snap installation";
+  #gum spin --spinner globe --title "Installing $1..." -- snap install $1
+  #snap install $1
+}
+
+install_package_pip () {
+  msg_todo "pip installation";
+}
+
+install_package_npm () {
+  msg_todo "npm installation";
+  #gum spin --spinner globe --title "Installing $(gum style --bold $1)..." npm install $1
+  #npm install $1 >& /dev/null
+}
+
+install_package_zypper () {
+  msg_todo "zypper installation";
+}
+
+
+# Installs a package via a given command.
+install_package_command () {
+  msg_warning "Installing $(gum style --bold $1) via $(gum style --italic 'command').";
+  eval $2;
 }
 
 # Installs gum.
