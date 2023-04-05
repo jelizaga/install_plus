@@ -441,8 +441,14 @@ install_package_apt () {
       msg_installed "$PACKAGE_NAME";
       ((PACKAGES_INSTALLED++));
     # Otherwise, print error messages.
-    elif [ $? == 1 ]; then
+    elif [ $? == 1 ] || [ $? == 100 ]; then
       msg_cannot_install "$PACKAGE_NAME" "Package not found. Is $(gum style --italic $PACKAGE_ID) the correct id?";
+    elif [ $? == 101 ]]; then
+      msg_cannot_install "$PACKAGE_NAME" "Download interrupted.";
+    elif [ $? == 102 ]; then
+      msg_cannot_install "$PACKAGE_NAME" "Error encountered while unpacking package.";
+    elif [ $? == 103 ]; then
+      msg_cannot_install "$PACKAGE_NAME" "Error encountered while configuring package.";
     elif [ $? == 104 ]; then
       msg_already_installed "$PACKAGE_NAME";
     elif [ $? == 106 ]; then
