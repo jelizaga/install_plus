@@ -9,6 +9,13 @@
           "apt": {
             "id": "syncthing"
           }
+        },
+        {
+          "name": "kitty",
+          "description": "feature-rich GPU-based terminal emulator",
+          "apt": {
+            "id": "kitty"
+          }
         }
       ]
     },
@@ -26,7 +33,7 @@
           "name": "Vim",
           "description": "the superior text editor",
           "apt": {
-            "id": "gvim"
+            "id": "vim-gtk3"
           }
         },
         {
@@ -50,7 +57,7 @@
         }, 
         {
           "name": "Tomb",
-          "description": "",
+          "description": "simple CLI file encryption",
           "apt": {
             "id": "tomb"
           }
@@ -58,7 +65,35 @@
       ]
     },
     {
-      "category_name": "✨ Media"
+      "category_name": "✨ Media",
+      "packages": [
+        {
+          "name": "VLC",
+          "description": "the 'best' open source player",
+          "apt": {
+            "id": "vlc"
+          }
+        }
+      ]
+    },
+    {
+      "category_name": "🎸 Music",
+      "packages": [
+        {
+          "name": "Spotify",
+          "description": "massive audio streaming service",
+          "flatpak": {
+            "id": "com.spotify.Client" 
+          }
+        },
+        {
+          "name": "ncmpcpp",
+          "description": "CLI music player",
+          "apt": {
+            "id": "ncmpcpp"
+          }
+        }
+      ]
     },
     {
       "category_name": "🕹️ Fun",
@@ -68,6 +103,13 @@
           "description": "make your terminal look like the Matrix",
           "apt": {
             "id": "cmatrix"
+          }
+        },
+        {
+          "name": "Steam",
+          "description": "game storefront & database",
+          "flatpak": {
+            "id": "com.valvesoftware.Steam"
           }
         }
       ]
@@ -86,7 +128,48 @@
       ]
     },
     {
-      "category_name": "🎨 Creativity"
+      "category_name": "🎨 Graphics",
+      "packages": [
+        {
+          "name": "Blender",
+          "description": "3D computer graphics suite",
+          "prefer": "flatpak",
+          "apt": {
+            "id": "blender"
+          },
+          "flatpak": {
+            "id": "org.blender.Blender"
+          }
+        },
+        {
+          "name": "GIMP",
+          "description": "GNU Image Manipulation Program",
+          "apt": {
+            "id": "gimp"
+          }
+        },
+        {
+          "name": "Krita",
+          "description": "digital painting suite",
+          "prefer": "flatpak",
+          "apt": {
+            "id": "krita"
+          },
+          "flatpak": {
+            "id": "org.kde.krita"
+          }
+        },
+        {
+          "name": "Inkscape",
+          "description": "vector-based drawing program",
+          "apt": {
+            "id": "inkscape"
+          },
+          "flatpak": {
+            "id": "org.inkscape.Inkscape"
+          }
+        }
+      ]
     },
     {
       "category_name": "📚 Knowledge Work",
