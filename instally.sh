@@ -484,8 +484,20 @@ install_package_flatpak () {
     # Otherwise, print error messages.
     elif [ $? == 1 ]; then
       msg_cannot_install "$PACKAGE_NAME" "Installation interrupted by user.";
+    elif [ $? == 3 ]; then
+      msg_cannot_install "$PACKAGE_NAME" "User does not have permission to install packages with Flatpak."
+    elif [ $? == 4 ]; then
+      msg_cannot_install "$PACKAGE_NAME" "Unresolvable dependencies. Try installing $(gum style --bold "$PACKAGE_NAME") manually.";
     elif [ $? == 5 ]; then
       msg_already_installed "$PACKAGE_NAME";
+    elif [ $? == 6 ]; then
+      msg_cannot_install "$PACKAGE_NAME" "Incompatible architecture.";
+    elif [ $? == 7 ]; then
+      msg_cannot_install "$PACKAGE_NAME" "Remote repository unavailable.";
+    elif [ $? == 8 ]; then
+      msg_cannot_install "$PACKAGE_NAME" "No such remote repository.";
+    elif [ $? == 9 ]; then
+      msg_cannot_install "$PACKAGE_NAME" "Could not be downloaded from remote repository.";
     fi
   fi
 }
