@@ -207,7 +207,7 @@ check_dependencies () {
     # Install gum:
     if ! package_is_installed gum; then
       printf "🛠️ We need gum.\n";
-      install_gum;
+      install_dependency_gum;
       if [ $? == 1 ]; then
         printf "❗ gum could not be installed.";
       else
@@ -217,7 +217,7 @@ check_dependencies () {
     # Install jq:
     if ! package_is_installed jq; then
       printf "🛠️ We need $(gum style --bold 'jq').\n";
-      install_package jq apt;
+      install_package_apt jq;
     fi
   fi
   if package_is_installed gum && package_is_installed jq; then
@@ -287,6 +287,51 @@ msg_todo () {
 # Package Installation  ########################################################
 # Functions related to installing packages.
 
+get_install_method () {
+  local PACKAGE_DATA="$1";
+  local INSTALL_METHOD="";
+  APT=$(echo "$PACKAGE_DATA" | jq 'has("apt")');
+  DNF=$(echo "$PACKAGE_DATA" | jq 'has("dnf")');
+  FLATPAK=$(echo "$PACKAGE_DATA" | jq 'has("flatpak")');
+  NPM=$(echo "$PACKAGE_DATA" | jq 'has("npm")');
+  PIP=$(echo "$PACKAGE_DATA" | jq 'has("pip")');
+  SNAP=$(echo "$PACKAGE_DATA" | jq 'has("snap")');
+  YUM=$(echo "$PACKAGE_DATA" | jq 'has("yum")');
+  ZYPPER=$(echo "$PACKAGE_DATA" | jq 'has("zypper")');
+  printf "$(gum style --italic 'Available install methods:')\n";
+  printf "apt: $APT / dnf: $DNF / flatpak: $FLATPAK / npm: $NPM\n";
+  printf "pip: $PIP / snap: $SNAP / yum: $YUM / zypper: $ZYPPER\n";
+  HAS_PREFERRED_INSTALL_METHOD=$(echo "$PACKAGE_DATA" | jq 'has("prefer")');
+  printf "$(gum style --italic 'Explicitly preferred install method:') $HAS_PREFERRED_INSTALL_METHOD\n";
+  if [ "$HAS_PREFERRED_INSTALL_METHOD" = "true" ]; then
+    INSTALL_METHOD=$(echo "$PACKAGE_DATA" | jq '.prefer');
+  elif $OS_IS_DEBIAN_BASED; then
+    if [ "$APT" = "true" ]; then
+      INSTALL_METHOD="apt";
+    fi
+  elif $OS_IS_RHEL_BASED; then
+    if [ "$DNF" = "true" ]; then
+      INSTALL_METHOD="dnf";
+    elif [ "$YUM" = "true" ]; then
+      INSTALL_METHOD="yum";
+    fi
+  elif $OS_IS_SUSE_BASED; then
+    if [ "$ZYPPER" = "true" ]; then
+      INSTALL_METHOD="zypper";
+    fi
+  elif [ "$FLATPAK" = "true" ]; then
+    INSTALL_METHOD="flatpak";
+  elif [ "$NPM" = "true" ]; then
+    INSTALL_METHOD="npm";
+  elif [ "$PIP" = "true"]; then
+    INSTALL_METHOD="pip";
+  elif [ "$SNAP" = "true" ]; then
+    INSTALL_METHOD="snap";
+  fi
+  echo "$INSTALL_METHOD";
+}
+
+
 # Installs packages given an array of package names.
 # Args:
 #   $@ - Array of packages to install.
@@ -306,62 +351,43 @@ install_packages () {
 
 install_package () {
   local PACKAGE_DATA="$1";
-  echo "$PACKAGE_DATA";
-  # If the package has a preferred install method, use that to install the
-  # package.
-  PREFERRED_INSTALL_METHOD=$(echo "$PACKAGE_DATA" | jq 'has("prefer")');
-  if [ "$PREFERRED_INSTALL_METHOD" = "true" ]; then
-    PREFERRED_INSTALL_METHOD=$(echo "$PACKAGE_DATA" | jq '.prefer');
-    # If the preferred install method is a command, execute the command;
-    if [ "$PREFERRED_INSTALL_METHOD" = "command" ]; then
-      COMMAND=$(echo "$PACKAGE_DATA" | jq '.command'); 
-      install_package_command "$PACKAGE_NAME" "$COMMAND";
-    # Otherwise, use the preferred install method.
-    else
-      PACKAGE_ID=$(echo "$PACKAGE_DATA" | jq --arg PREFERRED_INSTALL_METHOD "$PREFERRED_INSTALL_METHOD" ".[$PREFERRED_INSTALL_METHOD].id")
-      echo "Package manager: $PREFERRED_INSTALL_METHOD / Package ID: $PACKAGE_ID";
-      if [ "$PREFERRED_INSTALL_METHOD" = "apt" ]; then
-        install_package_apt "$PACKAGE_ID";
-      elif [ "$PREFERRED_INSTALL_METHOD" = "dnf" ]; then
-        install_package_dnf "$PACKAGE_ID";
-      elif [ "$PREFERRED_INSTALL_METHOD" = "flatpak" ]; then
-        install_package_flatpak "$PACKAGE_ID";
-      elif [ "$PREFERRED_INSTALL_METHOD" = "npm" ]; then
-        install_package_npm "$PACKAGE_ID";
-      elif [ "$PREFERRED_INSTALL_METHOD" = "pip" ]; then
-        install_package_pip "$PACKAGE_ID";
-      elif [ "$PREFERRED_INSTALL_METHOD" = "yum" ]; then
-        install_package_yum "$PACKAGE_ID";
-      elif [ "$PREFERRED_INSTALL_METHOD" = "zypper" ]; then
-        install_package_zypper "$PACKAGE_ID";
-      fi
-    fi
-  # If not—find a valid install method and use it to install the package
-  # instead.
-  else 
-    APT=$(echo "$PACKAGE_DATA" | jq 'has("apt")');
-    FLATPAK=$(echo "$PACKAGE_DATA" | jq 'has("flatpak")');
-    SNAP=$(echo "$PACKAGE_DATA" | jq 'has("snap")');
-    NPM=$(echo "$PACKAGE_DATA" | jq 'has("npm")');
-    PIP=$(echo "$PACKAGE_DATA" | jq 'has("pip")');
-    if $OS_IS_DEBIAN_BASED; then
-      msg_todo "Debian installation";
-      if [ "$APT" = "true" ]; then
-        install_package_apt;
-    elif $OS_IS_RHEL_BASED; then
-      msg_todo "RHEL installation";
-    elif $OS_IS_SUSE_BASED; then
-      msg_todo "SUSE installation";
-    fi
+  local PACKAGE_NAME=$(echo "$PACKAGE_DATA" | jq '.name');
+  local INSTALL_METHOD="$(get_install_method "$PACKAGE_DATA")";
+  #wait
+  local PACKAGE_ID=$(echo "$PACKAGE_DATA" | jq --arg INSTALL_METHOD "$INSTALL_METHOD" ".[$INSTALL_METHOD].id");
+  printf "\n";
+  printf "$(gum style --bold $PACKAGE_NAME)\n";
+  printf "$(gum style --italic 'Install method:') $INSTALL_METHOD\n";
+  printf "$(gum style --italic 'Package ID:') $PACKAGE_ID\n";
+  #echo "$PACKAGE_DATA";
+  # If the preferred install method is a command, execute the command;
+  if [ "$INSTALL_METHOD" = "command" ]; then
+    COMMAND=$(echo "$PACKAGE_DATA" | jq '.command');
+    install_package_command "$PACKAGE_NAME" "$COMMAND";
+  elif [ "$INSTALL_METHOD" = "apt" ]; then
+    install_package_apt "$PACKAGE_ID";
+  elif [ "$INSTALL_METHOD" = "dnf" ]; then
+    install_package_dnf "$PACKAGE_ID";
+  elif [ "$INSTALL_METHOD" = "flatpak" ]; then
+    install_package_flatpak "$PACKAGE_ID";
+  elif [ "$INSTALL_METHOD" = "npm" ]; then
+    install_package_npm "$PACKAGE_ID";
+  elif [ "$INSTALL_METHOD" = "pip" ]; then
+    install_package_pip "$PACKAGE_ID";
+  elif [ "$INSTALL_METHOD" = "yum" ]; then
+    install_package_yum "$PACKAGE_ID";
+  elif [ "$INSTALL_METHOD" = "zypper" ]; then
+    install_package_zypper "$PACKAGE_ID";
   fi
 }
 
 install_package_apt () {
+  msg_todo "apt installation";
   #gum spin --spinner globe --title "Installing $(gum style --bold $1)..." -- sudo apt install -y $1;
-  if [ $? == 0 ]; then
-    msg_installed $1
-    $((PACKAGES_INSTALLED++));
-  fi
+  #if [ $? == 0 ]; then
+    #msg_installed $1
+    #$((PACKAGES_INSTALLED++));
+  #fi
 }
 
 install_package_dnf () {
@@ -405,7 +431,7 @@ install_package_command () {
 }
 
 # Installs gum.
-install_gum () {
+install_dependency_gum () {
   echo "🌎 Installing gum..."
   if $OS_IS_DEBIAN_BASED; then
     sudo mkdir -p /etc/apt/keyrings
@@ -426,7 +452,7 @@ install_gum () {
 }
 
 # Installs d2.
-install_d2 () {
+install_dependency_d2 () {
   curl -fsSL https://d2lang.com/install.sh | sh -s --
 }
 
