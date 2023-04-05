@@ -7,6 +7,7 @@ OS_IS_SUSE_BASED=false
 PACKAGES_FILE="packages.json"
 PACKAGES_INSTALLED=0
 APT_IS_UPDATED=false
+FLATPAK_IS_UPDATED=false
 
 # print_title
 # Prints install+'s title.
@@ -438,7 +439,7 @@ install_package_apt () {
     # If package is successfully installed, say so.
     if [ $? == 0 ]; then
       msg_installed "$PACKAGE_NAME";
-      $((PACKAGES_INSTALLED++));
+      ((PACKAGES_INSTALLED++));
     # Otherwise, print error messages.
     elif [ $? == 1 ]; then
       msg_cannot_install "$PACKAGE_NAME" "Package not found. Is $(gum style --italic $PACKAGE_ID) the correct id?";
@@ -469,8 +470,24 @@ install_package_dnf () {
 install_package_flatpak () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
-  msg_todo "flatpak installation";
-  #gum spin --spinner globe --title "Installing $(gum style --bold $1)..." -- flatpak install -y $1 
+  local ALREADY_INSTALLED=$(flatpak list | grep "$PACKAGE_ID");
+  # If package is already installed, say so.
+  if flatpak list | grep -q "$PACKAGE_ID"; then
+    msg_already_installed "$PACKAGE_NAME";
+  # Otherwise, install package.
+  else
+    gum spin --spinner globe --title "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic $PACKAGE_ID))..." -- flatpak install -y $PACKAGE_ID;
+    # If package is successfully installed, say so.
+    if [ $? == 0 ]; then
+      msg_installed "$PACKAGE_NAME";
+      ((PACKAGES_INSTALLED++));
+    # Otherwise, print error messages.
+    elif [ $? == 1 ]; then
+      msg_cannot_install "$PACKAGE_NAME" "Installation interrupted by user.";
+    elif [ $? == 5 ]; then
+      msg_already_installed "$PACKAGE_NAME";
+    fi
+  fi
 }
 
 # Installs a package using npm package manager.

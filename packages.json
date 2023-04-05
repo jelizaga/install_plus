@@ -61,6 +61,18 @@
       "category_name": "✨ Media"
     },
     {
+      "category_name": "🕹️ Fun",
+      "packages": [
+        {
+          "name": "cmatrix",
+          "description": "make your terminal look like the Matrix",
+          "apt": {
+            "id": "cmatrix"
+          }
+        }
+      ]
+    },
+    {
       "category_name": "💬 Communication",
       "packages": [
         {
