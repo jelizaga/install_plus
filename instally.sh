@@ -308,25 +308,41 @@ get_install_method () {
   elif $OS_IS_DEBIAN_BASED; then
     if [ "$APT" = "true" ]; then
       INSTALL_METHOD="apt";
+    elif [ "$FLATPAK" = "true" ]; then
+      INSTALL_METHOD="flatpak";
+    elif [ "$NPM" = "true" ]; then
+      INSTALL_METHOD="npm";
+    elif [ "$PIP" = "true"]; then
+      INSTALL_METHOD="pip";
+    elif [ "$SNAP" = "true" ]; then
+      INSTALL_METHOD="snap";
     fi
   elif $OS_IS_RHEL_BASED; then
     if [ "$DNF" = "true" ]; then
       INSTALL_METHOD="dnf";
     elif [ "$YUM" = "true" ]; then
       INSTALL_METHOD="yum";
+    elif [ "$FLATPAK" = "true" ]; then
+      INSTALL_METHOD="flatpak";
+    elif [ "$NPM" = "true" ]; then
+      INSTALL_METHOD="npm";
+    elif [ "$PIP" = "true"]; then
+      INSTALL_METHOD="pip";
+    elif [ "$SNAP" = "true" ]; then
+      INSTALL_METHOD="snap";
     fi
   elif $OS_IS_SUSE_BASED; then
     if [ "$ZYPPER" = "true" ]; then
       INSTALL_METHOD="zypper";
+    elif [ "$FLATPAK" = "true" ]; then
+      INSTALL_METHOD="flatpak";
+    elif [ "$NPM" = "true" ]; then
+      INSTALL_METHOD="npm";
+    elif [ "$PIP" = "true"]; then
+      INSTALL_METHOD="pip";
+    elif [ "$SNAP" = "true" ]; then
+      INSTALL_METHOD="snap";
     fi
-  elif [ "$FLATPAK" = "true" ]; then
-    INSTALL_METHOD="flatpak";
-  elif [ "$NPM" = "true" ]; then
-    INSTALL_METHOD="npm";
-  elif [ "$PIP" = "true"]; then
-    INSTALL_METHOD="pip";
-  elif [ "$SNAP" = "true" ]; then
-    INSTALL_METHOD="snap";
   fi
   echo "$INSTALL_METHOD";
 }
@@ -349,14 +365,18 @@ install_packages () {
   done
 }
 
+# Installs a package given `PACKAGE_DATA` JSON.
+# Args:
+#   `$1` - JSON `PACKAGE_DATA` specific to a package.
 install_package () {
+  printf "\n";
   local PACKAGE_DATA="$1";
   local PACKAGE_NAME=$(echo "$PACKAGE_DATA" | jq -r '.name' | tr -d '\n');
   local INSTALL_METHOD="$(get_install_method "$PACKAGE_DATA" 2>&1)";
-  wait
-  local PACKAGE_ID=$(echo "$PACKAGE_DATA" | jq --arg INSTALL_METHOD "$INSTALL_METHOD" ".[$INSTALL_METHOD].id");
-  printf "\n";
+  local PACKAGE_ID=$(echo "$PACKAGE_DATA" | jq --arg INSTALL_METHOD "$INSTALL_METHOD" ".$INSTALL_METHOD.id");
   printf "$(gum style --bold "$PACKAGE_NAME")\n";
+  printf "$(gum style --italic 'Data:')\n";
+  printf "$PACKAGE_DATA\n";
   printf "$(gum style --italic 'Install method:') $INSTALL_METHOD\n";
   printf "$(gum style --italic 'Package ID:') $PACKAGE_ID\n";
   # If the preferred install method is a command, execute the command;
@@ -381,6 +401,8 @@ install_package () {
 }
 
 install_package_apt () {
+  local PACKAGE_ID=$1;
+  local PACKAGE_NAME=$2;
   msg_todo "apt installation";
   #gum spin --spinner globe --title "Installing $(gum style --bold $1)..." -- sudo apt install -y $1;
   #if [ $? == 0 ]; then
@@ -390,43 +412,58 @@ install_package_apt () {
 }
 
 install_package_dnf () {
+  local PACKAGE_ID=$1;
+  local PACKAGE_NAME=$2;
   msg_todo "dnf installation";
 }
 
 install_package_yum () {
+  local PACKAGE_ID=$1;
+  local PACKAGE_NAME=$2;
   msg_todo "yum installation";
 }
 
 install_package_flatpak () {
+  local PACKAGE_ID=$1;
+  local PACKAGE_NAME=$2;
   msg_todo "flatpak installation";
   #gum spin --spinner globe --title "Installing $(gum style --bold $1)..." -- flatpak install -y $1 
 }
 
 install_package_snap () {
+  local PACKAGE_ID=$1;
+  local PACKAGE_NAME=$2;
   msg_todo "snap installation";
   #gum spin --spinner globe --title "Installing $1..." -- snap install $1
   #snap install $1
 }
 
 install_package_pip () {
+  local PACKAGE_ID=$1;
+  local PACKAGE_NAME=$2;
   msg_todo "pip installation";
 }
 
 install_package_npm () {
+  local PACKAGE_ID=$1;
+  local PACKAGE_NAME=$2;
   msg_todo "npm installation";
   #gum spin --spinner globe --title "Installing $(gum style --bold $1)..." npm install $1
   #npm install $1 >& /dev/null
 }
 
 install_package_zypper () {
+  local PACKAGE_ID=$1;
+  local PACKAGE_NAME=$2;
   msg_todo "zypper installation";
 }
 
-
 # Installs a package via a given command.
 install_package_command () {
-  msg_warning "Installing $(gum style --bold $1) via $(gum style --italic 'command').";
-  eval $2;
+  local COMMAND=$1;
+  local PACKAGE_NAME=$2;
+  msg_warning "Installing $(gum style --bold $2) via $(gum style --italic 'command').";
+  eval $COMMAND;
 }
 
 # Installs gum.
