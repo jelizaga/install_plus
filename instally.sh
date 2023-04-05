@@ -287,6 +287,10 @@ msg_todo () {
 # Package Installation  ########################################################
 # Functions related to installing packages.
 
+# Determines and `echo`s the install method of a package, given `PACKAGE_DATA`
+# JSON.
+# Args:
+#   `$1` - JSON `PACKAGE_DATA` specific to a package.
 get_install_method () {
   local PACKAGE_DATA="$1";
   local INSTALL_METHOD="";
@@ -298,13 +302,9 @@ get_install_method () {
   SNAP=$(echo "$PACKAGE_DATA" | jq 'has("snap")');
   YUM=$(echo "$PACKAGE_DATA" | jq 'has("yum")');
   ZYPPER=$(echo "$PACKAGE_DATA" | jq 'has("zypper")');
-  printf "$(gum style --italic 'Available install methods:')\n";
-  printf "apt: $APT / dnf: $DNF / flatpak: $FLATPAK / npm: $NPM\n";
-  printf "pip: $PIP / snap: $SNAP / yum: $YUM / zypper: $ZYPPER\n";
   HAS_PREFERRED_INSTALL_METHOD=$(echo "$PACKAGE_DATA" | jq 'has("prefer")');
-  printf "$(gum style --italic 'Explicitly preferred install method?:') $HAS_PREFERRED_INSTALL_METHOD\n";
   if [ "$HAS_PREFERRED_INSTALL_METHOD" = "true" ]; then
-    INSTALL_METHOD=$(echo "$PACKAGE_DATA" | jq '.prefer');
+    INSTALL_METHOD=$(echo "$PACKAGE_DATA" | jq -r '.prefer');
   elif $OS_IS_DEBIAN_BASED; then
     if [ "$APT" = "true" ]; then
       INSTALL_METHOD="apt";
@@ -334,7 +334,7 @@ get_install_method () {
 
 # Installs packages given an array of package names.
 # Args:
-#   $@ - Array of packages to install.
+#   `$@` - Array of packages to install.
 install_packages () {
   local PACKAGES_TO_INSTALL=("$@");
   # For every PACKAGE...
@@ -352,14 +352,13 @@ install_packages () {
 install_package () {
   local PACKAGE_DATA="$1";
   local PACKAGE_NAME=$(echo "$PACKAGE_DATA" | jq -r '.name' | tr -d '\n');
-  local INSTALL_METHOD="$(get_install_method "$PACKAGE_DATA")";
-  #wait
+  local INSTALL_METHOD="$(get_install_method "$PACKAGE_DATA" 2>&1)";
+  wait
   local PACKAGE_ID=$(echo "$PACKAGE_DATA" | jq --arg INSTALL_METHOD "$INSTALL_METHOD" ".[$INSTALL_METHOD].id");
   printf "\n";
   printf "$(gum style --bold "$PACKAGE_NAME")\n";
   printf "$(gum style --italic 'Install method:') $INSTALL_METHOD\n";
   printf "$(gum style --italic 'Package ID:') $PACKAGE_ID\n";
-  #echo "$PACKAGE_DATA";
   # If the preferred install method is a command, execute the command;
   if [ "$INSTALL_METHOD" = "command" ]; then
     COMMAND=$(echo "$PACKAGE_DATA" | jq '.command');
