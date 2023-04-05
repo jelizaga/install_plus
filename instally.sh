@@ -6,6 +6,7 @@ OS_IS_RHEL_BASED=false
 OS_IS_SUSE_BASED=false
 PACKAGES_FILE="packages.json"
 PACKAGES_INSTALLED=0
+APT_IS_UPDATED=false
 
 # print_title
 # Prints install+'s title.
@@ -239,22 +240,32 @@ check_packages_file () {
 # Functions related to printing reusable messages.
 
 msg_not_installed () {
-  printf "❌ $(gum style --bold $1) is missing.\n"
+  local PACKAGE_NAME=$1;
+  printf "❌ $(gum style --bold "$PACKAGE_NAME") is missing.\n"
 }
 
 msg_already_installed () {
-  printf "👍 $(gum style --bold $1) is already installed.\n"
+  local PACKAGE_NAME=$1;
+  printf "👍 $(gum style --bold "$PACKAGE_NAME") is already installed.\n";
 }
 
 msg_installed () {
-  printf "🎁 $(gum style --bold $1) installed.\n"
+  local PACKAGE_NAME=$1;
+  printf "🎁 $(gum style --bold "$PACKAGE_NAME") installed.\n"
+}
+
+msg_updated () {
+  local PACKAGE_MANAGER=$1;
+  printf "✨ $(gum style --italic "$PACKAGE_MANAGER updated.")\n"
 }
 
 msg_cannot_install () {
+  local PACKAGE_NAME=$1;
   if [ -n "$2" ]; then
-    printf "❗ $(gum style --bold $1) could not be installed: $2\n"
+    local REASON=$2;
+    printf "❗ $(gum style --bold "$PACKAGE_NAME") could not be installed: $REASON\n"
   else
-    printf "❗ $(gum style --bold $1) could not be installed.\n"
+    printf "❗ $(gum style --bold "$PACKAGE_NAME") could not be installed.\n"
   fi
 }
 
@@ -269,16 +280,19 @@ msg_packages_installed () {
 }
 
 msg_error () {
-  printf "🐛 $(gum style --bold 'Error:') $1\n";
+  local MESSAGE=$1;
+  printf "🐛 $(gum style --bold 'Error:') $MESSAGE\n";
 }
 
 msg_warning () {
-  printf "⚠️ $(gum style --bold 'Warning:') $1\n";
+  local MESSAGE=$1;
+  printf "⚠️ $(gum style --bold 'Warning:') $MESSAGE\n";
 }
 
 msg_todo () {
   if [ -n "$1" ]; then
-    printf "🚧 $1 is under construction.\n";
+    local FEATURE=$1;
+    printf "🚧 $FEATURE is under construction.\n";
   else
     printf "🚧 Under construction.\n";
   fi
@@ -363,66 +377,95 @@ install_packages () {
     # Install the package.
     install_package "$PACKAGE_DATA";
   done
+  msg_packages_installed;
 }
 
 # Installs a package given `PACKAGE_DATA` JSON.
 # Args:
 #   `$1` - JSON `PACKAGE_DATA` specific to a package.
 install_package () {
-  printf "\n";
   local PACKAGE_DATA="$1";
   local PACKAGE_NAME=$(echo "$PACKAGE_DATA" | jq -r '.name' | tr -d '\n');
   local INSTALL_METHOD="$(get_install_method "$PACKAGE_DATA" 2>&1)";
-  local PACKAGE_ID=$(echo "$PACKAGE_DATA" | jq --arg INSTALL_METHOD "$INSTALL_METHOD" ".$INSTALL_METHOD.id");
-  printf "$(gum style --bold "$PACKAGE_NAME")\n";
-  printf "$(gum style --italic 'Data:')\n";
-  printf "$PACKAGE_DATA\n";
-  printf "$(gum style --italic 'Install method:') $INSTALL_METHOD\n";
-  printf "$(gum style --italic 'Package ID:') $PACKAGE_ID\n";
+  local PACKAGE_ID=$(echo "$PACKAGE_DATA" | jq -r --arg INSTALL_METHOD "$INSTALL_METHOD" ".$INSTALL_METHOD.id");
+  #printf "\n";
+  #printf "$(gum style --bold "$PACKAGE_NAME")\n";
+  #printf "$(gum style --italic 'Data:')\n";
+  #printf "$PACKAGE_DATA\n";
+  #printf "$(gum style --italic 'Install method:') $INSTALL_METHOD\n";
+  #printf "$(gum style --italic 'Package ID:') $PACKAGE_ID\n";
   # If the preferred install method is a command, execute the command;
   if [ "$INSTALL_METHOD" = "command" ]; then
     COMMAND=$(echo "$PACKAGE_DATA" | jq '.command');
-    install_package_command "$PACKAGE_NAME" "$COMMAND";
+    install_package_command "$COMMAND" "$PACKAGE_NAME";
   elif [ "$INSTALL_METHOD" = "apt" ]; then
-    install_package_apt "$PACKAGE_ID";
+    install_package_apt "$PACKAGE_ID" "$PACKAGE_NAME";
   elif [ "$INSTALL_METHOD" = "dnf" ]; then
-    install_package_dnf "$PACKAGE_ID";
+    install_package_dnf "$PACKAGE_ID" "$PACKAGE_NAME";
   elif [ "$INSTALL_METHOD" = "flatpak" ]; then
-    install_package_flatpak "$PACKAGE_ID";
+    install_package_flatpak "$PACKAGE_ID" "$PACKAGE_NAME";
   elif [ "$INSTALL_METHOD" = "npm" ]; then
-    install_package_npm "$PACKAGE_ID";
+    install_package_npm "$PACKAGE_ID" "$PACKAGE_NAME";
   elif [ "$INSTALL_METHOD" = "pip" ]; then
-    install_package_pip "$PACKAGE_ID";
+    install_package_pip "$PACKAGE_ID" "$PACKAGE_NAME";
   elif [ "$INSTALL_METHOD" = "yum" ]; then
-    install_package_yum "$PACKAGE_ID";
+    install_package_yum "$PACKAGE_ID" "$PACKAGE_NAME";
   elif [ "$INSTALL_METHOD" = "zypper" ]; then
-    install_package_zypper "$PACKAGE_ID";
+    install_package_zypper "$PACKAGE_ID" "$PACKAGE_NAME";
   fi
 }
 
+# Installs a package using apt package manager.
+# Args:
+#   `$1` - Valid package ID.
+#   `$2` - Package name.
 install_package_apt () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
-  msg_todo "apt installation";
-  #gum spin --spinner globe --title "Installing $(gum style --bold $1)..." -- sudo apt install -y $1;
-  #if [ $? == 0 ]; then
-    #msg_installed $1
-    #$((PACKAGES_INSTALLED++));
-  #fi
+  # If package is already installed, say so.
+  if dpkg-query -W $PACKAGE_ID 2>/dev/null | grep -q "^$PACKAGE_ID"; then
+    msg_already_installed "$PACKAGE_NAME";
+  # Otherwise,
+  else
+    # Update apt if it isn't already updated,
+    if ! $APT_IS_UPDATED; then
+      gum spin --spinner globe --title "Updating $(gum style --bold "apt")..." -- sudo apt-get update -y;
+      APT_IS_UPDATED=true;
+      msg_updated "apt";
+    fi
+    # And install the package.
+    gum spin --spinner globe --title "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic $PACKAGE_ID))..." -- sudo apt-get install -y $PACKAGE_ID;
+    # If package is successfully installed, say so.
+    if [ $? == 0 ]; then
+      msg_installed "$PACKAGE_NAME";
+      $((PACKAGES_INSTALLED++));
+    # Otherwise, print error messages.
+    elif [ $? == 1 ]; then
+      msg_cannot_install "$PACKAGE_NAME" "Package not found. Is $(gum style --italic $PACKAGE_ID) the correct id?";
+    elif [ $? == 104 ]; then
+      msg_already_installed "$PACKAGE_NAME";
+    elif [ $? == 106 ]; then
+      msg_cannot_install "$PACKAGE_NAME" "Unsatisfied dependencies.";
+    elif [ $? == 130 ]; then
+      msg_cannot_install "$PACKAGE_NAME" "Installation interrupted by user.";
+    fi
+  fi
 }
 
+# Installs a package using dnf package manager.
+# Args:
+#   `$1` - Valid package ID.
+#   `$2` - Package name.
 install_package_dnf () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
   msg_todo "dnf installation";
 }
 
-install_package_yum () {
-  local PACKAGE_ID=$1;
-  local PACKAGE_NAME=$2;
-  msg_todo "yum installation";
-}
-
+# Installs a package using flatpak package manager.
+# Args:
+#   `$1` - Valid package ID.
+#   `$2` - Package name.
 install_package_flatpak () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
@@ -430,20 +473,10 @@ install_package_flatpak () {
   #gum spin --spinner globe --title "Installing $(gum style --bold $1)..." -- flatpak install -y $1 
 }
 
-install_package_snap () {
-  local PACKAGE_ID=$1;
-  local PACKAGE_NAME=$2;
-  msg_todo "snap installation";
-  #gum spin --spinner globe --title "Installing $1..." -- snap install $1
-  #snap install $1
-}
-
-install_package_pip () {
-  local PACKAGE_ID=$1;
-  local PACKAGE_NAME=$2;
-  msg_todo "pip installation";
-}
-
+# Installs a package using npm package manager.
+# Args:
+#   `$1` - Valid package ID.
+#   `$2` - Package name.
 install_package_npm () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
@@ -452,6 +485,42 @@ install_package_npm () {
   #npm install $1 >& /dev/null
 }
 
+# Installs a package using pip package manager.
+# Args:
+#   `$1` - Valid package ID.
+#   `$2` - Package name.
+install_package_pip () {
+  local PACKAGE_ID=$1;
+  local PACKAGE_NAME=$2;
+  msg_todo "pip installation";
+}
+
+# Installs a package using snap package manager.
+# Args:
+#   `$1` - Valid package ID.
+#   `$2` - Package name.
+install_package_snap () {
+  local PACKAGE_ID=$1;
+  local PACKAGE_NAME=$2;
+  msg_todo "snap installation";
+  #gum spin --spinner globe --title "Installing $1..." -- snap install $1
+  #snap install $1
+}
+
+# Installs a package using yum package manager.
+# Args:
+#   `$1` - Valid package ID.
+#   `$2` - Package name.
+install_package_yum () {
+  local PACKAGE_ID=$1;
+  local PACKAGE_NAME=$2;
+  msg_todo "yum installation";
+}
+
+# Installs a package using zypper package manager.
+# Args:
+#   `$1` - Valid package ID.
+#   `$2` - Package name.
 install_package_zypper () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
@@ -459,10 +528,13 @@ install_package_zypper () {
 }
 
 # Installs a package via a given command.
+# Args:
+#   `$1` - Installation command.
+#   `$2` - Package name.
 install_package_command () {
   local COMMAND=$1;
   local PACKAGE_NAME=$2;
-  msg_warning "Installing $(gum style --bold $2) via $(gum style --italic 'command').";
+  msg_warning "Installing $(gum style --bold $PACKAGE_NAME) via $(gum style --italic 'command').";
   eval $COMMAND;
 }
 
