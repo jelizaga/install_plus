@@ -63,7 +63,7 @@ menu_settings () {
 # Invokes `menu_package_select` upon selection of categories.
 menu_select_categories () {
   check_packages_file;
-  printf "$(gum style --bold 'Select Categories')\n";
+  printf "$(gum style --bold --underline 'Select Categories')\n";
   printf "$(gum style --italic 'Press ')";
   printf "$(gum style --bold --foreground '#E60000' 'x')";
   printf "$(gum style --italic ' to select package categories')\n";
@@ -123,7 +123,7 @@ menu_install_packages () {
     fi
   done
   printf "\n"
-  printf "$(gum style --bold 'Install Packages')\n";
+  printf "$(gum style --bold --underline 'Install Packages')\n";
   printf "$(gum style --italic 'Press ')";
   printf "$(gum style --bold --foreground '#E60000' 'x')";
   printf "$(gum style --italic ' to select packages to install')\n";
