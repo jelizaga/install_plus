@@ -302,7 +302,7 @@ get_install_method () {
   printf "apt: $APT / dnf: $DNF / flatpak: $FLATPAK / npm: $NPM\n";
   printf "pip: $PIP / snap: $SNAP / yum: $YUM / zypper: $ZYPPER\n";
   HAS_PREFERRED_INSTALL_METHOD=$(echo "$PACKAGE_DATA" | jq 'has("prefer")');
-  printf "$(gum style --italic 'Explicitly preferred install method:') $HAS_PREFERRED_INSTALL_METHOD\n";
+  printf "$(gum style --italic 'Explicitly preferred install method?:') $HAS_PREFERRED_INSTALL_METHOD\n";
   if [ "$HAS_PREFERRED_INSTALL_METHOD" = "true" ]; then
     INSTALL_METHOD=$(echo "$PACKAGE_DATA" | jq '.prefer');
   elif $OS_IS_DEBIAN_BASED; then
@@ -351,12 +351,12 @@ install_packages () {
 
 install_package () {
   local PACKAGE_DATA="$1";
-  local PACKAGE_NAME=$(echo "$PACKAGE_DATA" | jq '.name');
+  local PACKAGE_NAME=$(echo "$PACKAGE_DATA" | jq -r '.name' | tr -d '\n');
   local INSTALL_METHOD="$(get_install_method "$PACKAGE_DATA")";
   #wait
   local PACKAGE_ID=$(echo "$PACKAGE_DATA" | jq --arg INSTALL_METHOD "$INSTALL_METHOD" ".[$INSTALL_METHOD].id");
   printf "\n";
-  printf "$(gum style --bold $PACKAGE_NAME)\n";
+  printf "$(gum style --bold "$PACKAGE_NAME")\n";
   printf "$(gum style --italic 'Install method:') $INSTALL_METHOD\n";
   printf "$(gum style --italic 'Package ID:') $PACKAGE_ID\n";
   #echo "$PACKAGE_DATA";
