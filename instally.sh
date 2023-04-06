@@ -86,7 +86,7 @@ menu_select_categories () {
   printf "$(gum style --italic 'press ')"
   printf "$(gum style --bold --foreground '#E60000' 'enter')"
   printf "$(gum style --italic ' to confirm your selection:')\n"
-  PACKAGE_CATEGORIES=$(jq -r '.categories | map(.category_name)[]' \
+  PACKAGE_CATEGORIES=$(jq -r '.categories | map(.category)[]' \
     packages.json | \
     gum choose --selected-prefix="$GUM_CHOOSE_SELECTED_PREFIX " \
     --unselected-prefix="$GUM_CHOOSE_UNSELECTED_PREFIX " \
@@ -117,7 +117,7 @@ menu_install_packages () {
     ((CATEGORY_COUNT++))
     # Create an array of packages in that category,
     PACKAGES_IN_CATEGORY=$(jq -r --arg CATEGORY "$CATEGORY" \
-      '.categories | map(select(.category_name == $CATEGORY))[0].packages' \
+      '.categories | map(select(.category == $CATEGORY))[0].packages' \
       packages.json);
     # And if the array isn't empty,
     if ! [[ "$PACKAGES_IN_CATEGORY" == "null" ]]; then

@@ -1,7 +1,7 @@
 {
   "categories": [
     {
-      "category_name": "⚙️ Utilities",
+      "category": "⚙️ Utilities",
       "packages": [
         {
           "name": "Syncthing",
@@ -52,7 +52,7 @@
       ]
     },
     {
-      "category_name": "⏰ Productivity",
+      "category": "⏰ Productivity",
       "packages": [
         {
           "name": "Taskwarrior",
@@ -69,7 +69,7 @@
       ] 
     },
     {
-      "category_name": "💻 Software Engineering",
+      "category": "💻 Software Engineering",
       "packages": [
         {
           "name": "Git",
@@ -100,7 +100,7 @@
       ]
     },
     {
-      "category_name": "🔒 Security",
+      "category": "🔒 Security",
       "packages": [
         {
           "name": "Mullvad VPN",
@@ -124,7 +124,7 @@
       ]
     },
     {
-      "category_name": "✨ Media",
+      "category": "✨ Media",
       "packages": [
         {
           "name": "VLC",
@@ -136,7 +136,7 @@
       ]
     },
     {
-      "category_name": "🎸 Music",
+      "category": "🎸 Music",
       "packages": [
         {
           "name": "Spotify",
@@ -155,7 +155,7 @@
       ]
     },
     {
-      "category_name": "🕹️ Fun",
+      "category": "🕹️ Fun",
       "packages": [
         {
           "name": "cmatrix",
@@ -181,7 +181,7 @@
       ]
     },
     {
-      "category_name": "💬 Communication",
+      "category": "💬 Communication",
       "packages": [
         {
           "name": "Zoom",
@@ -194,7 +194,7 @@
       ]
     },
     {
-      "category_name": "🎨 Graphics",
+      "category": "🎨 Graphics",
       "packages": [
         {
           "name": "Blender",
@@ -238,7 +238,7 @@
       ]
     },
     {
-      "category_name": "📚 Knowledge Work",
+      "category": "📚 Knowledge Work",
       "packages": [
         {
           "name": "Anki",
