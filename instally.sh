@@ -1,13 +1,23 @@
 #!/bin/bash
 
+# OS data
 OS=$(grep '^NAME=' /etc/os-release | cut -d= -f2 | tr -d '"')
 OS_IS_DEBIAN_BASED=false
 OS_IS_RHEL_BASED=false
 OS_IS_SUSE_BASED=false
+
+# Packages file
 PACKAGES_FILE="packages.json"
+
+# Packages
 PACKAGES_INSTALLED=0
 APT_IS_UPDATED=false
-FLATPAK_IS_UPDATED=false
+
+# UI defaults
+GUM_CHOOSE_CURSOR="⯈";
+GUM_CHOOSE_CURSOR_PREFIX="·";
+GUM_CHOOSE_SELECTED_PREFIX="x";
+GUM_CHOOSE_UNSELECTED_PREFIX="·";
 
 # print_title
 # Prints install+'s title.
@@ -76,12 +86,17 @@ menu_select_categories () {
   printf "$(gum style --italic 'press ')"
   printf "$(gum style --bold --foreground '#E60000' 'enter')"
   printf "$(gum style --italic ' to confirm your selection:')\n"
-  PACKAGE_CATEGORIES=$(jq -r '.categories | map(.category_name)[]' packages.json | gum choose --no-limit)
+  PACKAGE_CATEGORIES=$(jq -r '.categories | map(.category_name)[]' \
+    packages.json | \
+    gum choose --selected-prefix="$GUM_CHOOSE_SELECTED_PREFIX " \
+    --unselected-prefix="$GUM_CHOOSE_UNSELECTED_PREFIX " \
+    --no-limit)
   # Roll `PACKAGE_CATEGORIES` into an array (`PACKAGE_CATEGORIES_ARRAY`):
   PACKAGE_CATEGORIES_ARRAY=();
   readarray -t PACKAGE_CATEGORIES_ARRAY <<< "$PACKAGE_CATEGORIES"
   # Check if no category is selected:
-  if [ "${#PACKAGE_CATEGORIES_ARRAY[@]}" -eq 1 ] && [[ ${PACKAGE_CATEGORIES_ARRAY[0]} == "" ]]; then
+  if [ "${#PACKAGE_CATEGORIES_ARRAY[@]}" -eq 1 ] \
+    && [[ ${PACKAGE_CATEGORIES_ARRAY[0]} == "" ]]; then
     printf "No package categories selected.\n"
     menu_main
   else
@@ -101,15 +116,19 @@ menu_install_packages () {
   for CATEGORY in "${CATEGORIES_ARRAY[@]}"; do
     ((CATEGORY_COUNT++))
     # Create an array of packages in that category,
-    PACKAGES_IN_CATEGORY=$(jq -r --arg CATEGORY "$CATEGORY" '.categories | map(select(.category_name == $CATEGORY))[0].packages' packages.json);
+    PACKAGES_IN_CATEGORY=$(jq -r --arg CATEGORY "$CATEGORY" \
+      '.categories | map(select(.category_name == $CATEGORY))[0].packages' \
+      packages.json);
     # And if the array isn't empty,
     if ! [[ "$PACKAGES_IN_CATEGORY" == "null" ]]; then
       # Add each package JSON object within to the `PACKAGES_ARRAY`
       # and its menu item to `MENU_ITEMS_ARRAY`.
       PACKAGES_IN_CATEGORY_LENGTH=$(echo "$PACKAGES_IN_CATEGORY" | jq 'length');
       for (( i=0; i<$PACKAGES_IN_CATEGORY_LENGTH; i++ )); do
-        PACKAGE=$(echo "$PACKAGES_IN_CATEGORY" | jq --argjson INDEX $i '.[$INDEX]');
-        if (( $CATEGORY_COUNT==${#CATEGORIES_ARRAY[@]} )) && (( $i==$PACKAGES_IN_CATEGORY_LENGTH - 1)); then
+        PACKAGE=$(echo "$PACKAGES_IN_CATEGORY" | \
+          jq --argjson INDEX $i '.[$INDEX]');
+        if (( $CATEGORY_COUNT==${#CATEGORIES_ARRAY[@]} )) \
+          && (( $i==$PACKAGES_IN_CATEGORY_LENGTH - 1)); then
           PACKAGES_ARRAY+=("$PACKAGE");
         else
           PACKAGES_ARRAY+=("$PACKAGE,");
@@ -121,6 +140,7 @@ menu_install_packages () {
       done
     fi
   done
+  MENU_ITEMS_ARRAY_ALPHABETIZED=($(printf '%s\n' "${MENU_ITEMS_ARRAY[@]}" | sort));
   printf "\n"
   printf "$(gum style --bold --underline 'Install Packages')\n";
   printf "$(gum style --italic 'Press ')";
@@ -133,12 +153,14 @@ menu_install_packages () {
   printf "$(gum style --bold --foreground '#E60000' 'enter')"
   printf "$(gum style --italic ' to confirm your selection:')\n"
   # User selects packages to install.
-  PACKAGES_TO_INSTALL=$(gum choose --no-limit "${MENU_ITEMS_ARRAY[@]}");
+  PACKAGES_TO_INSTALL=$(gum choose --no-limit \
+    "${MENU_ITEMS_ARRAY[@]}");
   # Packages are rolled in an array, `PACKAGES_TO_INSTALL_ARRAY`.
   PACKAGES_TO_INSTALL_ARRAY=();
   readarray -t PACKAGES_TO_INSTALL_ARRAY <<< "$PACKAGES_TO_INSTALL";
   # Return to main menu if no packages were selected:
-  if [ "${#PACKAGES_TO_INSTALL_ARRAY[@]}" -eq 1 ] && [[ ${PACKAGES_TO_INSTALL_ARRAY[0]} == "" ]]; then
+  if [ "${#PACKAGES_TO_INSTALL_ARRAY[@]}" -eq 1 ] \
+    && [[ ${PACKAGES_TO_INSTALL_ARRAY[0]} == "" ]]; then
     printf "No packages selected.\n"
     menu_main;
   # Otherwise, install selected packages.
@@ -377,10 +399,14 @@ install_packages () {
   # For every PACKAGE...
   for PACKAGE in "${PACKAGES_TO_INSTALL_ARRAY[@]}"; do
     # Capture the actual `PACKAGE_NAME` from the array and remove styling.
-    PACKAGE_NAME=$(echo "$PACKAGE" | sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g" | awk -F " »" '{print $1}');
+    PACKAGE_NAME=$(echo "$PACKAGE" | \
+      sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g" | \
+      awk -F " »" '{print $1}');
     # Get the JSON `PACKAGE_DATA` for the matching `PACKAGE_NAME` from the
     # packages file.
-    PACKAGE_DATA=$(jq --arg PACKAGE_NAME "$PACKAGE_NAME" '.categories[] | select(.packages != null) | .packages[] | select(.name == $PACKAGE_NAME)' packages.json);
+    PACKAGE_DATA=$(jq --arg PACKAGE_NAME "$PACKAGE_NAME" \
+      '.categories[] | select(.packages != null) | .packages[] | select(.name == $PACKAGE_NAME)' \
+      packages.json);
     # Install the package.
     install_package "$PACKAGE_DATA";
   done
@@ -395,13 +421,9 @@ install_package () {
   local PACKAGE_DATA="$1";
   local PACKAGE_NAME=$(echo "$PACKAGE_DATA" | jq -r '.name' | tr -d '\n');
   local INSTALL_METHOD="$(get_install_method "$PACKAGE_DATA" 2>&1)";
-  local PACKAGE_ID=$(echo "$PACKAGE_DATA" | jq -r --arg INSTALL_METHOD "$INSTALL_METHOD" ".$INSTALL_METHOD.id");
-  #printf "\n";
-  #printf "$(gum style --bold "$PACKAGE_NAME")\n";
-  #printf "$(gum style --italic 'Data:')\n";
-  #printf "$PACKAGE_DATA\n";
-  #printf "$(gum style --italic 'Install method:') $INSTALL_METHOD\n";
-  #printf "$(gum style --italic 'Package ID:') $PACKAGE_ID\n";
+  local PACKAGE_ID=$(echo "$PACKAGE_DATA" | \
+    jq -r --arg INSTALL_METHOD "$INSTALL_METHOD" \
+    ".$INSTALL_METHOD.id");
   # If the preferred install method is a command, execute the command;
   if [ "$INSTALL_METHOD" = "command" ]; then
     COMMAND=$(echo "$PACKAGE_DATA" | jq '.command');
@@ -437,7 +459,9 @@ install_package_apt () {
   else
     # Update apt if it isn't already updated,
     if ! $APT_IS_UPDATED; then
-      gum spin --spinner globe --title "Updating $(gum style --bold "apt")..." -- sudo apt-get update -y;
+      gum spin --spinner globe --title \
+        "Updating $(gum style --bold "apt")..." \
+        -- sudo apt-get update -y;
       APT_IS_UPDATED=true;
       msg_updated "apt";
     fi
