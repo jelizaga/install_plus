@@ -30,8 +30,43 @@
           "apt": {
             "id": "gnome-tweaks"
           }
+        },
+        {
+          "name": "nnn",
+          "description": "unorthodox terminal file manager",
+          "apt": {
+            "id": "nnn"
+          }
+        },
+        {
+          "name": "OBS Studio",
+          "description": "screen capturing, recording, and streaming",
+          "prefer": "flatpak",
+          "flatpak": {
+            "id": "com.obsproject.Studio"
+          },
+          "apt": {
+            "id": "obs-studio"
+          }
         }
       ]
+    },
+    {
+      "category_name": "⏰ Productivity",
+      "packages": [
+        {
+          "name": "Taskwarrior",
+          "description": "CLI todo list",
+          "apt": {
+            "id": "taskwarrior"
+          }
+        },
+        {
+          "name": "d2",
+          "description": "diagramming script language",
+          "command": "curl -fsSL https://d2lang.com/install.sh | sh -s --"
+        }
+      ] 
     },
     {
       "category_name": "💻 Software Engineering",
@@ -56,12 +91,22 @@
           "apt": {
             "id": "code"
           }
+        },
+        {
+          "name": "VirtualBox",
+          "description": "x86 virtualization",
+          "command": "wget -P ~/Downloads https://download.virtualbox.org/virtualbox/7.0.6/virtualbox-7.0_7.0.6-155176~Ubuntu~jammy_amd64.deb; sudo dpkg -i ~/Downloads/virtualbox-7.0_7.0.6-155176~Ubuntu~jammy_amd64.deb; rm ~/Downloads/virtualbox-7.0_7.0.6-155176~Ubuntu~jammy_amd64.deb;"
         }
       ]
     },
     {
       "category_name": "🔒 Security",
       "packages": [
+        {
+          "name": "Mullvad VPN",
+          "description": "virtual private network",
+          "command": "wget -P ~/Downloads https://mullvad.net/en/download/app/deb/latest; sudo dpkg -i ~/Downloads/MullvadVPN-2023.3_amd64.deb; rm ~/Downloads/MullvadVPN-2023.3_amd64.deb;"
+        },
         {
           "name": "pass",
           "description": "the standard Unix password manager",

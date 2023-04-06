@@ -345,6 +345,7 @@ get_install_method () {
   SNAP=$(echo "$PACKAGE_DATA" | jq 'has("snap")');
   YUM=$(echo "$PACKAGE_DATA" | jq 'has("yum")');
   ZYPPER=$(echo "$PACKAGE_DATA" | jq 'has("zypper")');
+  COMMAND=$(echo "$PACKAGE_DATA" | jq 'has("command")');
   HAS_PREFERRED_INSTALL_METHOD=$(echo "$PACKAGE_DATA" | jq 'has("prefer")');
   if [ "$HAS_PREFERRED_INSTALL_METHOD" = "true" ]; then
     INSTALL_METHOD=$(echo "$PACKAGE_DATA" | jq -r '.prefer');
@@ -355,10 +356,12 @@ get_install_method () {
       INSTALL_METHOD="flatpak";
     elif [ "$NPM" = "true" ]; then
       INSTALL_METHOD="npm";
-    elif [ "$PIP" = "true"]; then
+    elif [ "$PIP" = "true" ]; then
       INSTALL_METHOD="pip";
     elif [ "$SNAP" = "true" ]; then
       INSTALL_METHOD="snap";
+    elif [ "$COMMAND" = "true" ]; then
+      INSTALL_METHOD="command";
     fi
   elif $OS_IS_RHEL_BASED; then
     if [ "$DNF" = "true" ]; then
@@ -369,10 +372,12 @@ get_install_method () {
       INSTALL_METHOD="flatpak";
     elif [ "$NPM" = "true" ]; then
       INSTALL_METHOD="npm";
-    elif [ "$PIP" = "true"]; then
+    elif [ "$PIP" = "true" ]; then
       INSTALL_METHOD="pip";
     elif [ "$SNAP" = "true" ]; then
       INSTALL_METHOD="snap";
+    elif [ "$COMMAND" = "true" ]; then
+      INSTALL_METHOD="command";
     fi
   elif $OS_IS_SUSE_BASED; then
     if [ "$ZYPPER" = "true" ]; then
@@ -381,10 +386,12 @@ get_install_method () {
       INSTALL_METHOD="flatpak";
     elif [ "$NPM" = "true" ]; then
       INSTALL_METHOD="npm";
-    elif [ "$PIP" = "true"]; then
+    elif [ "$PIP" = "true" ]; then
       INSTALL_METHOD="pip";
     elif [ "$SNAP" = "true" ]; then
       INSTALL_METHOD="snap";
+    elif [ "$COMMAND" = "true" ]; then
+      INSTALL_METHOD="command";
     fi
   fi
   echo "$INSTALL_METHOD";
@@ -421,27 +428,29 @@ install_package () {
   local PACKAGE_DATA="$1";
   local PACKAGE_NAME=$(echo "$PACKAGE_DATA" | jq -r '.name' | tr -d '\n');
   local INSTALL_METHOD="$(get_install_method "$PACKAGE_DATA" 2>&1)";
-  local PACKAGE_ID=$(echo "$PACKAGE_DATA" | \
-    jq -r --arg INSTALL_METHOD "$INSTALL_METHOD" \
-    ".$INSTALL_METHOD.id");
-  # If the preferred install method is a command, execute the command;
+  # If the preferred install method is a command, execute the command.
   if [ "$INSTALL_METHOD" = "command" ]; then
-    COMMAND=$(echo "$PACKAGE_DATA" | jq '.command');
+    COMMAND=$(echo "$PACKAGE_DATA" | jq -r '.command');
     install_package_command "$COMMAND" "$PACKAGE_NAME";
-  elif [ "$INSTALL_METHOD" = "apt" ]; then
-    install_package_apt "$PACKAGE_ID" "$PACKAGE_NAME";
-  elif [ "$INSTALL_METHOD" = "dnf" ]; then
-    install_package_dnf "$PACKAGE_ID" "$PACKAGE_NAME";
-  elif [ "$INSTALL_METHOD" = "flatpak" ]; then
-    install_package_flatpak "$PACKAGE_ID" "$PACKAGE_NAME";
-  elif [ "$INSTALL_METHOD" = "npm" ]; then
-    install_package_npm "$PACKAGE_ID" "$PACKAGE_NAME";
-  elif [ "$INSTALL_METHOD" = "pip" ]; then
-    install_package_pip "$PACKAGE_ID" "$PACKAGE_NAME";
-  elif [ "$INSTALL_METHOD" = "yum" ]; then
-    install_package_yum "$PACKAGE_ID" "$PACKAGE_NAME";
-  elif [ "$INSTALL_METHOD" = "zypper" ]; then
-    install_package_zypper "$PACKAGE_ID" "$PACKAGE_NAME";
+  # Otherwise, capture the `PACKAGE_ID` for the `INSTALLATION_METHOD`
+  # and install the package using said `INSTALLATION_METHOD`.
+  else
+    local PACKAGE_ID=$(echo "$PACKAGE_DATA" | jq -r --arg INSTALL_METHOD "$INSTALL_METHOD" ".$INSTALL_METHOD.id");
+    if [ "$INSTALL_METHOD" = "apt" ]; then
+      install_package_apt "$PACKAGE_ID" "$PACKAGE_NAME";
+    elif [ "$INSTALL_METHOD" = "dnf" ]; then
+      install_package_dnf "$PACKAGE_ID" "$PACKAGE_NAME";
+    elif [ "$INSTALL_METHOD" = "flatpak" ]; then
+      install_package_flatpak "$PACKAGE_ID" "$PACKAGE_NAME";
+    elif [ "$INSTALL_METHOD" = "npm" ]; then
+      install_package_npm "$PACKAGE_ID" "$PACKAGE_NAME";
+    elif [ "$INSTALL_METHOD" = "pip" ]; then
+      install_package_pip "$PACKAGE_ID" "$PACKAGE_NAME";
+    elif [ "$INSTALL_METHOD" = "yum" ]; then
+      install_package_yum "$PACKAGE_ID" "$PACKAGE_NAME";
+    elif [ "$INSTALL_METHOD" = "zypper" ]; then
+      install_package_zypper "$PACKAGE_ID" "$PACKAGE_NAME";
+    fi
   fi
 }
 
@@ -474,7 +483,7 @@ install_package_apt () {
     # Otherwise, print error messages.
     elif [ $? == 1 ] || [ $? == 100 ]; then
       msg_cannot_install "$PACKAGE_NAME" "Package not found. Is $(gum style --italic $PACKAGE_ID) the correct id?";
-    elif [ $? == 101 ]]; then
+    elif [ $? == 101 ]; then
       msg_cannot_install "$PACKAGE_NAME" "Download interrupted.";
     elif [ $? == 102 ]; then
       msg_cannot_install "$PACKAGE_NAME" "Error encountered while unpacking package.";
@@ -600,8 +609,18 @@ install_package_zypper () {
 install_package_command () {
   local COMMAND=$1;
   local PACKAGE_NAME=$2;
-  msg_warning "Installing $(gum style --bold $PACKAGE_NAME) via $(gum style --italic 'command').";
+  msg_warning "Installing $(gum style --bold "$PACKAGE_NAME") via $(gum style --italic 'command').";
   eval $COMMAND;
+  #gum spin --spinner globe --title "Installing $(gum style --bold "$PACKAGE_NAME") via $(gum style --italic 'command')..." -- eval $COMMAND;
+  if [ $? == 0 ]; then
+    msg_installed "$PACKAGE_NAME";
+    ((PACKAGES_INSTALLED++));
+  else
+    msg_warning "The last command exited with non-0 status.";
+    printf "  $(gum style --bold "$PACKAGE_NAME") may not have been installed:\n"
+    printf "  $(gum style --bold "1.") Check if $(gum style --bold "$PACKAGE_NAME") is installed.\n";
+    printf "  $(gum style --bold "2.") Confirm that the $(gum style --bold "$PACKAGE_NAME") installation command in $PACKAGES_FILE is valid.\n";
+  fi
 }
 
 # Installs gum.
@@ -623,11 +642,6 @@ install_dependency_gum () {
   else 
     return 1
   fi
-}
-
-# Installs d2.
-install_dependency_d2 () {
-  curl -fsSL https://d2lang.com/install.sh | sh -s --
 }
 
 # verify_package_installed #####################################################
