@@ -16,6 +16,20 @@
           "apt": {
             "id": "kitty"
           }
+        },
+        {
+          "name": "Gnome Disks",
+          "description": "manage and configure drives and media",
+          "apt": {
+            "id": "gnome-disk-utility"
+          }
+        },
+        {
+          "name": "Gnome Tweaks",
+          "description": "customize GNOME",
+          "apt": {
+            "id": "gnome-tweaks"
+          }
         }
       ]
     },
@@ -111,6 +125,13 @@
           "flatpak": {
             "id": "com.valvesoftware.Steam"
           }
+        },
+        {
+          "name": "higan",
+          "description": "multi-system gaming emulator",
+          "apt": {
+            "id": "higan"
+          }
         }
       ]
     },
@@ -179,6 +200,13 @@
           "description": "spaced-repetition flash cards",
           "flatpak": {
             "id": "net.ankiweb.Anki"
+          }
+        },
+        {
+          "name": "Calibre",
+          "description": "one-stop solution for your e-book needs",
+          "apt": {
+            "id": "calibre"
           }
         }
       ] 

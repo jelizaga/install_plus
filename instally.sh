@@ -65,6 +65,7 @@ menu_settings () {
 # Invokes `menu_package_select` upon selection of categories.
 menu_select_categories () {
   check_packages_file;
+  printf "\n";
   printf "$(gum style --bold --underline 'Select Categories')\n";
   printf "$(gum style --italic 'Press ')";
   printf "$(gum style --bold --foreground '#E60000' 'x')";
@@ -96,7 +97,6 @@ menu_install_packages () {
   # MENU_ITEMS_ARRAY - Items as they'll be displayed for installation.
   MENU_ITEMS_ARRAY=();
   # For every category,
-  echo "CATEGORIES: ${#CATEGORIES_ARRAY[@]}";
   CATEGORY_COUNT=0;
   for CATEGORY in "${CATEGORIES_ARRAY[@]}"; do
     ((CATEGORY_COUNT++))
@@ -107,11 +107,8 @@ menu_install_packages () {
       # Add each package JSON object within to the `PACKAGES_ARRAY`
       # and its menu item to `MENU_ITEMS_ARRAY`.
       PACKAGES_IN_CATEGORY_LENGTH=$(echo "$PACKAGES_IN_CATEGORY" | jq 'length');
-      echo $PACKAGES_IN_CATEGORY_LENGTH;
       for (( i=0; i<$PACKAGES_IN_CATEGORY_LENGTH; i++ )); do
         PACKAGE=$(echo "$PACKAGES_IN_CATEGORY" | jq --argjson INDEX $i '.[$INDEX]');
-        echo "Category #: $CATEGORY_COUNT / Total categories: ${#CATEGORIES_ARRAY[@]}"
-        echo "i: $i / Total packages: $PACKAGES_IN_CATEGORY_LENGTH";
         if (( $CATEGORY_COUNT==${#CATEGORIES_ARRAY[@]} )) && (( $i==$PACKAGES_IN_CATEGORY_LENGTH - 1)); then
           PACKAGES_ARRAY+=("$PACKAGE");
         else
@@ -147,6 +144,15 @@ menu_install_packages () {
   # Otherwise, install selected packages.
   else
     install_packages "${PACKAGES_TO_INSTALL_ARRAY[@]}";
+  fi
+}
+
+menu_install_more_packages () {
+  INSTALL_MORE=$(gum confirm "Install more packages?");
+  if [ $? == 0 ]; then
+    menu_select_categories;
+  else
+    menu_main;
   fi
 }
 
@@ -379,6 +385,7 @@ install_packages () {
     install_package "$PACKAGE_DATA";
   done
   msg_packages_installed;
+  menu_install_more_packages;
 }
 
 # Installs a package given `PACKAGE_DATA` JSON.
