@@ -231,12 +231,19 @@ check_os () {
 # Dependencies #################################################################
 
 check_dependencies () {
-  if ! package_is_installed gum || ! package_is_installed jq; then
+  if ! package_is_installed curl || ! package_is_installed gum || ! package_is_installed jq; then
     printf "Welcome to install+! You're using $OS.\n";
     printf "We need some dependencies to get started:\n";
+    # Install curl:
+    if ! package_is_installed curl; then
+      msg_dependency_needed "curl";
+      if $OS_IS_DEBIAN_BASED; then
+        install_package_apt curl
+      fi
+    fi
     # Install gum:
     if ! package_is_installed gum; then
-      printf "🛠️ We need gum.\n";
+      msg_dependency_needed "gum";
       install_dependency_gum;
       if [ $? == 1 ]; then
         printf "❗ gum could not be installed.";
@@ -246,11 +253,15 @@ check_dependencies () {
     fi
     # Install jq:
     if ! package_is_installed jq; then
-      printf "🛠️ We need $(gum style --bold 'jq').\n";
-      install_package_apt jq;
+      msg_dependency_needed "jq";
+      if $OS_IS_DEBIAN_BASED; then
+        install_package_apt jq;
+      fi
     fi
   fi
-  if package_is_installed gum && package_is_installed jq; then
+  if package_is_installed curl && \
+    package_is_installed gum && \
+    package_is_installed jq; then
     return 0;
   fi
 }
@@ -268,9 +279,18 @@ check_packages_file () {
 # Messages #####################################################################
 # Functions related to printing reusable messages.
 
+msg_dependency_needed () {
+  local DEPENDENCY=$1;
+  if ! package_is_installed gum; then
+    printf "🛠️ We need $DEPENDENCY.\n";
+  else
+    printf "🛠️ We need $(gum style --bold "$DEPENDENCY").\n";
+  fi
+}
+
 msg_not_installed () {
   local PACKAGE_NAME=$1;
-  printf "❌ $(gum style --bold "$PACKAGE_NAME") is missing.\n"
+  printf "❌ $(gum style --bold "$PACKAGE_NAME") is missing.\n";
 }
 
 msg_already_installed () {
@@ -280,21 +300,37 @@ msg_already_installed () {
 
 msg_installed () {
   local PACKAGE_NAME=$1;
-  printf "🎁 $(gum style --bold "$PACKAGE_NAME") installed.\n"
+  if ! package_is_installed gum; then
+    printf "🎁 $PACKAGE_NAME installed.\n";
+  else
+    printf "🎁 $(gum style --bold "$PACKAGE_NAME") installed.\n";
+  fi
 }
 
 msg_updated () {
   local PACKAGE_MANAGER=$1;
-  printf "✨ $(gum style --italic "$PACKAGE_MANAGER updated.")\n"
+  if ! package_is_installed gum; then
+    printf "✨ $PACKAGE_MANAGER updated.\n";
+  else
+    printf "✨ $(gum style --italic "$PACKAGE_MANAGER updated.")\n";
+  fi
 }
 
 msg_cannot_install () {
   local PACKAGE_NAME=$1;
   if [ -n "$2" ]; then
     local REASON=$2;
-    printf "❗ $(gum style --bold "$PACKAGE_NAME") could not be installed: $REASON\n"
+    if ! package_is_installed gum; then
+      printf "❗ $PACKAGE_NAME could not be installed: $REASON\n";
+    else
+      printf "❗ $(gum style --bold "$PACKAGE_NAME") could not be installed: $REASON\n";
+    fi
   else
-    printf "❗ $(gum style --bold "$PACKAGE_NAME") could not be installed.\n"
+    if ! package_is_installed gum; then
+      printf "❗ $PACKAGE_NAME could not be installed.\n";
+    else
+      printf "❗ $(gum style --bold "$PACKAGE_NAME") could not be installed.\n";
+    fi
   fi
 }
 
@@ -468,14 +504,28 @@ install_package_apt () {
   else
     # Update apt if it isn't already updated,
     if ! $APT_IS_UPDATED; then
-      gum spin --spinner globe --title \
-        "Updating $(gum style --bold "apt")..." \
-        -- sudo apt-get update -y;
-      APT_IS_UPDATED=true;
-      msg_updated "apt";
+      if ! package_is_installed gum; then
+        printf "Updating apt...\n";
+        sudo apt-get update -y;
+        msg_updated "apt";
+      else
+        gum spin --spinner globe --title \
+          "Updating $(gum style --bold "apt")..." \
+          -- sudo apt-get update -y;
+      fi
+      if [ $? == 0 ]; then
+        APT_IS_UPDATED=true;
+        msg_updated "apt";
+      else
+        msg_warning "apt could not be updated.";
+      fi
     fi
     # And install the package.
-    gum spin --spinner globe --title "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic $PACKAGE_ID))..." -- sudo apt-get install -y $PACKAGE_ID;
+    if ! package_is_installed gum; then
+      sudo apt-get install -y $PACKAGE_ID;
+    else
+      gum spin --spinner globe --title "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic $PACKAGE_ID))..." -- sudo apt-get install -y $PACKAGE_ID;
+    fi
     # If package is successfully installed, say so.
     if [ $? == 0 ]; then
       msg_installed "$PACKAGE_NAME";
@@ -623,14 +673,25 @@ install_package_command () {
   fi
 }
 
+# Installs curl.
+install_dependency_curl () {
+  echo "🌎 Installing curl..."
+  if $OS_IS_DEBIAN_BASED; then
+    sudo apt install curl;
+  elif $OS_IS_RHEL_BASED; then
+    sudo dnf install curl;
+  fi
+}
+
 # Installs gum.
 install_dependency_gum () {
   echo "🌎 Installing gum..."
   if $OS_IS_DEBIAN_BASED; then
-    sudo mkdir -p /etc/apt/keyrings
+    sudo mkdir -p /etc/apt/keyrings;
     curl -fsSL https://repo.charm.sh/apt/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg
-    echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | sudo tee /etc/apt/sources.list.d/charm.list
-    sudo apt update && sudo apt install gum
+    echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | sudo tee /etc/apt/sources.list.d/charm.list;
+    sudo apt update;
+    sudo apt install gum;
   elif $OS_IS_RHEL_BASED; then
     echo "[charm]
     name=Charm
@@ -638,7 +699,7 @@ install_dependency_gum () {
     enabled=1
     gpgcheck=1
     gpgkey=https://repo.charm.sh/yum/gpg.key" | sudo tee /etc/yum.repos.d/charm.repo
-    sudo yum install gum
+    sudo yum install gum;
   else 
     return 1
   fi
