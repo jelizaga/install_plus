@@ -14,7 +14,7 @@ PACKAGES_INSTALLED=0
 APT_IS_UPDATED=false
 
 # UI defaults
-GUM_CHOOSE_CURSOR="⯈";
+GUM_CHOOSE_CURSOR="▶";
 GUM_CHOOSE_CURSOR_PREFIX="·";
 GUM_CHOOSE_SELECTED_PREFIX="x";
 GUM_CHOOSE_UNSELECTED_PREFIX="·";
@@ -54,9 +54,10 @@ menu_main () {
   print_os
   printf "\n"
   SELECTED=$(gum choose \
-  "Install Packages" \
-  "Settings" \
-  "Quit");
+    --cursor="$GUM_CHOOSE_CURSOR " \
+    "Install Packages" \
+    "Settings" \
+    "Quit");
   if [[ $SELECTED == "Install Packages" ]]; then
     menu_select_categories
   elif [[ $SELECTED == "Settings" ]]; then
@@ -89,6 +90,7 @@ menu_select_categories () {
   GUM_CHOOSE_CURSOR_PREFIX="·";
   PACKAGE_CATEGORIES=$(jq -r '.categories | map(.category)[]' packages.json | \
     gum choose \
+    --cursor="$GUM_CHOOSE_CURSOR " \
     --cursor-prefix="$GUM_CHOOSE_CURSOR_PREFIX " \
     --selected-prefix="$GUM_CHOOSE_SELECTED_PREFIX " \
     --unselected-prefix="$GUM_CHOOSE_UNSELECTED_PREFIX " \
@@ -156,6 +158,10 @@ menu_install_packages () {
   printf "$(gum style --italic ' to confirm your selection:')\n"
   # User selects packages to install.
   PACKAGES_TO_INSTALL=$(gum choose --no-limit \
+    --cursor="$GUM_CHOOSE_CURSOR " \
+    --cursor-prefix="$GUM_CHOOSE_CURSOR_PREFIX " \
+    --selected-prefix="$GUM_CHOOSE_SELECTED_PREFIX " \
+    --unselected-prefix="$GUM_CHOOSE_UNSELECTED_PREFIX " \
     "${MENU_ITEMS_ARRAY[@]}");
   # Packages are rolled in an array, `PACKAGES_TO_INSTALL_ARRAY`.
   PACKAGES_TO_INSTALL_ARRAY=();
