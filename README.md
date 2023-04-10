@@ -22,7 +22,7 @@ installing your favorite packages en masse.
 * [Usage](#usage)
   * [packages.json](#packagesjson)
     * [Categorizing packages](#categorizing-packages)
-    * [Preferring specific installation methods](#preferring-specific-installation-methods)
+    * [Preferring installation methods](#preferring-installation-methods)
 * [Troubleshooting](#troubleshooting)
 
 <!-- vim-markdown-toc -->
@@ -56,7 +56,7 @@ install your favorite packages on (almost) anything!
 
 #### Categorizing packages
 
-**Categorize packages** using the `"categories"` field to create an
+*Categorize packages* using the `"categories"` field to create an
 *array of categories*:
 
 ```json
@@ -109,12 +109,13 @@ install your favorite packages on (almost) anything!
 
 * `"categories"` should be an array of category objects.
 * Each category object within `"categories"` has:
-  * `"category"` - the field naming your category.
-  * `"packages"` - an array of packages within the category.
+  * `"category"` - the name of your category,
+  * `"packages"` - the array of packages contained within the category,
+  * `"description"` - *optional* description of your category.
 
-#### Preferring specific installation methods
+#### Preferring installation methods
 
-**Prefer a specific installation method** by specifying your preferred
+*Prefer an installation method for a package* by specifying your preferred
 method using the `"prefer"` field:
 
 ```json
