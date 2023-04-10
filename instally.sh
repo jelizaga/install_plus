@@ -13,11 +13,16 @@ PACKAGES_FILE="packages.json"
 PACKAGES_INSTALLED=0
 APT_IS_UPDATED=false
 
-# UI defaults
+# UI
 GUM_CHOOSE_CURSOR="▶";
 GUM_CHOOSE_CURSOR_PREFIX="·";
 GUM_CHOOSE_SELECTED_PREFIX="x";
 GUM_CHOOSE_UNSELECTED_PREFIX="·";
+
+# Colors
+GUM_CHOOSE_CURSOR_FOREGROUND="#E60000";
+GUM_CHOOSE_SELECTED_FOREGROUND="#2CB0C4";
+GUM_CONFIRM_SELECTED_BACKGROUND="#E60000";
 
 # print_title
 # Prints install+'s title.
@@ -55,6 +60,8 @@ menu_main () {
   printf "\n"
   SELECTED=$(gum choose \
     --cursor="$GUM_CHOOSE_CURSOR " \
+    --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
+    --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
     "Install Packages" \
     "Settings" \
     "Quit");
@@ -90,6 +97,8 @@ menu_select_categories () {
   GUM_CHOOSE_CURSOR_PREFIX="·";
   PACKAGE_CATEGORIES=$(jq -r '.categories | map(.category)[]' packages.json | \
     gum choose \
+    --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
+    --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
     --cursor="$GUM_CHOOSE_CURSOR " \
     --cursor-prefix="$GUM_CHOOSE_CURSOR_PREFIX " \
     --selected-prefix="$GUM_CHOOSE_SELECTED_PREFIX " \
@@ -158,10 +167,11 @@ menu_install_packages () {
   printf "$(gum style --italic ' to confirm your selection:')\n"
   # User selects packages to install.
   PACKAGES_TO_INSTALL=$(gum choose --no-limit \
+    --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
+    --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
     --cursor="$GUM_CHOOSE_CURSOR " \
     --cursor-prefix="$GUM_CHOOSE_CURSOR_PREFIX " \
     --selected-prefix="$GUM_CHOOSE_SELECTED_PREFIX " \
-    --unselected-prefix="$GUM_CHOOSE_UNSELECTED_PREFIX " \
     "${MENU_ITEMS_ARRAY[@]}");
   # Packages are rolled in an array, `PACKAGES_TO_INSTALL_ARRAY`.
   PACKAGES_TO_INSTALL_ARRAY=();
@@ -178,7 +188,8 @@ menu_install_packages () {
 }
 
 menu_install_more_packages () {
-  INSTALL_MORE=$(gum confirm "Install more packages?");
+  INSTALL_MORE=$(gum confirm "Install more packages?" \
+    --selected.background="$GUM_CONFIRM_SELECTED_BACKGROUND");
   if [ $? == 0 ]; then
     menu_select_categories;
   else
