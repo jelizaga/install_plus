@@ -153,7 +153,7 @@ object:
 }
 ```
 
-`instally` will run the contents of your "`command`" field to install your
+`instally` will run the contents of your `"command"` field to install your
 package.
 
 * ⚠ *Caution:* Make sure you know what you're doing. `instally` will run
