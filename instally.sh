@@ -147,13 +147,20 @@ menu_install_packages () {
           PACKAGES_ARRAY+=("$PACKAGE,");
         fi
         PACKAGE_NAME=$(echo "$PACKAGE" | jq -r '.name');
-        PACKAGE_DESCRIPTION=$(echo "$PACKAGE" | jq -r '.description');
-        MENU_ITEM="$(gum style --bold "$PACKAGE_NAME »") $PACKAGE_DESCRIPTION"
-        MENU_ITEMS_ARRAY+=("$MENU_ITEM");
+        PACKAGE_HAS_DESCRIPTION=$(echo "$PACKAGE" | jq 'has("description")');
+        if [ "$PACKAGE_HAS_DESCRIPTION" = "true" ]; then
+          PACKAGE_DESCRIPTION=$(echo "$PACKAGE" | jq -r '.description');
+          MENU_ITEM="$(gum style --bold "$PACKAGE_NAME »") $PACKAGE_DESCRIPTION";
+          MENU_ITEMS_ARRAY+=("$MENU_ITEM");
+        else
+          MENU_ITEM="$(gum style --bold "$PACKAGE_NAME")"
+          MENU_ITEMS_ARRAY+=("$MENU_ITEM");
+        fi
       done
     fi
   done
   MENU_ITEMS_ARRAY_ALPHABETIZED=($(printf '%s\n' "${MENU_ITEMS_ARRAY[@]}" | sort));
+  echo "${MENU_ITEMS_ARRAY[@]}";
   printf "\n"
   printf "$(gum style --bold --underline 'Install Packages')\n";
   printf "$(gum style --italic 'Press ')";

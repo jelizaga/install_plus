@@ -5,7 +5,6 @@
       "packages": [
         {
           "name": "Syncthing",
-          "description": "continuous file synchronization",
           "apt": {
             "id": "syncthing"
           }
