@@ -21,9 +21,10 @@ installing your favorite packages en masse.
   * [Dependencies](#dependencies)
 * [Usage](#usage)
   * [packages.json](#packagesjson)
+    * [Packages](#packages)
     * [Categorizing packages](#categorizing-packages)
     * [Preferring installation methods](#preferring-installation-methods)
-  * [Installing packages using commands](#installing-packages-using-commands)
+    * [Installing packages using commands](#installing-packages-using-commands)
 * [Troubleshooting](#troubleshooting)
 
 <!-- vim-markdown-toc -->
@@ -54,6 +55,10 @@ install your favorite packages on (almost) anything!
 ### packages.json
 
 `packages.json` is the brains behind your `instally` experience.
+
+#### Packages
+
+`instally` *package objects* should be shaped like so:
 
 #### Categorizing packages
 
@@ -135,7 +140,7 @@ method using the `"prefer"` field:
 Since `"prefer"` is `"flatpak"`, `instally` will install this package using
 `flatpak` instead of `apt`.
 
-### Installing packages using commands
+#### Installing packages using commands
 
 *Install packages using commands* with the `"command"` field in a package
 object:
@@ -153,7 +158,7 @@ package.
 
 * ⚠ *Caution:* Make sure you know what you're doing. `instally` will run
   whatever is in the `"command"` field without sanitization or guardrails.
-* 👉 *Protip:* String together Bash commands using `;` or `&&`.
+* 👉 *Protip:* String together shell commands in sequence using `;` or `&&`.
 * 👉 *Protip:* You can use `"command"` to execute your own scripts.
 * 👉 *Protip:* Remember to delete downloaded files and install scripts if you
   don't want them anymore. You can automate this by adding an `rm` statement at
