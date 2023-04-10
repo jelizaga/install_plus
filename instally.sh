@@ -295,7 +295,11 @@ msg_not_installed () {
 
 msg_already_installed () {
   local PACKAGE_NAME=$1;
-  printf "👍 $(gum style --bold "$PACKAGE_NAME") is already installed.\n";
+  if ! package_is_installed gum; then
+    printf "👍 $PACKAGE_NAME is already installed.\n";
+  else
+    printf "👍 $(gum style --bold "$PACKAGE_NAME") is already installed.\n";
+  fi
 }
 
 msg_installed () {
