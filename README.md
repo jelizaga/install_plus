@@ -1,16 +1,19 @@
 # instally
 
-*`instally` is a portable interactive CLI for conveniently & consistently 
-installing your favorite packages en masse.*
+> `instally` is a portable interactive CLI for conveniently & consistently 
+installing your favorite packages en masse.
 
 *See also:* [.dotfiles](https://github.com/jelizaga/.dotfiles)
 
 * ⛺ **Minimal dependencies:** You can run `instally` on any machine that you
   can run Bash and `jq`. How much easier can it get?
 * 🚚 **Flexibly JSON-driven:** Specify packages for `instally` to install using
-  JSON, enjoying support for fallbacks, preferred methods, and multiple package
-  managers.
-* 🧰 **OS agnostic:** `instally` installs packages on (almost) anything.
+  JSON, enjoying support for categorization, fallbacks, preferred methods, 
+  multiple package managers, and even running your own installation commands.
+* 🧰 **OS agnostic:** Owing to its simplicity, `instally` can install 
+  packages on (almost) anything.
+
+## Contents
 
 <!-- vim-markdown-toc GFM -->
 
