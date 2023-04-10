@@ -21,7 +21,8 @@ installing your favorite packages en masse.
   * [Dependencies](#dependencies)
 * [Usage](#usage)
   * [packages.json](#packagesjson)
-    * [Preferring installation methods](#preferring-installation-methods)
+    * [Categorizing packages](#categorizing-packages)
+    * [Preferring specific installation methods](#preferring-specific-installation-methods)
 * [Troubleshooting](#troubleshooting)
 
 <!-- vim-markdown-toc -->
@@ -41,7 +42,8 @@ initial run:
 
 ## Usage
 
-1. Specify the packages you'd like to be installed in `packages.json`.
+1. Specify the packages you'd like to be installed in the 
+   [`packages.json`](#packagesjson) file.
 2. Run `instally`. `instally` will read `packages.json` and provide an
    interactive CLI for package selection and installation.
 
@@ -50,6 +52,85 @@ install your favorite packages on (almost) anything!
 
 ### packages.json
 
-#### Preferring installation methods
+`packages.json` is the brains behind your `instally` experience.
+
+#### Categorizing packages
+
+**Categorize packages** using the `"categories"` field to create an
+*array of categories*:
+
+```json
+{
+  "categories": [
+    {
+      "category": "🎸 Music",
+      "packages": [
+        {
+          "name": "Spotify",
+          "description": "massive audio streaming service",
+          "flatpak": {
+            "id": "com.spotify.Client" 
+          }
+        },
+        {
+          "name": "ncmpcpp",
+          "description": "CLI music player",
+          "apt": {
+            "id": "ncmpcpp"
+          }
+        }
+      ]
+    },
+    {
+      "category": "🎨 Graphics",
+      "packages": [
+        {
+          "name": "GIMP",
+          "description": "GNU Image Manipulation Program",
+          "apt": {
+            "id": "gimp"
+          }
+        },
+        {
+          "name": "Krita",
+          "description": "digital painting suite",
+          "apt": {
+            "id": "krita"
+          },
+          "flatpak": {
+            "id": "org.kde.krita"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+* `"categories"` should be an array of category objects.
+* Each category object within `"categories"` has:
+  * `"category"` - the field naming your category.
+  * `"packages"` - an array of packages within the category.
+
+#### Preferring specific installation methods
+
+**Prefer a specific installation method** by specifying your preferred
+method using the `"prefer"` field:
+
+```json
+{
+  "name": "Blender",
+  "prefer": "flatpak",
+  "apt": {
+    "id": "blender"
+  },
+  "flatpak": {
+    "id": "org.blender.Blender"
+  }
+}
+```
+
+Since `"prefer"` is `"flatpak"`, `instally` will install this package using
+`flatpak` instead of `apt`.
 
 ## Troubleshooting
