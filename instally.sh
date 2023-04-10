@@ -86,8 +86,10 @@ menu_select_categories () {
   printf "$(gum style --italic 'press ')"
   printf "$(gum style --bold --foreground '#E60000' 'enter')"
   printf "$(gum style --italic ' to confirm your selection:')\n"
+  GUM_CHOOSE_CURSOR_PREFIX="·";
   PACKAGE_CATEGORIES=$(jq -r '.categories | map(.category)[]' packages.json | \
     gum choose \
+    --cursor-prefix="$GUM_CHOOSE_CURSOR_PREFIX " \
     --selected-prefix="$GUM_CHOOSE_SELECTED_PREFIX " \
     --unselected-prefix="$GUM_CHOOSE_UNSELECTED_PREFIX " \
     --no-limit)
