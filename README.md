@@ -21,6 +21,7 @@ installing your favorite packages en masse.
   * [Dependencies](#dependencies)
 * [Usage](#usage)
   * [packages.json](#packagesjson)
+    * [Preferring installation methods](#preferring-installation-methods)
 * [Troubleshooting](#troubleshooting)
 
 <!-- vim-markdown-toc -->
@@ -48,5 +49,7 @@ Now you can take your custom `packages.json` file anywhere with `instally`, and
 install your favorite packages on (almost) anything!
 
 ### packages.json
+
+#### Preferring installation methods
 
 ## Troubleshooting

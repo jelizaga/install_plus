@@ -238,7 +238,7 @@ check_dependencies () {
     if ! package_is_installed curl; then
       msg_dependency_needed "curl";
       if $OS_IS_DEBIAN_BASED; then
-        install_package_apt curl
+        install_package_apt curl curl;
       fi
     fi
     # Install gum:
@@ -255,7 +255,7 @@ check_dependencies () {
     if ! package_is_installed jq; then
       msg_dependency_needed "jq";
       if $OS_IS_DEBIAN_BASED; then
-        install_package_apt jq;
+        install_package_apt jq jq;
       fi
     fi
   fi
