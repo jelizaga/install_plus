@@ -172,6 +172,7 @@ menu_install_packages () {
     --cursor="$GUM_CHOOSE_CURSOR " \
     --cursor-prefix="$GUM_CHOOSE_CURSOR_PREFIX " \
     --selected-prefix="$GUM_CHOOSE_SELECTED_PREFIX " \
+    --unselected-prefix="$GUM_CHOOSE_UNSELECTED_PREFIX " \
     "${MENU_ITEMS_ARRAY[@]}");
   # Packages are rolled in an array, `PACKAGES_TO_INSTALL_ARRAY`.
   PACKAGES_TO_INSTALL_ARRAY=();
