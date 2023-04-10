@@ -23,6 +23,7 @@ installing your favorite packages en masse.
   * [packages.json](#packagesjson)
     * [Categorizing packages](#categorizing-packages)
     * [Preferring installation methods](#preferring-installation-methods)
+  * [Installing packages using commands](#installing-packages-using-commands)
 * [Troubleshooting](#troubleshooting)
 
 <!-- vim-markdown-toc -->
@@ -133,5 +134,29 @@ method using the `"prefer"` field:
 
 Since `"prefer"` is `"flatpak"`, `instally` will install this package using
 `flatpak` instead of `apt`.
+
+### Installing packages using commands
+
+*Install packages using commands* with the `"command"` field in a package
+object:
+
+```json
+{
+  "name": "VirtualBox",
+  "description": "x86 virtualization",
+  "command": "wget -P ~/Downloads https://download.virtualbox.org/virtualbox/7.0.6/virtualbox-7.0_7.0.6-155176~Ubuntu~jammy_amd64.deb; sudo dpkg -i ~/Downloads/virtualbox-7.0_7.0.6-155176~Ubuntu~jammy_amd64.deb; rm ~/Downloads/virtualbox-7.0_7.0.6-155176~Ubuntu~jammy_amd64.deb;"
+}
+```
+
+`instally` will run the contents of your "`command`" field to install your
+package.
+
+* ⚠ *Caution:* Make sure you know what you're doing. `instally` will run
+  whatever is in the `"command"` field without sanitization or guardrails.
+* 👉 *Protip:* String together Bash commands using `;` or `&&`.
+* 👉 *Protip:* You can use `"command"` to execute your own scripts.
+* 👉 *Protip:* Remember to delete downloaded files and install scripts if you
+  don't want them anymore. You can automate this by adding an `rm` statement at
+  the end of your command, as in the above example.
 
 ## Troubleshooting
