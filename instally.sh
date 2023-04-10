@@ -590,34 +590,43 @@ install_package_dnf () {
 install_package_flatpak () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
-  local ALREADY_INSTALLED=$(flatpak list | grep "$PACKAGE_ID");
-  # If package is already installed, say so.
-  if flatpak list | grep -q "$PACKAGE_ID"; then
-    msg_already_installed "$PACKAGE_NAME";
-  # Otherwise, install package.
+  if ! package_is_installed flatpak; then
+    msg_not_installed flatpak
+    if $OS_IS_DEBIAN_BASED; then
+      install_package_apt flatpak;
+    elif $OS_IS_RHEL_BASED; then
+      install_package_dnf flatpak;
+    fi
   else
-    gum spin --spinner globe --title "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic $PACKAGE_ID))..." -- flatpak install -y $PACKAGE_ID;
-    # If package is successfully installed, say so.
-    if [ $? == 0 ]; then
-      msg_installed "$PACKAGE_NAME";
-      ((PACKAGES_INSTALLED++));
-    # Otherwise, print error messages.
-    elif [ $? == 1 ]; then
-      msg_cannot_install "$PACKAGE_NAME" "Installation interrupted by user.";
-    elif [ $? == 3 ]; then
-      msg_cannot_install "$PACKAGE_NAME" "User does not have permission to install packages with Flatpak."
-    elif [ $? == 4 ]; then
-      msg_cannot_install "$PACKAGE_NAME" "Unresolvable dependencies. Try installing $(gum style --bold "$PACKAGE_NAME") manually.";
-    elif [ $? == 5 ]; then
+    local ALREADY_INSTALLED=$(flatpak list | grep "$PACKAGE_ID");
+    # If package is already installed, say so.
+    if flatpak list | grep -q "$PACKAGE_ID"; then
       msg_already_installed "$PACKAGE_NAME";
-    elif [ $? == 6 ]; then
-      msg_cannot_install "$PACKAGE_NAME" "Incompatible architecture.";
-    elif [ $? == 7 ]; then
-      msg_cannot_install "$PACKAGE_NAME" "Remote repository unavailable.";
-    elif [ $? == 8 ]; then
-      msg_cannot_install "$PACKAGE_NAME" "No such remote repository.";
-    elif [ $? == 9 ]; then
-      msg_cannot_install "$PACKAGE_NAME" "Could not be downloaded from remote repository.";
+    # Otherwise, install package.
+    else
+      gum spin --spinner globe --title "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic $PACKAGE_ID))..." -- flatpak install -y $PACKAGE_ID;
+      # If package is successfully installed, say so.
+      if [ $? == 0 ]; then
+        msg_installed "$PACKAGE_NAME";
+        ((PACKAGES_INSTALLED++));
+      # Otherwise, print error messages.
+      elif [ $? == 1 ]; then
+        msg_cannot_install "$PACKAGE_NAME" "Installation interrupted by user.";
+      elif [ $? == 3 ]; then
+        msg_cannot_install "$PACKAGE_NAME" "User does not have permission to install packages with Flatpak."
+      elif [ $? == 4 ]; then
+        msg_cannot_install "$PACKAGE_NAME" "Unresolvable dependencies. Try installing $(gum style --bold "$PACKAGE_NAME") manually.";
+      elif [ $? == 5 ]; then
+        msg_already_installed "$PACKAGE_NAME";
+      elif [ $? == 6 ]; then
+        msg_cannot_install "$PACKAGE_NAME" "Incompatible architecture.";
+      elif [ $? == 7 ]; then
+        msg_cannot_install "$PACKAGE_NAME" "Remote repository unavailable.";
+      elif [ $? == 8 ]; then
+        msg_cannot_install "$PACKAGE_NAME" "No such remote repository.";
+      elif [ $? == 9 ]; then
+        msg_cannot_install "$PACKAGE_NAME" "Could not be downloaded from remote repository.";
+      fi
     fi
   fi
 }
@@ -728,35 +737,6 @@ install_dependency_gum () {
     return 1
   fi
 }
-
-# verify_package_installed #####################################################
-# Returns 1 if package is missing; 0 if found.
-# Prints message declaring package status.
-# Args:
-#   $1 - Package id.
-#   $2 - Package manager or method used to install package.
-verify_package_installed () {
-  if [ $2 == apt ]; then
-    dpkg -s $1 >& /dev/null
-  elif [ $2 == flatpak ]; then
-    flatpak info $1 >& /dev/null
-  elif [ $2 == snap ]; then
-    snap list $1 >& /dev/null
-  elif [ $2 == npm ]; then
-    npm ls $1 >& /dev/null
-  fi
-  if [ $? == 1 ]; then
-    printf "❌ $1 is missing.\n"
-    return 1
-  else
-    printf "👍 $1 is already installed.\n"
-    return 0
-  fi
-}
-
-# verify_package_available #####################################################
-# Returns 0 if package is available for installation; 1 if unavailable.
-
 
 ################################################################################
 
