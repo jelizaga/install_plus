@@ -7,7 +7,7 @@ OS_IS_RHEL_BASED=false
 OS_IS_SUSE_BASED=false
 
 # Packages file
-PACKAGES_FILE="packages.json"
+PACKAGES_FILE="$HOME/.instally/packages.json"
 
 # Packages
 PACKAGES_INSTALLED=0
@@ -94,8 +94,7 @@ menu_select_categories () {
   printf "$(gum style --italic 'press ')"
   printf "$(gum style --bold --foreground '#E60000' 'enter')"
   printf "$(gum style --italic ' to confirm your selection:')\n"
-  GUM_CHOOSE_CURSOR_PREFIX="·";
-  PACKAGE_CATEGORIES=$(jq -r '.categories | map(.category)[]' packages.json | \
+  PACKAGE_CATEGORIES=$(jq -r '.categories | map(.category)[]' $PACKAGES_FILE | \
     gum choose \
     --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
     --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
@@ -131,7 +130,7 @@ menu_install_packages () {
     # Create an array of packages in that category,
     PACKAGES_IN_CATEGORY=$(jq -r --arg CATEGORY "$CATEGORY" \
       '.categories | map(select(.category == $CATEGORY))[0].packages' \
-      packages.json);
+      $PACKAGES_FILE);
     # And if the array isn't empty,
     if ! [[ "$PACKAGES_IN_CATEGORY" == "null" ]]; then
       # Add each package JSON object within to the `PACKAGES_ARRAY`
@@ -293,14 +292,54 @@ check_dependencies () {
   fi
 }
 
+# Checks for ~/.instally & ~/.instally/packages.json.
+# Creates either if they've yet to exist.
 check_packages_file () {
-  if ! [ -e $PACKAGES_FILE ]; then
-    printf "\n"
-    printf "⚠️  $(gum style --bold 'packages.json') not found.\n"
-    printf "$(gum style --italic 'Please select a valid ')"
-    printf "$(gum style --bold 'packages.json')"
-    printf "$(gum style --italic ' file:')\n"
+  if ! [ -e $HOME/.instally ]; then
+    make_instally_dir;
+    make_packages_file;
+    prompt_edit_packages_file;
+  elif ! [ -e $HOME/.instally/packages.json ]; then
+    make_packages_file;
+    prompt_edit_packages_file;
+  elif ! [ -s $PACKAGES_FILE ]; then
+    msg_empty "packages.json" "📒";
+    prompt_edit_packages_file;
   fi
+  check_packages_file;
+}
+
+# File system ##################################################################
+# Functions related to the file system.
+
+# Makes ~/.instally and reports this action.
+make_instally_dir () {
+  mkdir $HOME/.instally;
+  msg_created "~/.instally" "📁";
+}
+
+# Makes ~/.instally/packages.json and reports this action.
+make_packages_file () {
+  touch $HOME/.instally/packages.json;
+  msg_created "~/.instally/packages.json" "📒";
+}
+
+# Prompts user whether they'd like to edit packages.json.
+prompt_edit_packages_file () {
+  printf "$(gum style --italic \
+    'To define packages for instally to install, edit') ";
+  printf "$(gum style --bold \
+    'packages.json').\n";
+  printf "$(gum style --bold --italic 'Instructions:') ";
+  printf "https://github.com/jelizaga/instally/#-packagesjson\n";
+  EDIT_PACKAGES_FILE=$(gum confirm \
+    "📒 Edit $(gum style --bold 'packages.json')?" \
+    --selected.background="$GUM_CONFIRM_SELECTED_BACKGROUND");
+  if [ $? == 0 ]; then
+    $EDITOR $PACKAGES_FILE;
+  else
+    menu_main;
+  fi 
 }
 
 # Messages #####################################################################
@@ -309,15 +348,31 @@ check_packages_file () {
 msg_dependency_needed () {
   local DEPENDENCY=$1;
   if ! package_is_installed gum; then
-    printf "🛠️ We need $DEPENDENCY.\n";
+    printf "🔩 We need $DEPENDENCY.\n";
   else
-    printf "🛠️ We need $(gum style --bold "$DEPENDENCY").\n";
+    printf "🔩 We need $(gum style --bold "$DEPENDENCY").\n";
   fi
 }
 
 msg_not_installed () {
   local PACKAGE_NAME=$1;
   printf "❌ $(gum style --bold "$PACKAGE_NAME") is missing.\n";
+}
+
+msg_empty () {
+  local ITEM=$1;
+  if [ -n "$2" ]; then
+    local ICON=$2;
+    printf "$ICON $(gum style --bold "$ITEM") is empty.\n";
+  else
+    printf "❌ $(gum style --bold "$ITEM") is empty.\n";
+  fi
+}
+
+msg_created () {
+  local ITEM=$1;
+  local ICON=$2;
+  printf "$ICON $(gum style --bold "$ITEM") created.\n";
 }
 
 msg_already_installed () {
@@ -480,7 +535,7 @@ install_packages () {
     # packages file.
     PACKAGE_DATA=$(jq --arg PACKAGE_NAME "$PACKAGE_NAME" \
       '.categories[] | select(.packages != null) | .packages[] | select(.name == $PACKAGE_NAME)' \
-      packages.json);
+      $PACKAGES_FILE);
     # Install the package.
     install_package "$PACKAGE_DATA";
   done
