@@ -20,21 +20,24 @@ GUM_CHOOSE_SELECTED_PREFIX="x";
 GUM_CHOOSE_UNSELECTED_PREFIX="·";
 
 # Colors
-GUM_CHOOSE_CURSOR_FOREGROUND="#E60000";
-GUM_CHOOSE_SELECTED_FOREGROUND="#2CB0C4";
-GUM_CONFIRM_SELECTED_BACKGROUND="#E60000";
+COLOR_ACTIVE="#E60000";
+COLOR_ACCENT="#2CB0C4";
+GUM_CHOOSE_CURSOR_FOREGROUND="$COLOR_ACTIVE";
+GUM_CHOOSE_SELECTED_FOREGROUND="$COLOR_ACCENT";
+GUM_CONFIRM_SELECTED_BACKGROUND="$COLOR_ACTIVE";
 
 # print_title
 # Prints install+'s title.
 print_title () {
-  printf "\n"
-  printf "$(gum style --italic '        welcome to')\n"
-  printf "   \"                    m           \"\"#    \"\"#\n"
-  printf " mmm    m mm    mmm   mm#mm   mmm     #      #      m\n"
-  printf "   #    #\"  #  #   \"    #    \"   #    #      #      #\n"
-  printf "   #    #   #   \"\"\"m    #    m\"\"\"#    #      #   \"\"\"#\"\"\"\n"
-  printf " mm#mm  #   #  \"mmm\"    \"mm  \"mm\"#    \"mm    \"mm    #\n"
-  printf "\n"
+  printf "\n";
+  printf "$(gum style --italic '        welcome to')\n";
+  printf "   \"                    m           \"\"#    \"\"#          \n";
+  printf " mmm    m mm    mmm   mm#mm   mmm     #      #    m   m\n";
+  printf "   #    #\"  #  #   \"    #    \"   #    #      #    \"m m\" \n";
+  printf "   #    #   #   \"\"\"m    #    m\"\"\"#    #      #     #m#  \n";
+  printf " mm#mm  #   #  \"mmm\"    \"mm  \"mm\"#    \"mm    \"mm   \"#  \n";
+  printf "                                                   m\"   \n";
+  printf "                                                  \"\"    \n";
 }
 
 print_os () {
