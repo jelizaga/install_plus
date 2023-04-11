@@ -93,114 +93,122 @@ menu_settings () {
 # Invokes `menu_package_select` upon selection of categories.
 menu_select_categories () {
   check_packages_file;
-  printf "\n";
-  printf "$(gum style --bold --underline 'Select Categories')\n";
-  printf "$(gum style --italic 'Press ')";
-  printf "$(gum style --bold --foreground '#E60000' 'x')";
-  printf "$(gum style --italic ' to select package categories')\n";
-  printf "$(gum style --italic 'press ')"
-  printf "$(gum style --bold --foreground '#E60000' 'a')";
-  printf "$(gum style --italic ' to select all')\n"
-  printf "$(gum style --italic 'press ')"
-  printf "$(gum style --bold --foreground '#E60000' 'enter')"
-  printf "$(gum style --italic ' to confirm your selection:')\n"
-  PACKAGE_CATEGORIES=$(jq -r '.categories | map(.category)[]' $PACKAGES_FILE | \
-    gum choose \
-    --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
-    --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
-    --cursor="$GUM_CHOOSE_CURSOR " \
-    --cursor-prefix="$GUM_CHOOSE_CURSOR_PREFIX " \
-    --selected-prefix="$GUM_CHOOSE_SELECTED_PREFIX " \
-    --unselected-prefix="$GUM_CHOOSE_UNSELECTED_PREFIX " \
-    --no-limit)
-  # Roll `PACKAGE_CATEGORIES` into an array (`PACKAGE_CATEGORIES_ARRAY`):
-  PACKAGE_CATEGORIES_ARRAY=();
-  readarray -t PACKAGE_CATEGORIES_ARRAY <<< "$PACKAGE_CATEGORIES"
-  # Check if no category is selected:
-  if [ "${#PACKAGE_CATEGORIES_ARRAY[@]}" -eq 1 ] \
-    && [[ ${PACKAGE_CATEGORIES_ARRAY[0]} == "" ]]; then
-    printf "No package categories selected.\n"
-    menu_main
+  HAS_CATEGORIES=$(jq 'has("categories")' $PACKAGES_FILE);
+  if [ $HAS_CATEGORIES ]; then
+    printf "\n";
+    printf "$(gum style --bold --underline 'Select Categories')\n";
+    printf "$(gum style --italic 'Press ')";
+    printf "$(gum style --bold --foreground '#E60000' 'x')";
+    printf "$(gum style --italic ' to select package categories')\n";
+    printf "$(gum style --italic 'press ')"
+    printf "$(gum style --bold --foreground '#E60000' 'a')";
+    printf "$(gum style --italic ' to select all')\n"
+    printf "$(gum style --italic 'press ')"
+    printf "$(gum style --bold --foreground '#E60000' 'enter')"
+    printf "$(gum style --italic ' to confirm your selection:')\n"
+    PACKAGE_CATEGORIES=$(jq -r '.categories | map(.category)[]' $PACKAGES_FILE | \
+      gum choose \
+      --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
+      --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
+      --cursor="$GUM_CHOOSE_CURSOR " \
+      --cursor-prefix="$GUM_CHOOSE_CURSOR_PREFIX " \
+      --selected-prefix="$GUM_CHOOSE_SELECTED_PREFIX " \
+      --unselected-prefix="$GUM_CHOOSE_UNSELECTED_PREFIX " \
+      --no-limit)
+    # Roll `PACKAGE_CATEGORIES` into an array (`PACKAGE_CATEGORIES_ARRAY`):
+    PACKAGE_CATEGORIES_ARRAY=();
+    readarray -t PACKAGE_CATEGORIES_ARRAY <<< "$PACKAGE_CATEGORIES"
+    # Check if no category is selected:
+    if [ "${#PACKAGE_CATEGORIES_ARRAY[@]}" -eq 1 ] \
+      && [[ ${PACKAGE_CATEGORIES_ARRAY[0]} == "" ]]; then
+      menu_install_packages;
+    else
+      menu_install_packages "${PACKAGE_CATEGORIES_ARRAY[@]}";
+    fi
   else
-    menu_install_packages "${PACKAGE_CATEGORIES_ARRAY[@]}"
+    menu_install_packages;
   fi
 }
 
 # Menu used to select packages for installation.
 menu_install_packages () {
-  local CATEGORIES_ARRAY=("$@");
-  # PACKAGES_ARRAY - JSON objects containing individual package details.
-  PACKAGES_ARRAY=();
-  # MENU_ITEMS_ARRAY - Items as they'll be displayed for installation.
-  MENU_ITEMS_ARRAY=();
-  # For every category,
-  CATEGORY_COUNT=0;
-  for CATEGORY in "${CATEGORIES_ARRAY[@]}"; do
-    ((CATEGORY_COUNT++))
-    # Create an array of packages in that category,
-    PACKAGES_IN_CATEGORY=$(jq -r --arg CATEGORY "$CATEGORY" \
-      '.categories | map(select(.category == $CATEGORY))[0].packages' \
-      $PACKAGES_FILE);
-    # And if the array isn't empty,
-    if ! [[ "$PACKAGES_IN_CATEGORY" == "null" ]]; then
-      # Add each package JSON object within to the `PACKAGES_ARRAY`
-      # and its menu item to `MENU_ITEMS_ARRAY`.
-      PACKAGES_IN_CATEGORY_LENGTH=$(echo "$PACKAGES_IN_CATEGORY" | jq 'length');
-      for (( i=0; i<$PACKAGES_IN_CATEGORY_LENGTH; i++ )); do
-        PACKAGE=$(echo "$PACKAGES_IN_CATEGORY" | \
-          jq --argjson INDEX $i '.[$INDEX]');
-        if (( $CATEGORY_COUNT==${#CATEGORIES_ARRAY[@]} )) \
-          && (( $i==$PACKAGES_IN_CATEGORY_LENGTH - 1)); then
-          PACKAGES_ARRAY+=("$PACKAGE");
-        else
-          PACKAGES_ARRAY+=("$PACKAGE,");
-        fi
-        PACKAGE_NAME=$(echo "$PACKAGE" | jq -r '.name');
-        PACKAGE_HAS_DESCRIPTION=$(echo "$PACKAGE" | jq 'has("description")');
-        if [ "$PACKAGE_HAS_DESCRIPTION" = "true" ]; then
-          PACKAGE_DESCRIPTION=$(echo "$PACKAGE" | jq -r '.description');
-          MENU_ITEM="$(gum style --bold "$PACKAGE_NAME »") $PACKAGE_DESCRIPTION";
-          MENU_ITEMS_ARRAY+=("$MENU_ITEM");
-        else
-          MENU_ITEM="$(gum style --bold "$PACKAGE_NAME")"
-          MENU_ITEMS_ARRAY+=("$MENU_ITEM");
-        fi
-      done
+  if ! [ $# -eq 0 ]; then
+    local CATEGORIES_ARRAY=("$@");
+    # PACKAGES_ARRAY - JSON objects containing individual package details.
+    PACKAGES_ARRAY=();
+    # MENU_ITEMS_ARRAY - Items as they'll be displayed for installation.
+    MENU_ITEMS_ARRAY=();
+    # For every category,
+    CATEGORY_COUNT=0;
+    for CATEGORY in "${CATEGORIES_ARRAY[@]}"; do
+      ((CATEGORY_COUNT++))
+      # Create an array of packages in that category,
+      PACKAGES_IN_CATEGORY=$(jq -r --arg CATEGORY "$CATEGORY" \
+        '.categories | map(select(.category == $CATEGORY))[0].packages' \
+        $PACKAGES_FILE);
+      # And if the array isn't empty,
+      if ! [[ "$PACKAGES_IN_CATEGORY" == "null" ]]; then
+        # Add each package JSON object within to the `PACKAGES_ARRAY`
+        # and its menu item to `MENU_ITEMS_ARRAY`.
+        PACKAGES_IN_CATEGORY_LENGTH=$(echo "$PACKAGES_IN_CATEGORY" | jq 'length');
+        for (( i=0; i<$PACKAGES_IN_CATEGORY_LENGTH; i++ )); do
+          PACKAGE=$(echo "$PACKAGES_IN_CATEGORY" | \
+            jq --argjson INDEX $i '.[$INDEX]');
+          if (( $CATEGORY_COUNT==${#CATEGORIES_ARRAY[@]} )) \
+            && (( $i==$PACKAGES_IN_CATEGORY_LENGTH - 1)); then
+            PACKAGES_ARRAY+=("$PACKAGE");
+          else
+            PACKAGES_ARRAY+=("$PACKAGE,");
+          fi
+          PACKAGE_NAME=$(echo "$PACKAGE" | jq -r '.name');
+          PACKAGE_HAS_DESCRIPTION=$(echo "$PACKAGE" | jq 'has("description")');
+          if [ "$PACKAGE_HAS_DESCRIPTION" = "true" ]; then
+            PACKAGE_DESCRIPTION=$(echo "$PACKAGE" | jq -r '.description');
+            MENU_ITEM="$(gum style --bold "$PACKAGE_NAME »") $PACKAGE_DESCRIPTION";
+            MENU_ITEMS_ARRAY+=("$MENU_ITEM");
+          else
+            MENU_ITEM="$(gum style --bold "$PACKAGE_NAME")"
+            MENU_ITEMS_ARRAY+=("$MENU_ITEM");
+          fi
+        done
+      fi
+    done
+    MENU_ITEMS_ARRAY_ALPHABETIZED=($(printf '%s\n' "${MENU_ITEMS_ARRAY[@]}" | sort));
+    echo "${MENU_ITEMS_ARRAY[@]}";
+    printf "\n"
+    printf "$(gum style --bold --underline 'Install Packages')\n";
+    printf "$(gum style --italic 'Press ')";
+    printf "$(gum style --bold --foreground '#E60000' 'x')";
+    printf "$(gum style --italic ' to select packages to install')\n";
+    printf "$(gum style --italic 'press ')"
+    printf "$(gum style --bold --foreground '#E60000' 'a')";
+    printf "$(gum style --italic ' to select all')\n"
+    printf "$(gum style --italic 'press ')"
+    printf "$(gum style --bold --foreground '#E60000' 'enter')"
+    printf "$(gum style --italic ' to confirm your selection:')\n"
+    # User selects packages to install.
+    PACKAGES_TO_INSTALL=$(gum choose --no-limit \
+      --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
+      --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
+      --cursor="$GUM_CHOOSE_CURSOR " \
+      --cursor-prefix="$GUM_CHOOSE_CURSOR_PREFIX " \
+      --selected-prefix="$GUM_CHOOSE_SELECTED_PREFIX " \
+      --unselected-prefix="$GUM_CHOOSE_UNSELECTED_PREFIX " \
+      "${MENU_ITEMS_ARRAY[@]}");
+    # Packages are rolled in an array, `PACKAGES_TO_INSTALL_ARRAY`.
+    PACKAGES_TO_INSTALL_ARRAY=();
+    readarray -t PACKAGES_TO_INSTALL_ARRAY <<< "$PACKAGES_TO_INSTALL";
+    # Return to main menu if no packages were selected:
+    if [ "${#PACKAGES_TO_INSTALL_ARRAY[@]}" -eq 1 ] \
+      && [[ ${PACKAGES_TO_INSTALL_ARRAY[0]} == "" ]]; then
+      printf "No packages selected.\n"
+      menu_main;
+    # Otherwise, install selected packages.
+    else
+      install_packages "${PACKAGES_TO_INSTALL_ARRAY[@]}";
     fi
-  done
-  MENU_ITEMS_ARRAY_ALPHABETIZED=($(printf '%s\n' "${MENU_ITEMS_ARRAY[@]}" | sort));
-  echo "${MENU_ITEMS_ARRAY[@]}";
-  printf "\n"
-  printf "$(gum style --bold --underline 'Install Packages')\n";
-  printf "$(gum style --italic 'Press ')";
-  printf "$(gum style --bold --foreground '#E60000' 'x')";
-  printf "$(gum style --italic ' to select packages to install')\n";
-  printf "$(gum style --italic 'press ')"
-  printf "$(gum style --bold --foreground '#E60000' 'a')";
-  printf "$(gum style --italic ' to select all')\n"
-  printf "$(gum style --italic 'press ')"
-  printf "$(gum style --bold --foreground '#E60000' 'enter')"
-  printf "$(gum style --italic ' to confirm your selection:')\n"
-  # User selects packages to install.
-  PACKAGES_TO_INSTALL=$(gum choose --no-limit \
-    --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
-    --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
-    --cursor="$GUM_CHOOSE_CURSOR " \
-    --cursor-prefix="$GUM_CHOOSE_CURSOR_PREFIX " \
-    --selected-prefix="$GUM_CHOOSE_SELECTED_PREFIX " \
-    --unselected-prefix="$GUM_CHOOSE_UNSELECTED_PREFIX " \
-    "${MENU_ITEMS_ARRAY[@]}");
-  # Packages are rolled in an array, `PACKAGES_TO_INSTALL_ARRAY`.
-  PACKAGES_TO_INSTALL_ARRAY=();
-  readarray -t PACKAGES_TO_INSTALL_ARRAY <<< "$PACKAGES_TO_INSTALL";
-  # Return to main menu if no packages were selected:
-  if [ "${#PACKAGES_TO_INSTALL_ARRAY[@]}" -eq 1 ] \
-    && [[ ${PACKAGES_TO_INSTALL_ARRAY[0]} == "" ]]; then
-    printf "No packages selected.\n"
-    menu_main;
-  # Otherwise, install selected packages.
   else
-    install_packages "${PACKAGES_TO_INSTALL_ARRAY[@]}";
+    msg_todo "Non-categorized package installation";
   fi
 }
 
