@@ -306,14 +306,18 @@ check_packages_file () {
     make_instally_dir;
     make_packages_file;
     prompt_edit_packages_file;
+    check_packages_file;
   elif ! [ -e $HOME/.instally/packages.json ]; then
     make_packages_file;
     prompt_edit_packages_file;
+    check_packages_file;
   elif ! [ -s $PACKAGES_FILE ]; then
     msg_empty "packages.json" "📒";
     prompt_edit_packages_file;
+    check_packages_file;
+  else
+    return 0;
   fi
-  check_packages_file;
 }
 
 # File system ##################################################################
