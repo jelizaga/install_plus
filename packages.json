@@ -187,6 +187,27 @@
           }
         },
         {
+          "name": "cowsay",
+          "description": "a cow talks to you and says things",
+          "apt": {
+            "id": "cowsay"
+          }
+        },
+        {
+          "name": "fortune",
+          "description": "a random quote generator",
+          "apt": {
+            "id": "fortune"
+          }
+        },
+        {
+          "name": "nsnake",
+          "description": "classic Nokia-style Snake in your terminal",
+          "apt": {
+            "id": "nsnake"
+          }
+        },
+        {
           "name": "Steam",
           "description": "game storefront & database",
           "flatpak": {
