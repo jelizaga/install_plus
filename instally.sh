@@ -65,13 +65,20 @@ menu_main () {
     "Install Packages" \
     "Settings" \
     "Quit");
-  if [[ $SELECTED == "Install Packages" ]]; then
-    menu_select_categories
-  elif [[ $SELECTED == "Settings" ]]; then
-    menu_settings
-  elif [[ $SELECTED == "Quit" ]]; then
-    return 0
-  fi
+  case $SELECTED in
+    "Install Packages")
+      menu_select_categories;
+      ;;
+    "Settings")
+      menu_settings;
+      ;;
+    "Quit")
+      exit 0;
+      ;;
+    *)
+      exit 1;
+      ;;
+  esac
 }
 
 # Settings menu where `instally` can be configured.
