@@ -17,21 +17,21 @@ installing your favorite packages en masse.
 
 <!-- vim-markdown-toc GFM -->
 
-* [Installation](#installation)
-  * [Dependencies](#dependencies)
-* [Usage](#usage)
-  * [packages.json](#packagesjson)
+* [💽 Installation](#-installation)
+  * [🔩 Dependencies](#-dependencies)
+* [🙂 Usage](#-usage)
+  * [📒 packages.json](#-packagesjson)
     * [Packages](#packages)
     * [Categorizing packages](#categorizing-packages)
     * [Preferring installation methods](#preferring-installation-methods)
     * [Installing packages using commands](#installing-packages-using-commands)
-* [Troubleshooting](#troubleshooting)
+* [🔧 Troubleshooting](#-troubleshooting)
 
 <!-- vim-markdown-toc -->
 
-## Installation
+## 💽 Installation
 
-### Dependencies
+### 🔩 Dependencies
 
 `instally` checks for and installs its own dependencies if they're missing upon
 initial run:
@@ -42,7 +42,7 @@ initial run:
 * [`jq`](https://github.com/stedolan/jq) - For reading your `packages.json` file
   and installing packages.
 
-## Usage
+## 🙂 Usage
 
 1. Specify the packages you'd like to be installed in the 
    [`packages.json`](#packagesjson) file.
@@ -52,7 +52,7 @@ initial run:
 Now you can take your custom `packages.json` file anywhere with `instally`, and
 install your favorite packages on (almost) anything!
 
-### packages.json
+### 📒 packages.json
 
 `packages.json` is the brains behind your `instally` experience.
 
@@ -164,4 +164,4 @@ package.
   don't want them anymore. You can automate this by adding an `rm` statement at
   the end of your command, as in the above example.
 
-## Troubleshooting
+## 🔧 Troubleshooting
