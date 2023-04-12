@@ -299,5 +299,32 @@
         }
       ] 
     }
+  ],
+  "packages": [
+    {
+      "name": "lm-sensors",
+      "description": "test",
+      "apt": {
+        "id": "lm-sensors"
+      }
+    },
+    {
+      "name": "neomutt",
+      "apt": {
+        "id": "neomutt"
+      }
+    },
+    {
+      "name": "buku",
+      "apt": {
+        "id": "buku"
+      }
+    },
+    {
+      "name": "Newsboat",
+      "apt": {
+        "id": "newsboat"
+      }
+    }
   ]
 }
