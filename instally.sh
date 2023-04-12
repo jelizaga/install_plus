@@ -27,7 +27,7 @@ GUM_CHOOSE_SELECTED_FOREGROUND="$COLOR_ACCENT";
 GUM_CONFIRM_SELECTED_BACKGROUND="$COLOR_ACTIVE";
 
 DELIMITER="|";
-IFS="|";
+IFS="$DELIMITER";
 
 # print_title
 # Prints install+'s title.
@@ -96,7 +96,7 @@ menu_settings () {
 # Associated with `menu_select_groups`.
 prompt_select_groups () {
   printf "\n";
-  printf "$(gum style --bold --underline 'Select Categories')\n";
+  printf "$(gum style --bold --underline 'Select Groups')\n";
   printf "$(gum style --italic 'Press ')";
   printf "$(gum style --bold --foreground '#E60000' 'x')";
   printf "$(gum style --italic ' to select package groups')\n";
@@ -219,7 +219,6 @@ get_menu_items () {
   fi
   UNGROUPED_PACKAGES=($(get_ungrouped_menu_items));
   PACKAGES_ARRAY+=( "${UNGROUPED_PACKAGES[@]}" );
-  #echo "${PACKAGES_ARRAY[@]}";
   printf '%s\n' "${PACKAGES_ARRAY[@]}";
 }
 
@@ -228,8 +227,11 @@ menu_install_packages () {
   local MENU_ITEMS=($(get_menu_items "$@"));
   IFS=$'\n';
   readarray -t MENU_ITEMS_ARRAY <<< "$MENU_ITEMS";
+  for ITEM in "${MENU_ITEMS_ARRAY[@]}"; do
+    echo $ITEM;
+  done
+  IFS="$DELIMITER";
   prompt_install_packages;
-  # User selects packages to install.
   local SELECTED_PACKAGES=$(gum choose --no-limit \
     --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
     --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
@@ -238,15 +240,12 @@ menu_install_packages () {
     --selected-prefix="$GUM_CHOOSE_SELECTED_PREFIX " \
     --unselected-prefix="$GUM_CHOOSE_UNSELECTED_PREFIX " \
     "${MENU_ITEMS_ARRAY[@]}");
-  # Packages are rolled in an array, `PACKAGES_TO_INSTALL_ARRAY`.
   local SELECTED_PACKAGES_ARRAY=();
   readarray -t SELECTED_PACKAGES_ARRAY <<< "$SELECTED_PACKAGES";
-  # Return to main menu if no packages were selected:
   if [ "${#SELECTED_PACKAGES_ARRAY[@]}" -eq 1 ] \
     && [[ ${SELECTED_PACKAGES_ARRAY[0]} == "" ]]; then
     printf "No packages selected.\n"
     menu_main;
-  # Otherwise, install selected packages.
   else
     install_packages "${SELECTED_PACKAGES_ARRAY[@]}";
   fi
