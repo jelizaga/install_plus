@@ -73,7 +73,7 @@ menu_main () {
     "Quit");
   case $SELECTED in
     "Install Packages")
-      menu_select_categories;
+      menu_select_groups;
       ;;
     "Settings")
       menu_settings;
@@ -92,14 +92,14 @@ menu_settings () {
   msg_error "To be complete.";
 }
 
-# Prompts user to select package categories and provides instructions.
-# Associated with `menu_select_categories`.
-prompt_select_categories () {
+# Prompts user to select package groups and provides instructions.
+# Associated with `menu_select_groups`.
+prompt_select_groups () {
   printf "\n";
   printf "$(gum style --bold --underline 'Select Categories')\n";
   printf "$(gum style --italic 'Press ')";
   printf "$(gum style --bold --foreground '#E60000' 'x')";
-  printf "$(gum style --italic ' to select package categories')\n";
+  printf "$(gum style --italic ' to select package groups')\n";
   printf "$(gum style --italic 'press ')"
   printf "$(gum style --bold --foreground '#E60000' 'a')";
   printf "$(gum style --italic ' to select all')\n"
@@ -108,15 +108,15 @@ prompt_select_categories () {
   printf "$(gum style --italic ' to confirm your selection:')\n"
 }
 
-# Menu used to select categories of packages for installation.
+# Menu used to select groups of packages for installation.
 # Invokes `menu_package_select` after user selects (or doesn't select)
-# categories of packages.
-menu_select_categories () {
+# groups of packages.
+menu_select_groups () {
   check_packages_file;
-  HAS_GROUPS=$(jq 'has("categories")' $PACKAGES_FILE);
+  HAS_GROUPS=$(jq 'has("groups")' $PACKAGES_FILE);
   if [ $HAS_GROUPS ]; then
-    prompt_select_categories;
-    PACKAGE_GROUPS=$(jq -r '.categories | map(.category)[]' $PACKAGES_FILE | \
+    prompt_select_groups;
+    PACKAGE_GROUPS=$(jq -r '.groups | map(.group)[]' $PACKAGES_FILE | \
       gum choose \
       --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
       --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
@@ -138,8 +138,8 @@ menu_select_categories () {
   fi
 }
 
-# Prompts user to select package categories and provides instructions.
-# Associated with `menu_select_categories`.
+# Prompts user to select package groups and provides instructions.
+# Associated with `menu_select_groups`.
 prompt_install_packages () {
   printf "\n"
   printf "$(gum style --bold --underline 'Install Packages')\n";
@@ -160,9 +160,9 @@ get_grouped_menu_items () {
   local GROUP_COUNT=0;
   for GROUP in "${GROUPS_ARRAY[@]}"; do
     ((GROUP_COUNT++));
-    # Create an array of packages in that category,
+    # Create an array of packages in that group,
     PACKAGES_IN_GROUP=$(jq -r --arg GROUP "$GROUP" \
-      '.categories | map(select(.category == $GROUP))[0].packages' \
+      '.groups | map(select(.group == $GROUP))[0].packages' \
       $PACKAGES_FILE);
     # And if the array isn't empty,
     if ! [[ "$PACKAGES_IN_GROUP" == "null" ]]; then
@@ -256,7 +256,7 @@ menu_install_more_packages () {
   INSTALL_MORE=$(gum confirm "Install more packages?" \
     --selected.background="$GUM_CONFIRM_SELECTED_BACKGROUND");
   if [ $? == 0 ]; then
-    menu_select_categories;
+    menu_select_groups;
   else
     menu_main;
   fi
@@ -593,9 +593,6 @@ get_install_method () {
 #   `$@` - Array of packages to install.
 install_packages () {
   local PACKAGES_TO_INSTALL=("$@");
-  for ITEM in "${PACKAGES_TO_INSTALL[@]}"; do
-    echo $ITEM;
-  done
   # For every PACKAGE...
   for PACKAGE in "${PACKAGES_TO_INSTALL[@]}"; do
     # Capture the actual `PACKAGE_NAME` from the array and remove styling.
@@ -605,7 +602,7 @@ install_packages () {
     # Get the JSON `PACKAGE_DATA` for the matching `PACKAGE_NAME` from the
     # packages file.
     PACKAGE_DATA=$(jq --arg PACKAGE_NAME "$PACKAGE_NAME" \
-      '.categories[] | select(.packages != null) | .packages[] | select(.name == $PACKAGE_NAME)' \
+      '.groups[] | select(.packages != null) | .packages[] | select(.name == $PACKAGE_NAME)' \
       $PACKAGES_FILE);
     # Install the package.
     install_package "$PACKAGE_DATA";
