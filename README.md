@@ -8,7 +8,7 @@ installing your favorite packages en masse.
 * ⛺ **Minimal dependencies:** You can run `instally` on any machine that you
   can run Bash and `jq`. How much easier can it get?
 * 🚚 **Flexibly JSON-driven:** Specify packages for `instally` to install using
-  JSON, enjoying support for categorization, fallbacks, preferred methods, 
+  JSON, enjoying support for grouping, fallbacks, preferred methods, 
   multiple package managers, and even running your own installation commands.
 * 🧰 **OS agnostic:** Owing to its simplicity, `instally` can install 
   packages on (almost) anything.
@@ -22,7 +22,7 @@ installing your favorite packages en masse.
 * [🙂 Usage](#-usage)
   * [📒 packages.json](#-packagesjson)
     * [Packages](#packages)
-    * [Categorizing packages](#categorizing-packages)
+    * [Grouping packages](#grouping-packages)
     * [Preferring installation methods](#preferring-installation-methods)
     * [Installing packages using commands](#installing-packages-using-commands)
 * [🔧 Troubleshooting](#-troubleshooting)
@@ -45,7 +45,7 @@ initial run:
 ## 🙂 Usage
 
 1. Specify the packages you'd like to be installed in the 
-   [`packages.json`](#packagesjson) file.
+   [`packages.json`](#-packagesjson) file.
 2. Run `instally`. `instally` will read `packages.json` and provide an
    interactive CLI for package selection and installation.
 
@@ -60,16 +60,16 @@ install your favorite packages on (almost) anything!
 
 `instally` *package objects* should be shaped like so:
 
-#### Categorizing packages
+#### Grouping packages
 
-*Categorize packages* using the `"categories"` field to create an
-*array of categories*:
+*Categorize packages* using the `"groups"` field to create an
+*array of groups*:
 
 ```json
 {
-  "categories": [
+  "groups": [
     {
-      "category": "🎸 Music",
+      "group": "🎸 Music",
       "packages": [
         {
           "name": "Spotify",
@@ -88,7 +88,7 @@ install your favorite packages on (almost) anything!
       ]
     },
     {
-      "category": "🎨 Graphics",
+      "group": "🎨 Graphics",
       "packages": [
         {
           "name": "GIMP",
@@ -113,11 +113,11 @@ install your favorite packages on (almost) anything!
 }
 ```
 
-* `"categories"` should be an array of category objects.
-* Each category object within `"categories"` has:
-  * `"category"` - the name of your category,
-  * `"packages"` - the array of packages contained within the category,
-  * `"description"` - *optional* description of your category.
+* `"groups"` should be an array of group objects.
+* Each group object within `"groups"` has:
+  * `"group"` - the name of your group,
+  * `"packages"` - the array of packages contained within the group,
+  * `"description"` - *optional* description of your group.
 
 #### Preferring installation methods
 
