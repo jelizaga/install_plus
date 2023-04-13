@@ -324,6 +324,23 @@ cmatrix/jammy,now 2.0-3 amd64 [installed]
 
 #### dnf
 
+Search for the package:
+
+```bash
+→ dnf search [PACKAGE NAME]
+```
+
+The `"id"` is `"task"` (or `"task.x86_64"`):
+
+```bash
+Last metadata expiration check: 0:09:21 ago on Thu 13 Apr 2023 05:08:31 PM EDT.
+========================= Summary Matched: taskwarrior =========================
+task.x86_64 : Taskwarrior - a command-line TODO list manager
+taskopen.noarch : Script for taking notes and open urls with taskwarrior
+tasksh.x86_64 : Shell command that wraps Taskwarrior commands
+vit.noarch : Visual Interactive Taskwarrior full-screen terminal interface
+```
+
 #### flatpak
 
 Search for the package:
