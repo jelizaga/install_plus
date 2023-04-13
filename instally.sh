@@ -394,7 +394,11 @@ prompt_edit_packages_file () {
     "📒 Edit $(gum style --bold 'packages.json')?" \
     --selected.background="$GUM_CONFIRM_SELECTED_BACKGROUND");
   if [ $? == 0 ]; then
-    $EDITOR $PACKAGES_FILE;
+    if [ -z $EDITOR ]; then
+      nano $PACKAGES_FILE;
+    elif [ -n $EDITOR ]; then
+      $EDITOR $PACKAGES_FILE;
+    fi
   else
     menu_main;
   fi 
