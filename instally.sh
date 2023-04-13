@@ -112,6 +112,7 @@ prompt_select_groups () {
 # Invokes `menu_package_select` after user selects (or doesn't select)
 # groups of packages.
 menu_select_groups () {
+  PACKAGES_INSTALLED=0;
   check_packages_file;
   HAS_GROUPS=$(jq 'has("groups")' $PACKAGES_FILE);
   if [ "$HAS_GROUPS" = "true" ]; then
@@ -669,8 +670,8 @@ install_package_apt () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
   # If package is already installed, say so.
-  local PACKAGE_IS_INSTALLED=$(dpkg-query -s $PACKAGE_ID);
-  if [ $PACKAGE_IS_INSTALLED -eq 0 ]; then
+  #local PACKAGE_IS_INSTALLED=$(dpkg-query -s $PACKAGE_ID >/dev/null 2>&1);
+  if dpkg -s $PACKAGE_ID >/dev/null 2>&1; then
     msg_already_installed "$PACKAGE_NAME";
   # Otherwise,
   else
