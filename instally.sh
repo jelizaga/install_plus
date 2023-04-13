@@ -665,7 +665,8 @@ install_package_apt () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
   # If package is already installed, say so.
-  if dpkg-query -W $PACKAGE_ID 2>/dev/null | grep -q "^$PACKAGE_ID"; then
+  local PACKAGE_IS_INSTALLED=$(dpkg-query -s $PACKAGE_ID);
+  if [ $PACKAGE_IS_INSTALLED -eq 0 ]; then
     msg_already_installed "$PACKAGE_NAME";
   # Otherwise,
   else
