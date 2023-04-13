@@ -95,10 +95,12 @@ Here's a *simple example* of a `packages.json`:
 
 * `"packages"` - An array of [*package objects*](#package-objects) listing the
   packages for installation.
+* `"groups"` - *Optional* array of [*package groups*](#grouping-packages)
+  containing package objects for installation.
 
 #### Package objects
 
-`instally` *package objects* should be shaped like so:
+`instally` *package objects* are shaped like so:
 
 ```json
 {
@@ -115,7 +117,10 @@ Here's a *simple example* of a `packages.json`:
 * `"description"` - *Optional* description of the package.
 * [*Installation methods*](#installation-methods) - `"apt"`, `"dnf"`
   `"flatpak"`, `"yum"`, and `"zypper"` are all valid installation methods using
-  package managers.
+  package managers. `instally` can also install packages using
+  [custom shell commands](#installation-by-command).
+* `"prefer"` - *Optional* preferred installation method. See
+  [preferring installation methods](#preferring-installation-methods).
 
 #### Installation methods
 
