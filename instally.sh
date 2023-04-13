@@ -114,7 +114,7 @@ prompt_select_groups () {
 menu_select_groups () {
   check_packages_file;
   HAS_GROUPS=$(jq 'has("groups")' $PACKAGES_FILE);
-  if [ $HAS_GROUPS ]; then
+  if [ "$HAS_GROUPS" = "true" ]; then
     prompt_select_groups;
     PACKAGE_GROUPS=$(jq -r '.groups | map(.group)[]' $PACKAGES_FILE | \
       gum choose \
@@ -227,9 +227,6 @@ menu_install_packages () {
   local MENU_ITEMS=($(get_menu_items "$@"));
   IFS=$'\n';
   readarray -t MENU_ITEMS_ARRAY <<< "$MENU_ITEMS";
-  for ITEM in "${MENU_ITEMS_ARRAY[@]}"; do
-    echo $ITEM;
-  done
   IFS="$DELIMITER";
   prompt_install_packages;
   local SELECTED_PACKAGES=$(gum choose --no-limit \
@@ -453,10 +450,19 @@ msg_already_installed () {
 
 msg_installed () {
   local PACKAGE_NAME=$1;
-  if ! package_is_installed gum; then
-    printf "🎁 $PACKAGE_NAME installed.\n";
+  if [ -n "$2" ]; then
+    local INSTALLATION_METHOD=$2;
+    if ! package_is_installed gum; then
+      printf "🎁 $PACKAGE_NAME installed via $INSTALLATION_METHOD.\n";
+    else
+      printf "🎁 $(gum style --bold "$PACKAGE_NAME") installed using $(gum style --bold "$INSTALLATION_METHOD").\n";
+    fi
   else
-    printf "🎁 $(gum style --bold "$PACKAGE_NAME") installed.\n";
+    if ! package_is_installed gum; then
+      printf "🎁 $PACKAGE_NAME installed.\n";
+    else
+      printf "🎁 $(gum style --bold "$PACKAGE_NAME") installed.\n";
+    fi
   fi
 }
 
@@ -598,11 +604,19 @@ install_packages () {
     PACKAGE_NAME=$(echo "$PACKAGE" | \
       sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g" | \
       awk -F " »" '{print $1}');
-    # Get the JSON `PACKAGE_DATA` for the matching `PACKAGE_NAME` from the
-    # packages file.
-    PACKAGE_DATA=$(jq --arg PACKAGE_NAME "$PACKAGE_NAME" \
-      '.groups[] | select(.packages != null) | .packages[] | select(.name == $PACKAGE_NAME)' \
-      $PACKAGES_FILE);
+    local PACKAGE_DATA="";
+    local HAS_UNGROUPED_PACKAGES=$(jq 'has("packages")' $PACKAGES_FILE);
+    local HAS_GROUPED_PACKAGES=$(jq 'has("groups")' $PACKAGES_FILE);
+    if [ "$HAS_UNGROUPED_PACKAGES" = "true" ]; then
+      PACKAGE_DATA=$(jq --arg PACKAGE_NAME "$PACKAGE_NAME" \
+        '.packages[] | select(.name == $PACKAGE_NAME)' \
+        $PACKAGES_FILE);
+    fi
+    if [ "$HAS_GROUPED_PACKAGES" = "true" ]; then
+      PACKAGE_DATA=$(jq --arg PACKAGE_NAME "$PACKAGE_NAME" \
+        '.groups[] | select(.packages != null) | .packages[] | select(.name == $PACKAGE_NAME)' \
+        $PACKAGES_FILE);
+    fi
     # Install the package.
     install_package "$PACKAGE_DATA";
   done
@@ -677,12 +691,13 @@ install_package_apt () {
     if ! package_is_installed gum; then
       sudo apt-get install -y $PACKAGE_ID;
     else
-      gum spin --spinner globe --title "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic $PACKAGE_ID))..." -- sudo apt-get install -y $PACKAGE_ID;
+      gum spin --spinner globe --title "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic $PACKAGE_ID)) using $(gum style --italic 'apt')..." -- sudo apt-get install -y $PACKAGE_ID;
     fi
     # If package is successfully installed, say so.
     if [ $? == 0 ]; then
-      msg_installed "$PACKAGE_NAME";
+      msg_installed "$PACKAGE_NAME" "apt";
       ((PACKAGES_INSTALLED++));
+      return 0;
     # Otherwise, print error messages.
     elif [ $? == 1 ] || [ $? == 100 ]; then
       msg_cannot_install "$PACKAGE_NAME" "Package not found. Is $(gum style --italic $PACKAGE_ID) the correct id?";
@@ -719,12 +734,19 @@ install_package_dnf () {
 install_package_flatpak () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
+  # Check if flatpak is installed, and install it if not.
   if ! package_is_installed flatpak; then
-    msg_not_installed flatpak
+    msg_not_installed "flatpak";
     if $OS_IS_DEBIAN_BASED; then
-      install_package_apt flatpak;
+      install_package_apt "flatpak" "flatpak";
+      if [ $? == 0 ]; then
+        install_package_flatpak "$PACKAGE_ID" "$PACKAGE_NAME";
+      fi
     elif $OS_IS_RHEL_BASED; then
-      install_package_dnf flatpak;
+      install_package_dnf "flatpak" "flatpak";
+      if [ $? == 0 ]; then
+        install_package_flatpak "$PACKAGE_ID" "$PACKAGE_NAME";
+      fi
     fi
   else
     local ALREADY_INSTALLED=$(flatpak list | grep "$PACKAGE_ID");
@@ -733,10 +755,10 @@ install_package_flatpak () {
       msg_already_installed "$PACKAGE_NAME";
     # Otherwise, install package.
     else
-      gum spin --spinner globe --title "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic $PACKAGE_ID))..." -- flatpak install -y $PACKAGE_ID;
+      gum spin --spinner globe --title "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic $PACKAGE_ID)) using $(gum style --italic 'flatpak')..." -- flatpak install -y $PACKAGE_ID;
       # If package is successfully installed, say so.
       if [ $? == 0 ]; then
-        msg_installed "$PACKAGE_NAME";
+        msg_installed "$PACKAGE_NAME" "flatpak";
         ((PACKAGES_INSTALLED++));
       # Otherwise, print error messages.
       elif [ $? == 1 ]; then

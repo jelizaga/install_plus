@@ -31,6 +31,14 @@ installing your favorite packages en masse.
     * [Grouping packages](#grouping-packages)
     * [Installation order](#installation-order)
 * [🔧 Troubleshooting](#-troubleshooting)
+  * [Getting package IDs](#getting-package-ids)
+    * [apt](#apt)
+    * [dnf](#dnf)
+    * [flatpak](#flatpak)
+    * [npm](#npm)
+    * [pip](#pip)
+    * [yum](#yum)
+    * [zypper](#zypper)
 
 <!-- vim-markdown-toc -->
 
@@ -133,6 +141,7 @@ Specify as few or as many installation methods for a package as you'd like.
 
 ##### Installation by package manager
 
+```json
 {
   "name": "Vim",
   "description": "your favorite text editor",
@@ -140,6 +149,10 @@ Specify as few or as many installation methods for a package as you'd like.
     "id": "vim-gtk3"
   }
 }
+```
+
+* 👉 *Protip:* See [getting package IDs](#getting-package-ids) for help getting
+  the `"id"`s of your packages.
 
 ###### Supported package managers
 
@@ -278,3 +291,64 @@ user.
   with their dependencies.
 
 ## 🔧 Troubleshooting
+
+### Getting package IDs
+
+#### apt
+
+Search for the package:
+
+```bash
+→ apt search [APPLICATION NAME]
+```
+
+The `"id"` is `"cmatrix"`:
+
+```bash
+cmatrix/jammy,now 2.0-3 amd64 [installed]
+  simulates the display from "The Matrix"
+```
+
+#### dnf
+
+#### flatpak
+
+Search for the package:
+
+```bash
+→ flatpak search [APPLICATION NAME]
+```
+
+The `"id"` is `"com.spotify.Client"`, under `Application ID`:
+
+```bash
+Name       Description                       Application ID        Version             Branch Remotes
+Spotify    Online music streaming service    com.spotify.Client    1.2.8.923.g4f94bf0d stable flathub
+```
+
+#### npm
+
+Search for the package:
+
+```bash
+→ npm search [APPLICATION NAME]
+```
+
+The `"id"` is `"tiddlywiki"` under `NAME`:
+
+```bash
+NAME                      | DESCRIPTION          | AUTHOR          | DATE       | VERSION  | KEYWORDS                   
+tiddlywiki                | a non-linear…        | =jermolene      | 2023-03-26 | 5.2.7    | tiddlywiki tiddlywiki5 wiki
+```
+
+#### pip
+
+1. Search for the package at [https://pypi.org/search/](https://pypi.org/search/).
+2. The `"id"` is in the installation command at the top of your package's page.
+   Example: in `pip install buku`, `"buku"` is the `"id"`.
+
+`pip search [PACKAGE NAME]` isn't supported by PyPI.
+
+#### yum
+
+#### zypper
