@@ -23,8 +23,11 @@ installing your favorite packages en masse.
   * [📒 packages.json](#-packagesjson)
     * [Package objects](#package-objects)
     * [Installation methods](#installation-methods)
-      * [Preferring installation methods](#preferring-installation-methods)
+      * [Installation by package manager](#installation-by-package-manager)
+        * [Supported package managers](#supported-package-managers)
       * [Installation by command](#installation-by-command)
+      * [Preferring installation methods](#preferring-installation-methods)
+      * [How does instally choose installation methods?](#how-does-instally-choose-installation-methods)
     * [Grouping packages](#grouping-packages)
     * [Installation order](#installation-order)
 * [🔧 Troubleshooting](#-troubleshooting)
@@ -117,33 +120,36 @@ Here's a *simple example* of a `packages.json`:
 * `"description"` - *Optional* description of the package.
 * [*Installation methods*](#installation-methods) - `"apt"`, `"dnf"`
   `"flatpak"`, `"yum"`, and `"zypper"` are all valid installation methods using
-  package managers. `instally` can also install packages using
+  [package managers](#installation-by-package-manager). `instally` can also 
+  install packages using
   [custom shell commands](#installation-by-command).
 * `"prefer"` - *Optional* preferred installation method. See
   [preferring installation methods](#preferring-installation-methods).
 
 #### Installation methods
 
-##### Preferring installation methods
+Specify as few or as many installation methods for a package as you'd like.
 
-*Prefer an installation method for a package* by specifying your preferred
-method using the `"prefer"` field:
 
-```json
+##### Installation by package manager
+
 {
-  "name": "Blender",
-  "prefer": "flatpak",
+  "name": "Vim",
+  "description": "your favorite text editor",
   "apt": {
-    "id": "blender"
-  },
-  "flatpak": {
-    "id": "org.blender.Blender"
+    "id": "vim-gtk3"
   }
 }
-```
 
-Since `"prefer"` is `"flatpak"`, `instally` will install this package using
-`flatpak` instead of `apt`.
+###### Supported package managers
+
+* `apt`
+* `dnf`
+* `flatpak`
+* `npm`
+* `pip`
+* `yum`
+* `zypper`
 
 ##### Installation by command
 
@@ -168,6 +174,39 @@ package.
 * 👉 *Protip:* Remember to delete downloaded files and install scripts if you
   don't want them anymore. You can automate this by adding an `rm` statement at
   the end of your command, as in the above example.
+
+##### Preferring installation methods
+
+*Prefer an installation method for a package* by specifying your preferred
+method using the `"prefer"` field:
+
+```json
+{
+  "name": "Blender",
+  "prefer": "flatpak",
+  "apt": {
+    "id": "blender"
+  },
+  "flatpak": {
+    "id": "org.blender.Blender"
+  }
+}
+```
+
+Since `"prefer"` is `"flatpak"`, `instally` will install this package using
+`flatpak` instead of `apt`.
+
+##### How does instally choose installation methods?
+
+`instally` will dynamically chose whatever methods are appropriate for your OS,
+unless you [prefer an installation method](#preferring-installation-methods).
+
+For example, `instally` won't use `apt` if you're using a non-Debian-based
+distro, and won't use `dnf` if you're not using a RHEL-based distro.
+
+If `flatpak`, `npm`, or `pip` are missing but are specified to be used for
+installing a package, `instally` will automatically attempt to install them for
+you during the installation run.
 
 #### Grouping packages
 
