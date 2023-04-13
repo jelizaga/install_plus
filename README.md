@@ -5,13 +5,15 @@ installing your favorite packages en masse.
 
 *See also:* [.dotfiles](https://github.com/jelizaga/.dotfiles)
 
-* ⛺ **Minimal dependencies:** You can run `instally` on any machine that you
-  can run Bash and `jq`. How much easier can it get?
-* 🚚 **Flexibly JSON-driven:** Specify packages for `instally` to install using
-  JSON, enjoying support for grouping, fallbacks, preferred methods, 
-  multiple package managers, and even running your own installation commands.
-* 🧰 **OS agnostic:** Owing to its simplicity, `instally` can install 
-  packages on (almost) anything.
+* ⛺ **Minimal dependencies:** Owing to its simplicity, you can bring `instally`
+  to any machine that's capable of running Bash and `jq`.
+* 🚚 **JSON-driven flexibility:** Specify packages for `instally` to install
+  using JSON and enjoy support for grouping, preferred methods of installation, 
+  fallback methods, multiple package managers, and even running your own
+  installation commands.
+* 💼 **Super portable:** With `instally` and your own custom `package.json`
+  file, you can bring your favorite packages to (almost) any distro and install
+  them right away.
 
 ## Contents
 
@@ -30,7 +32,8 @@ installing your favorite packages en masse.
       * [How does instally choose installation methods?](#how-does-instally-choose-installation-methods)
     * [Grouping packages](#grouping-packages)
     * [Installation order](#installation-order)
-* [🔧 Troubleshooting](#-troubleshooting)
+* [🎨 Configuration](#-configuration)
+* [👉 Protips](#-protips)
   * [Getting package IDs](#getting-package-ids)
     * [apt](#apt)
     * [dnf](#dnf)
@@ -39,6 +42,7 @@ installing your favorite packages en masse.
     * [pip](#pip)
     * [yum](#yum)
     * [zypper](#zypper)
+* [🔧 Troubleshooting](#-troubleshooting)
 
 <!-- vim-markdown-toc -->
 
@@ -46,8 +50,8 @@ installing your favorite packages en masse.
 
 ### 🔩 Dependencies
 
-`instally` checks for and installs its own dependencies if they're missing upon
-initial run:
+`instally` checks for and automatically installs its own dependencies if
+they're missing upon initial run:
 
 * [`curl`](https://en.wikipedia.org/wiki/CURL) - For installing `gum` and as a
   fallback installation method.
@@ -290,7 +294,16 @@ user.
 * 👉 *Protip:* Using [grouping](#grouping-packages), you can bundle packages
   with their dependencies.
 
-## 🔧 Troubleshooting
+## 🎨 Configuration
+
+Configure `instally` by editing `~/.instally/instally.conf`:
+
+```
+COLOR_ACTIVE="VALUE" # Active color; use a hex code.
+COLOR_ACCENT="VALUE" # Accent color; use a hex code.
+```
+
+## 👉 Protips
 
 ### Getting package IDs
 
@@ -299,7 +312,7 @@ user.
 Search for the package:
 
 ```bash
-→ apt search [APPLICATION NAME]
+→ apt search [PACKAGE NAME]
 ```
 
 The `"id"` is `"cmatrix"`:
@@ -316,7 +329,7 @@ cmatrix/jammy,now 2.0-3 amd64 [installed]
 Search for the package:
 
 ```bash
-→ flatpak search [APPLICATION NAME]
+→ flatpak search [PACKAGE NAME]
 ```
 
 The `"id"` is `"com.spotify.Client"`, under `Application ID`:
@@ -331,7 +344,7 @@ Spotify    Online music streaming service    com.spotify.Client    1.2.8.923.g4f
 Search for the package:
 
 ```bash
-→ npm search [APPLICATION NAME]
+→ npm search [PACKAGE NAME]
 ```
 
 The `"id"` is `"tiddlywiki"` under `NAME`:
@@ -352,3 +365,5 @@ tiddlywiki                | a non-linear…        | =jermolene      | 2023-03-2
 #### yum
 
 #### zypper
+
+## 🔧 Troubleshooting
