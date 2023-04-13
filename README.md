@@ -21,10 +21,12 @@ installing your favorite packages en masse.
   * [🔩 Dependencies](#-dependencies)
 * [🙂 Usage](#-usage)
   * [📒 packages.json](#-packagesjson)
-    * [Packages](#packages)
+    * [Package objects](#package-objects)
+    * [Installation methods](#installation-methods)
+      * [Preferring installation methods](#preferring-installation-methods)
+      * [Installation by command](#installation-by-command)
     * [Grouping packages](#grouping-packages)
-    * [Preferring installation methods](#preferring-installation-methods)
-    * [Installing packages using commands](#installing-packages-using-commands)
+    * [Installation order](#installation-order)
 * [🔧 Troubleshooting](#-troubleshooting)
 
 <!-- vim-markdown-toc -->
@@ -39,8 +41,8 @@ initial run:
 * [`curl`](https://en.wikipedia.org/wiki/CURL) - For installing `gum` and as a
   fallback installation method.
 * [`gum`](https://github.com/charmbracelet/gum) - For interactivity.
-* [`jq`](https://github.com/stedolan/jq) - For reading your `packages.json` file
-  and installing packages.
+* [`jq`](https://github.com/stedolan/jq) - For reading your 
+  [`packages.json`](#-packagesjson) file and installing packages.
 
 ## 🙂 Usage
 
@@ -54,15 +56,117 @@ install your favorite packages on (almost) anything!
 
 ### 📒 packages.json
 
-`packages.json` is the brains behind your `instally` experience.
+`packages.json` is the brains behind your `instally` experience. Using
+`packages.json`, you can configure:
 
-#### Packages
+* What packages `instally` can install,
+* Installation methods and fallback installation methods,
+* Grouping of packages,
+* What order packages are installed in.
+
+---
+
+Here's a *simple example* of a `packages.json`:
+
+```json
+{
+  "packages": [
+    {
+      "name": "curl",
+      "apt": {
+        "id": "curl"
+      }
+    },
+    {
+      "name": "Vim",
+      "apt": {
+        "id": "vim-gtk3"
+      }
+    },
+    {
+      "name": "nsnake",
+      "apt": {
+        "id": "nsnake"
+      }
+    }
+  ]
+}
+```
+
+* `"packages"` - An array of [*package objects*](#package-objects) listing the
+  packages for installation.
+
+#### Package objects
 
 `instally` *package objects* should be shaped like so:
 
+```json
+{
+  "name": "Vim",
+  "description": "your favorite text editor",
+  "apt": {
+    "id": "vim-gtk3"
+  }
+}
+```
+
+* `"name"` - The name of the package. This could be virtually anything and
+  spelled in any way.
+* `"description"` - *Optional* description of the package.
+* [*Installation methods*](#installation-methods) - `"apt"`, `"dnf"`
+  `"flatpak"`, `"yum"`, and `"zypper"` are all valid installation methods using
+  package managers.
+
+#### Installation methods
+
+##### Preferring installation methods
+
+*Prefer an installation method for a package* by specifying your preferred
+method using the `"prefer"` field:
+
+```json
+{
+  "name": "Blender",
+  "prefer": "flatpak",
+  "apt": {
+    "id": "blender"
+  },
+  "flatpak": {
+    "id": "org.blender.Blender"
+  }
+}
+```
+
+Since `"prefer"` is `"flatpak"`, `instally` will install this package using
+`flatpak` instead of `apt`.
+
+##### Installation by command
+
+*Install packages using commands* with the `"command"` field in a package
+object:
+
+```json
+{
+  "name": "VirtualBox",
+  "description": "x86 virtualization",
+  "command": "wget -P ~/Downloads https://download.virtualbox.org/virtualbox/7.0.6/virtualbox-7.0_7.0.6-155176~Ubuntu~jammy_amd64.deb; sudo dpkg -i ~/Downloads/virtualbox-7.0_7.0.6-155176~Ubuntu~jammy_amd64.deb; rm ~/Downloads/virtualbox-7.0_7.0.6-155176~Ubuntu~jammy_amd64.deb;"
+}
+```
+
+`instally` will run the contents of your `"command"` field to install your
+package.
+
+* ⚠ *Caution:* Make sure you know what you're doing. `instally` will run
+  whatever is in the `"command"` field without sanitization or guardrails.
+* 👉 *Protip:* String together shell commands in sequence using `;` or `&&`.
+* 👉 *Protip:* You can use `"command"` to execute your own scripts.
+* 👉 *Protip:* Remember to delete downloaded files and install scripts if you
+  don't want them anymore. You can automate this by adding an `rm` statement at
+  the end of your command, as in the above example.
+
 #### Grouping packages
 
-*Categorize packages* using the `"groups"` field to create an
+*Group packages* using the `"groups"` field to create an
 *array of groups*:
 
 ```json
@@ -119,49 +223,14 @@ install your favorite packages on (almost) anything!
   * `"packages"` - the array of packages contained within the group,
   * `"description"` - *optional* description of your group.
 
-#### Preferring installation methods
+#### Installation order
 
-*Prefer an installation method for a package* by specifying your preferred
-method using the `"prefer"` field:
+`instally` installs packages from  `packages.json` sequentially, from the top
+to the bottom of the file, so the order of package installation is up to the
+user.
 
-```json
-{
-  "name": "Blender",
-  "prefer": "flatpak",
-  "apt": {
-    "id": "blender"
-  },
-  "flatpak": {
-    "id": "org.blender.Blender"
-  }
-}
-```
-
-Since `"prefer"` is `"flatpak"`, `instally` will install this package using
-`flatpak` instead of `apt`.
-
-#### Installing packages using commands
-
-*Install packages using commands* with the `"command"` field in a package
-object:
-
-```json
-{
-  "name": "VirtualBox",
-  "description": "x86 virtualization",
-  "command": "wget -P ~/Downloads https://download.virtualbox.org/virtualbox/7.0.6/virtualbox-7.0_7.0.6-155176~Ubuntu~jammy_amd64.deb; sudo dpkg -i ~/Downloads/virtualbox-7.0_7.0.6-155176~Ubuntu~jammy_amd64.deb; rm ~/Downloads/virtualbox-7.0_7.0.6-155176~Ubuntu~jammy_amd64.deb;"
-}
-```
-
-`instally` will run the contents of your `"command"` field to install your
-package.
-
-* ⚠ *Caution:* Make sure you know what you're doing. `instally` will run
-  whatever is in the `"command"` field without sanitization or guardrails.
-* 👉 *Protip:* String together shell commands in sequence using `;` or `&&`.
-* 👉 *Protip:* You can use `"command"` to execute your own scripts.
-* 👉 *Protip:* Remember to delete downloaded files and install scripts if you
-  don't want them anymore. You can automate this by adding an `rm` statement at
-  the end of your command, as in the above example.
+* 👉 *Protip:* Install dependencies before the packages that depend on them.
+* 👉 *Protip:* Using [grouping](#grouping-packages), you can bundle packages
+  with their dependencies.
 
 ## 🔧 Troubleshooting
