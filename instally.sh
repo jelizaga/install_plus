@@ -760,7 +760,7 @@ install_package_dnf () {
         -- sudo dnf install -y $PACKAGE_ID;
       if [ $? == 0 ]; then
         msg_installed "$PACKAGE_NAME" "dnf";
-        ((PACKAGE_INSTALLED++));
+        ((PACKAGES_INSTALLED++));
         return 0;
       else
         msg_cannot_install "$PACKAGE_NAME";
@@ -864,13 +864,10 @@ install_package_snap () {
     if snap list | grep -q "$PACKAGE_ID"; then
       msg_already_installed "$PACKAGE_NAME";
     else
-      gum spin \
-        --spinner globe \
-        --title "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic $PACKAGE_ID)) using $(gum style --italic 'snap')..." \
-        -- snap install $PACKAGE_ID;
+      snap install $PACKAGE_ID;
       if [ $? == 0 ]; then
         msg_installed "$PACKAGE_NAME" "snap";
-        ((PACKAGE_INSTALLED++));
+        ((PACKAGES_INSTALLED++));
         return 0;
       else
         msg_cannot_install "$PACKAGE_NAME";
@@ -899,7 +896,7 @@ install_package_yum () {
         -- sudo yum install -y $PACKAGE_ID;
       if [ $? == 0 ]; then
         msg_installed "$PACKAGE_NAME" "dnf";
-        ((PACKAGE_INSTALLED++));
+        ((PACKAGES_INSTALLED++));
         return 0;
       else
         msg_cannot_install "$PACKAGE_NAME";
