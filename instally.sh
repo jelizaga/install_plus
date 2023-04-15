@@ -665,10 +665,10 @@ install_package () {
         install_package_yum "$PACKAGE_ID" "$PACKAGE_NAME";
       elif [ "$INSTALL_METHOD" = "zypper" ]; then
         install_package_zypper "$PACKAGE_ID" "$PACKAGE_NAME";
-      else
-        msg_cannot_install "$PACKAGE_NAME" "Install method not found.";
       fi
     fi
+  else
+    msg_cannot_install "$PACKAGE_NAME" "Install method not found.";
   fi
 }
 
