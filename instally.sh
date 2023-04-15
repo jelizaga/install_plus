@@ -825,6 +825,12 @@ install_package_flatpak () {
   fi
 }
 
+install_package_go () {
+  local PACKAGE_ID=$1;
+  local PACKAGE_NAME=$2;
+  msg_todo "go installation";
+}
+
 # Installs a package using npm package manager.
 # Args:
 #   `$1` - Valid package ID.
@@ -897,7 +903,7 @@ install_package_yum () {
         --title "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic $PACKAGE_ID)) using $(gum style --italic 'yum')..." \
         -- sudo yum install -y $PACKAGE_ID;
       if [ $? == 0 ]; then
-        msg_installed "$PACKAGE_NAME" "dnf";
+        msg_installed "$PACKAGE_NAME" "yum";
         ((PACKAGES_INSTALLED++));
         return 0;
       else
@@ -914,7 +920,25 @@ install_package_yum () {
 install_package_zypper () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
-  msg_todo "zypper installation";
+  if ! package_is_installed zypper; then
+    msg_not_installed "zypper";
+  else
+    if zypper pa -i | grep -q "$PACKAGE_ID"; then
+      msg_already_installed "$PACKAGE_NAME";
+    else
+      gum spin \
+        --spinner globe \
+        --title "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic $PACKAGE_ID)) using $(gum style --italic 'zypper')..." \
+        -- sudo zypper install -y $PACKAGE_ID;
+      if [ $? == 0 ]; then
+        msg_installed "$PACKAGE_NAME" "zypper";
+        ((PACKAGES_INSTALLED++));
+        return 0;
+      else
+        msg_cannot_install "$PACKAGE_NAME";
+      fi
+    fi
+  fi
 }
 
 # Installs a package via a given command.
@@ -969,6 +993,9 @@ gpgkey=https://repo.charm.sh/yum/gpg.key" | sudo tee /etc/yum.repos.d/charm.repo
     else 
       sudo dnf install -y gum;
     fi
+  elif $OS_IS_SUSE_BASED; then
+    sudo zypper install -y go;
+    go install github.com/charmbracelet/gum@latest;
   fi
 }
 
