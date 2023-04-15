@@ -284,7 +284,7 @@ os_is_debian_based () {
 
 os_is_rhel_based () {
   if \
-    [ "$OS_NAME" = "Fedora" ] || \
+    [ "$OS_NAME" = "Fedora Linux" ] || \
     [ "$OS_NAME" = "Red Hat Enterprise Linux" ] || \
     [ "$OS_NAME" = "CentOS Linux" ] || \
     [ "$OS_NAME" = "Oracle Linux Server" ] || \
