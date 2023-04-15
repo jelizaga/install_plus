@@ -850,9 +850,31 @@ install_package_pip () {
 install_package_snap () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
-  msg_todo "snap installation";
-  #gum spin --spinner globe --title "Installing $1..." -- snap install $1
-  #snap install $1
+  if ! package_is_installed snap; then
+    msg_not_installed "snap";
+    if $OS_IS_DEBIAN_BASED; then
+      install_package_apt "snapd";
+      if [ $? == 0 ]; then
+        install_package_snap "$PACKAGE_ID" "$PACKAGE_NAME";
+      fi
+    fi
+  else
+    if snap list | grep -q "$PACKAGE_ID"; then
+      msg_already_installed "$PACKAGE_NAME";
+    else
+      gum spin \
+        --spinner globe \
+        --title "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic $PACKAGE_ID)) using $(gum style --italic 'snap')..." \
+        -- snap install -y $PACKAGE_ID;
+      if [ $? == 0 ]; then
+        msg_installed "$PACKAGE_NAME" "snap";
+        ((PACKAGE_INSTALLED++));
+        return 0;
+      else
+        msg_cannot_install "$PACKAGE_NAME";
+      fi
+    fi
+  fi
 }
 
 # Installs a package using yum package manager.
@@ -871,7 +893,7 @@ install_package_yum () {
     else
       gum spin \
         --spinner globe \
-        --title "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic $PACKAGE_ID)) using $(gum style --italic 'dnf')..." \
+        --title "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic $PACKAGE_ID)) using $(gum style --italic 'yum')..." \
         -- sudo yum install -y $PACKAGE_ID;
       if [ $? == 0 ]; then
         msg_installed "$PACKAGE_NAME" "dnf";
