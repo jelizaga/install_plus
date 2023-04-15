@@ -266,40 +266,40 @@ menu_install_more_packages () {
 
 os_is_debian_based () {
   if \
-    [ "$OS" = "Pop!_OS" ] || \
-    [ "$OS" = "Ubuntu" ] || \
-    [ "$OS" = "Debian GNU/Linux" ] || \
-    [ "$OS" = "Linux Mint" ] || \
-    [ "$OS" = "elementary OS" ] || \
-    [ "$OS" = "Zorin OS" ] || \
-    [ "$OS" = "MX Linux" ] || \
-    [ "$OS" = "Raspberry Pi OS" ] || \
-    [ "$OS" = "Deepin" ] || \
-    [ "$OS" = "ArcoLinux" ] || \
-    [ "$OS" = "Peppermint Linux" ] || \
-    [ "$OS" = "Bodhi Linux" ]; then
+    [ "$OS_NAME" = "Pop!_OS" ] || \
+    [ "$OS_NAME" = "Ubuntu" ] || \
+    [ "$OS_NAME" = "Debian GNU/Linux" ] || \
+    [ "$OS_NAME" = "Linux Mint" ] || \
+    [ "$OS_NAME" = "elementary OS" ] || \
+    [ "$OS_NAME" = "Zorin OS" ] || \
+    [ "$OS_NAME" = "MX Linux" ] || \
+    [ "$OS_NAME" = "Raspberry Pi OS" ] || \
+    [ "$OS_NAME" = "Deepin" ] || \
+    [ "$OS_NAME" = "ArcoLinux" ] || \
+    [ "$OS_NAME" = "Peppermint Linux" ] || \
+    [ "$OS_NAME" = "Bodhi Linux" ]; then
     OS_IS_DEBIAN_BASED=true;
   fi
 }
 
 os_is_rhel_based () {
   if \
-    [ "$OS" = "Fedora" ] || \
-    [ "$OS" = "Red Hat Enterprise Linux" ] || \
-    [ "$OS" = "CentOS Linux" ] || \
-    [ "$OS" = "Oracle Linux Server" ] || \
-    [ "$OS" = "Rocky Linux" ] || \
-    [ "$OS" = "AlmaLinux" ] || \
-    [ "$OS" = "OpenMandriva Lx" ] ||\
-    [ "$OS" = "Mageia" ] ; then
+    [ "$OS_NAME" = "Fedora" ] || \
+    [ "$OS_NAME" = "Red Hat Enterprise Linux" ] || \
+    [ "$OS_NAME" = "CentOS Linux" ] || \
+    [ "$OS_NAME" = "Oracle Linux Server" ] || \
+    [ "$OS_NAME" = "Rocky Linux" ] || \
+    [ "$OS_NAME" = "AlmaLinux" ] || \
+    [ "$OS_NAME" = "OpenMandriva Lx" ] ||\
+    [ "$OS_NAME" = "Mageia" ] ; then
     OS_IS_RHEL_BASED=true;
   fi
 }
 
 os_is_suse_based () {
   if \
-    [ "$OS" = "OpenSUSE" ] || \
-    [ "$OS" = "SUSE Enterprise Linux Server" ]; then
+    [ "$OS_NAME" = "OpenSUSE" ] || \
+    [ "$OS_NAME" = "SUSE Enterprise Linux Server" ]; then
     OS_IS_SUSE_BASED=true;
   fi
 }
@@ -614,20 +614,20 @@ install_packages () {
     local HAS_UNGROUPED_PACKAGES=$(jq 'has("packages")' $PACKAGES_FILE);
     local HAS_GROUPED_PACKAGES=$(jq 'has("groups")' $PACKAGES_FILE);
     if [ "$HAS_UNGROUPED_PACKAGES" = "true" ]; then
-      echo "Yeeet.";
-      PACKAGE_DATA=$(jq --arg PACKAGE_NAME "$PACKAGE_NAME" \
+      UNGROUPED_PACKAGE_DATA=$(jq --arg PACKAGE_NAME "$PACKAGE_NAME" \
         '.packages[] | select(.name == $PACKAGE_NAME)' \
         $PACKAGES_FILE);
-      echo "$PACKAGE_DATA";
     fi
     if [ "$HAS_GROUPED_PACKAGES" = "true" ]; then
-      echo "MEat."
-      PACKAGE_DATA=$(jq --arg PACKAGE_NAME "$PACKAGE_NAME" \
+      GROUPED_PACKAGE_DATA=$(jq --arg PACKAGE_NAME "$PACKAGE_NAME" \
         '.groups[] | select(.packages != null) | .packages[] | select(.name == $PACKAGE_NAME)' \
         $PACKAGES_FILE);
-      echo "$PACKAGE_DATA";
     fi
-    # Install the package.
+    if [ -n "$GROUPED_PACKAGE_DATA" ] && [ "$GROUPED_PACKAGE_DATA" != $'\n' ]; then
+      PACKAGE_DATA="$GROUPED_PACKAGE_DATA";
+    else
+      PACKAGE_DATA="$UNGROUPED_PACKAGE_DATA";
+    fi
     install_package "$PACKAGE_DATA";
   done
   msg_packages_installed;
@@ -663,6 +663,8 @@ install_package () {
       install_package_yum "$PACKAGE_ID" "$PACKAGE_NAME";
     elif [ "$INSTALL_METHOD" = "zypper" ]; then
       install_package_zypper "$PACKAGE_ID" "$PACKAGE_NAME";
+    else
+      msg_cannot_install "$PACKAGE_NAME" "Install method not found.";
     fi
   fi
 }
