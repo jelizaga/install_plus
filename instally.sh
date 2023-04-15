@@ -1,17 +1,18 @@
 #!/bin/bash
 
 # OS data
-OS=$(grep '^NAME=' /etc/os-release | cut -d= -f2 | tr -d '"')
-OS_IS_DEBIAN_BASED=false
-OS_IS_RHEL_BASED=false
-OS_IS_SUSE_BASED=false
+OS_NAME=$(grep '^NAME=' /etc/os-release | cut -d= -f2 | tr -d '"');
+OS_PRETTY_NAME=$(grep '^PRETTY_NAME=' /etc/os-release | cut -d= -f2 | tr -d '"');
+OS_IS_DEBIAN_BASED=false;
+OS_IS_RHEL_BASED=false;
+OS_IS_SUSE_BASED=false;
 
 # Packages file
-PACKAGES_FILE="$HOME/.instally/packages.json"
+PACKAGES_FILE="$HOME/.instally/packages.json";
 
 # Packages
-PACKAGES_INSTALLED=0
-APT_IS_UPDATED=false
+PACKAGES_INSTALLED=0;
+APT_IS_UPDATED=false;
 
 # UI
 GUM_CHOOSE_CURSOR="▶";
@@ -44,7 +45,7 @@ print_title () {
 }
 
 print_os () {
-  printf "$(gum style --bold 'OS:') $OS\n"
+  printf "$(gum style --bold 'OS:') $OS_PRETTY_NAME\n"
 }
 
 package_is_installed () {
@@ -613,14 +614,18 @@ install_packages () {
     local HAS_UNGROUPED_PACKAGES=$(jq 'has("packages")' $PACKAGES_FILE);
     local HAS_GROUPED_PACKAGES=$(jq 'has("groups")' $PACKAGES_FILE);
     if [ "$HAS_UNGROUPED_PACKAGES" = "true" ]; then
+      echo "Yeeet.";
       PACKAGE_DATA=$(jq --arg PACKAGE_NAME "$PACKAGE_NAME" \
         '.packages[] | select(.name == $PACKAGE_NAME)' \
         $PACKAGES_FILE);
+      echo "$PACKAGE_DATA";
     fi
     if [ "$HAS_GROUPED_PACKAGES" = "true" ]; then
+      echo "MEat."
       PACKAGE_DATA=$(jq --arg PACKAGE_NAME "$PACKAGE_NAME" \
         '.groups[] | select(.packages != null) | .packages[] | select(.name == $PACKAGE_NAME)' \
         $PACKAGES_FILE);
+      echo "$PACKAGE_DATA";
     fi
     # Install the package.
     install_package "$PACKAGE_DATA";

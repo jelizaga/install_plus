@@ -7,12 +7,18 @@
           "name": "Syncthing",
           "apt": {
             "id": "syncthing"
+          },
+          "dnf": {
+            "id": "syncthing"
           }
         },
         {
           "name": "kitty",
           "description": "feature-rich GPU-based terminal emulator",
           "apt": {
+            "id": "kitty"
+          },
+          "dnf": {
             "id": "kitty"
           }
         },
@@ -26,6 +32,9 @@
           "description": "manage and configure drives and media",
           "apt": {
             "id": "gnome-disk-utility"
+          },
+          "dnf": {
+            "id": "gnome-disk-utility"
           }
         },
         {
@@ -33,12 +42,18 @@
           "description": "customize GNOME",
           "apt": {
             "id": "gnome-tweaks"
+          },
+          "dnf": {
+            "id": "gnome-tweaks"
           }
         },
         {
           "name": "nnn",
           "description": "unorthodox terminal file manager",
           "apt": {
+            "id": "nnn"
+          },
+          "dnf": {
             "id": "nnn"
           }
         },
@@ -63,6 +78,9 @@
           "description": "CLI todo list",
           "apt": {
             "id": "taskwarrior"
+          },
+          "dnf": {
+            "id": "task"
           }
         },
         {
@@ -80,6 +98,9 @@
           "description": "distributed version control",
           "apt": {
             "id": "git"
+          },
+          "dnf": {
+            "id": "git"
           }
         },
         {
@@ -87,6 +108,9 @@
           "description": "the superior text editor",
           "apt": {
             "id": "vim-gtk3"
+          },
+          "dnf": {
+            "id": "vim-X11"
           }
         },
         {
@@ -99,7 +123,10 @@
         {
           "name": "VirtualBox",
           "description": "x86 virtualization",
-          "command": "wget -P ~/Downloads https://download.virtualbox.org/virtualbox/7.0.6/virtualbox-7.0_7.0.6-155176~Ubuntu~jammy_amd64.deb; sudo dpkg -i ~/Downloads/virtualbox-7.0_7.0.6-155176~Ubuntu~jammy_amd64.deb; rm ~/Downloads/virtualbox-7.0_7.0.6-155176~Ubuntu~jammy_amd64.deb;"
+          "command": "wget -P ~/Downloads https://download.virtualbox.org/virtualbox/7.0.6/virtualbox-7.0_7.0.6-155176~Ubuntu~jammy_amd64.deb; sudo dpkg -i ~/Downloads/virtualbox-7.0_7.0.6-155176~Ubuntu~jammy_amd64.deb; rm ~/Downloads/virtualbox-7.0_7.0.6-155176~Ubuntu~jammy_amd64.deb;",
+          "Fedora Linux 37 (Workstation Edition)": {
+            "command": "wget -P https://download.virtualbox.org/virtualbox/7.0.6/VirtualBox-7.0-7.0.6_155176_fedora36-1.x86_64.rpm; sudo dnf install ~/Downloads/VirtualBox-7.0-7.0.6_155176_fedora36-1.x86_64.rpm; rm ~/Downloads/VirtualBox-7.0-7.0.6_155176_fedora36-1.x86_64.rpm;"
+          }
         }
       ]
     },
@@ -109,12 +136,18 @@
         {
           "name": "Mullvad VPN",
           "description": "virtual private network",
-          "command": "wget -P ~/Downloads https://mullvad.net/en/download/app/deb/latest; sudo dpkg -i ~/Downloads/MullvadVPN-2023.3_amd64.deb; rm ~/Downloads/MullvadVPN-2023.3_amd64.deb;"
+          "command": "wget -P ~/Downloads https://mullvad.net/en/download/app/deb/latest; sudo dpkg -i ~/Downloads/MullvadVPN-2023.3_amd64.deb; rm ~/Downloads/MullvadVPN-2023.3_amd64.deb;",
+          "Fedora Linux 37 (Workstation Edition)": {
+            "command": "wget -P ~/Downloads https://mullvad.net/en/download/app/rpm/latest; sudo dnf install ~/Downloads/MullvadVPN-2023.3_x86_64.rpm; rm ~/Downloads/MullvadVPN-2023.3_x86_64.rpm"
+          }
         },
         {
           "name": "pass",
           "description": "the standard Unix password manager",
           "apt": {
+            "id": "pass"
+          },
+          "dnf": {
             "id": "pass"
           }
         }, 
@@ -134,6 +167,9 @@
           "name": "ffmpeg",
           "apt": {
             "id": "ffmpeg"
+          },
+          "dnf": {
+            "id": "ffmpeg-free"
           }
         },
         {
@@ -165,6 +201,9 @@
           "description": "CLI music player",
           "apt": {
             "id": "ncmpcpp"
+          },
+          "dnf": {
+            "id": "ncmpcpp"
           }
         }
       ]
@@ -177,12 +216,18 @@
           "description": "make your terminal look like the Matrix",
           "apt": {
             "id": "cmatrix"
+          },
+          "dnf": {
+            "id": "cmatrix"
           }
         },
         {
           "name": "figlet",
           "description": "generate ASCII text on the fly",
           "apt": {
+            "id": "figlet"
+          },
+          "dnf": {
             "id": "figlet"
           }
         },
@@ -191,12 +236,18 @@
           "description": "a cow talks to you and says things",
           "apt": {
             "id": "cowsay"
+          },
+          "dnf": {
+            "id": "cowsay"
           }
         },
         {
           "name": "fortune",
           "description": "a random quote generator",
           "apt": {
+            "id": "fortune"
+          },
+          "dnf": {
             "id": "fortune"
           }
         },
@@ -255,6 +306,9 @@
           "description": "GNU Image Manipulation Program",
           "apt": {
             "id": "gimp"
+          },
+          "dnf": {
+            "id": "gimp"
           }
         },
         {
@@ -264,6 +318,9 @@
           "apt": {
             "id": "krita"
           },
+          "dnf": {
+            "id": "krita"
+          },
           "flatpak": {
             "id": "org.kde.krita"
           }
@@ -271,7 +328,11 @@
         {
           "name": "Inkscape",
           "description": "vector-based drawing program",
+          "prefer": "flatpak",
           "apt": {
+            "id": "inkscape"
+          },
+          "dnf": {
             "id": "inkscape"
           },
           "flatpak": {
@@ -295,6 +356,9 @@
           "description": "one-stop solution for your e-book needs",
           "apt": {
             "id": "calibre"
+          },
+          "dnf": {
+            "id": "calibre"
           }
         }
       ] 
@@ -306,11 +370,17 @@
       "description": "test",
       "apt": {
         "id": "lm-sensors"
+      },
+      "dnf": {
+        "id": "lm_sensors"
       }
     },
     {
       "name": "neomutt",
       "apt": {
+        "id": "neomutt"
+      },
+      "dnf": {
         "id": "neomutt"
       }
     },
@@ -318,11 +388,17 @@
       "name": "buku",
       "apt": {
         "id": "buku"
+      },
+      "dnf": {
+        "id": "buku"
       }
     },
     {
       "name": "Newsboat",
       "apt": {
+        "id": "newsboat"
+      },
+      "dnf": {
         "id": "newsboat"
       }
     }

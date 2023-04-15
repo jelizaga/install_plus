@@ -90,6 +90,9 @@ Here's a *simple example* of a `packages.json`:
       "name": "curl",
       "apt": {
         "id": "curl"
+      },
+      "dnf": {
+        "id": "curl"
       }
     },
     {
@@ -99,9 +102,13 @@ Here's a *simple example* of a `packages.json`:
       }
     },
     {
-      "name": "nsnake",
+      "name": "Taskwarrior",
+      "description": "CLI todo list",
       "apt": {
-        "id": "nsnake"
+        "id": "taskwarrior"
+      },
+      "dnf": {
+        "id": "task"
       }
     }
   ]
@@ -364,7 +371,7 @@ Search for the package:
 → npm search [PACKAGE NAME]
 ```
 
-The `"id"` is `"tiddlywiki"` under `NAME`:
+The `"id"` is `"tiddlywiki"`, under `NAME`:
 
 ```bash
 NAME                      | DESCRIPTION          | AUTHOR          | DATE       | VERSION  | KEYWORDS                   
