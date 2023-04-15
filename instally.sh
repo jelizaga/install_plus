@@ -13,6 +13,7 @@ PACKAGES_FILE="$HOME/.instally/packages.json";
 # Packages
 PACKAGES_INSTALLED=0;
 APT_IS_UPDATED=false;
+SNAPS="";
 
 # UI
 GUM_CHOOSE_CURSOR="▶";
@@ -27,6 +28,7 @@ GUM_CHOOSE_CURSOR_FOREGROUND="$COLOR_ACTIVE";
 GUM_CHOOSE_SELECTED_FOREGROUND="$COLOR_ACCENT";
 GUM_CONFIRM_SELECTED_BACKGROUND="$COLOR_ACTIVE";
 
+# Delimiter
 DELIMITER="|";
 IFS="$DELIMITER";
 
@@ -630,6 +632,8 @@ install_packages () {
     fi
     install_package "$PACKAGE_DATA";
   done
+  echo "$SNAPS";
+  install_packages_snap;
   msg_packages_installed;
   menu_install_more_packages;
 }
@@ -662,7 +666,8 @@ install_package () {
       elif [ "$INSTALL_METHOD" = "pip" ]; then
         install_package_pip "$PACKAGE_ID" "$PACKAGE_NAME";
       elif [ "$INSTALL_METHOD" = "snap" ]; then
-        install_package_snap "$PACKAGE_ID" "$PACKAGE_NAME";
+        #install_package_snap "$PACKAGE_ID" "$PACKAGE_NAME";
+        SNAPS+="$PACKAGE_ID ";
       elif [ "$INSTALL_METHOD" = "yum" ]; then
         install_package_yum "$PACKAGE_ID" "$PACKAGE_NAME";
       elif [ "$INSTALL_METHOD" = "zypper" ]; then
@@ -843,6 +848,21 @@ install_package_pip () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
   msg_todo "pip installation";
+}
+
+install_packages_snap () {
+  if ! package_is_installed snap; then
+    msg_not_installed "snap";
+    if $OS_IS_DEBIAN_BASED; then
+      install_package_apt "snapd";
+      if [ $? == 0 ]; then
+        install_package_snap "$PACKAGE_ID" "$PACKAGE_NAME";
+      fi
+    fi
+  else
+    echo "$SNAPS";
+    snap install "$SNAPS";
+  fi
 }
 
 # Installs a package using snap package manager.
