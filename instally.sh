@@ -13,7 +13,7 @@ PACKAGES_FILE="$HOME/.instally/packages.json";
 # Packages
 PACKAGES_INSTALLED=0;
 APT_IS_UPDATED=false;
-SNAPS="";
+SNAPS=();
 
 # UI
 GUM_CHOOSE_CURSOR="▶";
@@ -667,11 +667,7 @@ install_package () {
         install_package_pip "$PACKAGE_ID" "$PACKAGE_NAME";
       elif [ "$INSTALL_METHOD" = "snap" ]; then
         #install_package_snap "$PACKAGE_ID" "$PACKAGE_NAME";
-        if [ "$SNAPS" = "" ]; then
-          SNAPS+="$PACKAGE_ID";
-        else
-          SNAPS+=" $PACKAGE_ID";
-        fi 
+        SNAPS+="$PACKAGE_ID";
       elif [ "$INSTALL_METHOD" = "yum" ]; then
         install_package_yum "$PACKAGE_ID" "$PACKAGE_NAME";
       elif [ "$INSTALL_METHOD" = "zypper" ]; then
@@ -865,7 +861,7 @@ install_packages_snap () {
     fi
   else
     echo "$SNAPS";
-    snap install "$SNAPS";
+    snap install "${SNAPS[@]}";
   fi
 }
 
