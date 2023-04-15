@@ -737,7 +737,7 @@ install_package_apt () {
 install_package_dnf () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
-  if ! package_installed dnf; then
+  if ! package_is_installed dnf; then
     msg_not_installed "dnf";
     if $OS_IS_DEBIAN_BASED; then
       install_package_apt "dnf" "dnf";
@@ -916,10 +916,12 @@ name=Charm
 baseurl=https://repo.charm.sh/yum/
 enabled=1
 gpgcheck=1
-gpgkey=https://repo.charm.sh/yum/gpg.key" | sudo tee /etc/yum.repos.d/charm.repo
-    sudo yum install gum;
-  else 
-    return 1
+gpgkey=https://repo.charm.sh/yum/gpg.key" | sudo tee /etc/yum.repos.d/charm.repo;
+    if ! package_is_installed dnf; then
+      sudo yum install -y gum;
+    else 
+      sudo dnf install -y gum;
+    fi
   fi
 }
 
