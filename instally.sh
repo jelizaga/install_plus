@@ -641,30 +641,33 @@ install_package () {
   local PACKAGE_DATA="$1";
   local PACKAGE_NAME=$(echo "$PACKAGE_DATA" | jq -r '.name' | tr -d '\n');
   local INSTALL_METHOD="$(get_install_method "$PACKAGE_DATA" 2>&1)";
-  # If the preferred install method is a command, execute the command.
-  if [ "$INSTALL_METHOD" = "command" ]; then
-    COMMAND=$(echo "$PACKAGE_DATA" | jq -r '.command');
-    install_package_command "$COMMAND" "$PACKAGE_NAME";
-  # Otherwise, capture the `PACKAGE_ID` for the `INSTALLATION_METHOD`
-  # and install the package using said `INSTALLATION_METHOD`.
-  else
-    local PACKAGE_ID=$(echo "$PACKAGE_DATA" | jq -r --arg INSTALL_METHOD "$INSTALL_METHOD" ".$INSTALL_METHOD.id");
-    if [ "$INSTALL_METHOD" = "apt" ]; then
-      install_package_apt "$PACKAGE_ID" "$PACKAGE_NAME";
-    elif [ "$INSTALL_METHOD" = "dnf" ]; then
-      install_package_dnf "$PACKAGE_ID" "$PACKAGE_NAME";
-    elif [ "$INSTALL_METHOD" = "flatpak" ]; then
-      install_package_flatpak "$PACKAGE_ID" "$PACKAGE_NAME";
-    elif [ "$INSTALL_METHOD" = "npm" ]; then
-      install_package_npm "$PACKAGE_ID" "$PACKAGE_NAME";
-    elif [ "$INSTALL_METHOD" = "pip" ]; then
-      install_package_pip "$PACKAGE_ID" "$PACKAGE_NAME";
-    elif [ "$INSTALL_METHOD" = "yum" ]; then
-      install_package_yum "$PACKAGE_ID" "$PACKAGE_NAME";
-    elif [ "$INSTALL_METHOD" = "zypper" ]; then
-      install_package_zypper "$PACKAGE_ID" "$PACKAGE_NAME";
+  # If an install method exists, install the package.
+  if [ -n "$INSTALL_METHOD" ] && [ "$INSTALL_METHOD" != $'\n' ]; then
+    # If the preferred install method is a command, execute the command.
+    if [ "$INSTALL_METHOD" = "command" ]; then
+      COMMAND=$(echo "$PACKAGE_DATA" | jq -r '.command');
+      install_package_command "$COMMAND" "$PACKAGE_NAME";
+    # Otherwise, capture the `PACKAGE_ID` for the `INSTALLATION_METHOD`
+    # and install the package using said `INSTALLATION_METHOD`.
     else
-      msg_cannot_install "$PACKAGE_NAME" "Install method not found.";
+      local PACKAGE_ID=$(echo "$PACKAGE_DATA" | jq -r --arg INSTALL_METHOD "$INSTALL_METHOD" ".$INSTALL_METHOD.id");
+      if [ "$INSTALL_METHOD" = "apt" ]; then
+        install_package_apt "$PACKAGE_ID" "$PACKAGE_NAME";
+      elif [ "$INSTALL_METHOD" = "dnf" ]; then
+        install_package_dnf "$PACKAGE_ID" "$PACKAGE_NAME";
+      elif [ "$INSTALL_METHOD" = "flatpak" ]; then
+        install_package_flatpak "$PACKAGE_ID" "$PACKAGE_NAME";
+      elif [ "$INSTALL_METHOD" = "npm" ]; then
+        install_package_npm "$PACKAGE_ID" "$PACKAGE_NAME";
+      elif [ "$INSTALL_METHOD" = "pip" ]; then
+        install_package_pip "$PACKAGE_ID" "$PACKAGE_NAME";
+      elif [ "$INSTALL_METHOD" = "yum" ]; then
+        install_package_yum "$PACKAGE_ID" "$PACKAGE_NAME";
+      elif [ "$INSTALL_METHOD" = "zypper" ]; then
+        install_package_zypper "$PACKAGE_ID" "$PACKAGE_NAME";
+      else
+        msg_cannot_install "$PACKAGE_NAME" "Install method not found.";
+      fi
     fi
   fi
 }
@@ -755,6 +758,8 @@ install_package_dnf () {
         -- sudo dnf install -y $PACKAGE_ID;
       if [ $? == 0 ]; then
         msg_installed "$PACKAGE_NAME" "dnf";
+        ((PACKAGE_INSTALLED++));
+        return 0;
       else
         msg_cannot_install "$PACKAGE_NAME";
       fi
