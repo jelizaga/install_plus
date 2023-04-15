@@ -300,7 +300,8 @@ os_is_rhel_based () {
 
 os_is_suse_based () {
   if \
-    [ "$OS_NAME" = "OpenSUSE" ] || \
+    [ "$OS_NAME" = "openSUSE" ] || \
+    [ "$OS_NAME" = "openSUSE Tumbleweed" ] || \
     [ "$OS_NAME" = "SUSE Enterprise Linux Server" ]; then
     OS_IS_SUSE_BASED=true;
   fi
