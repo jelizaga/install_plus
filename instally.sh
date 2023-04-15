@@ -867,7 +867,7 @@ install_package_snap () {
       gum spin \
         --spinner globe \
         --title "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic $PACKAGE_ID)) using $(gum style --italic 'snap')..." \
-        -- snap install -y $PACKAGE_ID;
+        -- snap install $PACKAGE_ID;
       if [ $? == 0 ]; then
         msg_installed "$PACKAGE_NAME" "snap";
         ((PACKAGE_INSTALLED++));
