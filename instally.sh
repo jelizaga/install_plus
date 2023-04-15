@@ -668,7 +668,7 @@ install_package () {
       fi
     fi
   else
-    msg_cannot_install "$PACKAGE_NAME" "Install method not found.";
+    msg_cannot_install "$PACKAGE_NAME" "Installation method not found.";
   fi
 }
 
@@ -862,7 +862,26 @@ install_package_snap () {
 install_package_yum () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
-  msg_todo "yum installation";
+  if ! package_is_installed yum; then
+    msg_not_installed "yum";
+    msg_cannot_install "$PACKAGE_NAME";
+  else
+    if yum list installed | grep -q "$PACKAGE_ID"; then
+      msg_already_installed "$PACKAGE_NAME";
+    else
+      gum spin \
+        --spinner globe \
+        --title "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic $PACKAGE_ID)) using $(gum style --italic 'dnf')..." \
+        -- sudo yum install -y $PACKAGE_ID;
+      if [ $? == 0 ]; then
+        msg_installed "$PACKAGE_NAME" "dnf";
+        ((PACKAGE_INSTALLED++));
+        return 0;
+      else
+        msg_cannot_install "$PACKAGE_NAME";
+      fi
+    fi
+  fi
 }
 
 # Installs a package using zypper package manager.
