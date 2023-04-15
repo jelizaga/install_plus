@@ -661,6 +661,8 @@ install_package () {
         install_package_npm "$PACKAGE_ID" "$PACKAGE_NAME";
       elif [ "$INSTALL_METHOD" = "pip" ]; then
         install_package_pip "$PACKAGE_ID" "$PACKAGE_NAME";
+      elif [ "$INSTALL_METHOD" = "snap" ]; then
+        install_package_snap "$PACKAGE_ID" "$PACKAGE_NAME";
       elif [ "$INSTALL_METHOD" = "yum" ]; then
         install_package_yum "$PACKAGE_ID" "$PACKAGE_NAME";
       elif [ "$INSTALL_METHOD" = "zypper" ]; then
