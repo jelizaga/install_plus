@@ -912,11 +912,11 @@ install_dependency_gum () {
     sudo apt install gum;
   elif $OS_IS_RHEL_BASED; then
     echo "[charm]
-    name=Charm
-    baseurl=https://repo.charm.sh/yum/
-    enabled=1
-    gpgcheck=1
-    gpgkey=https://repo.charm.sh/yum/gpg.key" | sudo tee /etc/yum.repos.d/charm.repo
+name=Charm
+baseurl=https://repo.charm.sh/yum/
+enabled=1
+gpgcheck=1
+gpgkey=https://repo.charm.sh/yum/gpg.key" | sudo tee /etc/yum.repos.d/charm.repo
     sudo yum install gum;
   else 
     return 1
