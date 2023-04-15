@@ -737,7 +737,29 @@ install_package_apt () {
 install_package_dnf () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
-  msg_todo "dnf installation";
+  if ! package_installed dnf; then
+    msg_not_installed "dnf";
+    if $OS_IS_DEBIAN_BASED; then
+      install_package_apt "dnf" "dnf";
+      install_package_dnf "$PACKAGE_ID" "$PACKAGE_NAME";
+    elif $OS_IS_RHEL_BASED; then
+      install_package_yum "$PACKAGE_ID" "$PACKAGE_NAME";
+    fi
+  else
+    if dnf list installed | grep -q "$PACKAGE_ID"; then
+      msg_already_installed "$PACKAGE_NAME";
+    else
+      gum spin \
+        --spinner globe \
+        --title "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic $PACKAGE_ID)) using $(gum style --italic 'dnf')..." \
+        -- sudo dnf install -y $PACKAGE_ID;
+      if [ $? == 0 ]; then
+        msg_installed "$PACKAGE_NAME" "dnf";
+      else
+        msg_cannot_install "$PACKAGE_NAME";
+      fi
+    fi
+  fi
 }
 
 # Installs a package using flatpak package manager.
@@ -762,7 +784,6 @@ install_package_flatpak () {
       fi
     fi
   else
-    local ALREADY_INSTALLED=$(flatpak list | grep "$PACKAGE_ID");
     # If package is already installed, say so.
     if flatpak list | grep -q "$PACKAGE_ID"; then
       msg_already_installed "$PACKAGE_NAME";
