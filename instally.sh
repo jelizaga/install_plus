@@ -995,7 +995,7 @@ gpgkey=https://repo.charm.sh/yum/gpg.key" | sudo tee /etc/yum.repos.d/charm.repo
       sudo dnf install -y gum;
     fi
   elif $OS_IS_SUSE_BASED; then
-    sudo zypper install -y go;
+    sudo zypper install -y gcc-go;
     go install github.com/charmbracelet/gum@latest;
   fi
 }
