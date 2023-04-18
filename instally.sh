@@ -899,11 +899,11 @@ install_package_go () {
     elif $OS_IS_SUSE_BASED; then
       if ! package_is_installed gum; then
         msg_installing "go" "go" "zypper";
-        sudo zypper install -y go;
+        sudo zypper install -y gcc-go;
       else
         gum spin \
           --spinner globe \
-          --title "$(msg_installing "go" "go" "zypper")" \
+          --title "$(msg_installing "go" "gcc-go" "zypper")" \
           -- sudo zypper install -y go;
       fi
       if [ $? == 0 ]; then
