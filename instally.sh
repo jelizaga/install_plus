@@ -1131,7 +1131,7 @@ gpgkey=https://repo.charm.sh/yum/gpg.key" | sudo tee /etc/yum.repos.d/charm.repo
     wget -P ~/Downloads https://github.com/charmbracelet/gum/releases/download/v0.10.0/gum-0.10.0.tar.gz;
     mkdir ~/Downloads/gum;
     tar -zxvf ~/Downloads/gum-0.10.0.tar.gz -C ~/Downloads/gum;
-    install_package_go ~/Downloads/gum;
+    install_package_go ~/Downloads/gum gum;
   fi
 }
 
