@@ -572,6 +572,48 @@ msg_todo () {
   fi
 }
 
+# Package manager installation #################################################
+
+install_package_manager_go () {
+  if $OS_IS_DEBIAN_BASED; then
+    install_package_apt golang-go;
+  elif $OS_IS_RHEL_BASED; then
+    install_package_dnf golang-go;
+  elif $OS_IS_SUSE_BASED; then
+    if ! package_is_installed gum; then
+      msg_installing "go" "gcc-go" "zypper";
+      sudo zypper install -y gcc-go;
+      msg_installing "go" "go" "zypper";
+      sudo zypper install -y go;
+      sudo zypper remove -y gcc-go;
+    else
+      gum spin \
+        --spinner globe \
+        --title "$(msg_installing "go" "gcc-go" "zypper")" \
+        -- sudo zypper install -y gcc-go;
+      gum spin \
+        --spinner globe \
+        --title "$(msg_installing "go" "go" "zypper")" \
+        -- sudo zypper install -y go;
+    fi
+    if [ $? == 0 ]; then
+      export PATH=$PATH:$HOME/go/bin;
+    else
+      msg_cannot_install "go";
+    fi
+  fi
+}
+
+install_package_manager_dnf () {
+  if $OS_IS_DEBIAN_BASED; then
+    install_package_apt "dnf" "dnf";
+    if [ $? == 0 ]; then
+      install_package_dnf "$PACKAGE_ID" "$PACKAGE_NAME";
+    fi
+  elif $OS_IS_RHEL_BASED; then
+    install_package_yum "$PACKAGE_ID" "$PACKAGE_NAME";
+  fi
+}
 # Package installation  ########################################################
 # Functions related to installing packages.
 
@@ -792,17 +834,13 @@ install_package_dnf () {
   # If dnf isn't installed, try to install dnf.
   if ! package_is_installed dnf; then
     msg_not_installed "dnf" "install $PACKAGE_NAME";
-    if $OS_IS_DEBIAN_BASED; then
-      install_package_apt "dnf" "dnf";
-      if [ $? == 0 ]; then
-        install_package_dnf "$PACKAGE_ID" "$PACKAGE_NAME";
-      fi
-    elif $OS_IS_RHEL_BASED; then
-      install_package_yum "$PACKAGE_ID" "$PACKAGE_NAME";
-    fi
+    install_package_manager dnf;
+  # Otherwise, try to install the package using dnf,
   else
+    # Check if the package is already installed using dnf,
     if dnf list installed | grep -q "$PACKAGE_ID"; then
       msg_already_installed "$PACKAGE_NAME";
+    # Otherwise, install the package.
     else
       if ! package_is_installed gum; then
         msg_installing "$PACKAGE_NAME" "$PACKAGE_ID" "dnf";
@@ -813,10 +851,12 @@ install_package_dnf () {
           --title "$(msg_installing "$PACKAGE_NAME" "$PACKAGE_ID" "dnf")" \
           -- sudo dnf install -y $PACKAGE_ID;
       fi
+      # If the package is successfully installed, say so.
       if [ $? == 0 ]; then
         msg_installed "$PACKAGE_NAME" "dnf";
         ((PACKAGES_INSTALLED++));
         return 0;
+      # Otherwise, tell 'em the package can't be installed.
       else
         msg_cannot_install "$PACKAGE_NAME";
       fi
@@ -887,45 +927,23 @@ install_package_flatpak () {
   fi
 }
 
-install_package_manager_go () {
-  msg_not_installed "go" "install $PACKAGE_NAME";
-  if $OS_IS_DEBIAN_BASED; then
-    install_package_apt golang-go;
-  elif $OS_IS_RHEL_BASED; then
-    install_package_dnf golang-go;
-  elif $OS_IS_SUSE_BASED; then
-    if ! package_is_installed gum; then
-      msg_installing "go" "gcc-go" "zypper";
-      sudo zypper install -y gcc-go;
-      msg_installing "go" "go" "zypper";
-      sudo zypper install -y go;
-      sudo zypper remove -y gcc-go;
-    else
-      gum spin \
-        --spinner globe \
-        --title "$(msg_installing "go" "gcc-go" "zypper")" \
-        -- sudo zypper install -y gcc-go;
-      gum spin \
-        --spinner globe \
-        --title "$(msg_installing "go" "go" "zypper")" \
-        -- sudo zypper install -y go;
-    fi
-    if [ $? == 0 ]; then
-      export PATH=$PATH:$HOME/go/bin;
-    else
-      msg_cannot_install "go";
-    fi
-  fi
-}
-
+# Installs a go package using go.
+# Args:
+#   `$1` - Valid package ID.
+#   `$2` - Package name.
 install_package_go () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
+  # If go isn't installed, try installing go.
   if ! package_is_installed go; then
+    msg_not_installed "go" "install $PACKAGE_NAME";
     install_package_manager_go;
+  # Otherwise, try installing the package using go.
   else
+    # Check if the package is already installed using go,
     if go list | grep -q "$PACKAGE_ID"; then
       msg_already_installed "$PACKAGE_NAME";
+    # And install the package.
     else
       if ! package_is_installed gum; then
         msg_installing "$PACKAGE_NAME" "$PACKAGE_ID" "go";
@@ -936,6 +954,7 @@ install_package_go () {
           --title "$(msg_installing "$PACKAGE_NAME" "$PACKAGE_ID" "go")" \
           -- go install $PACKAGE_ID;
       fi
+      # If the package is successfully installed, say so.
       if [ $? == 0 ]; then
         msg_installed "$PACKAGE_NAME" "go";
         ((PACKAGES_INSTALLED++));
