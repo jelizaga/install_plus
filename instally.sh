@@ -325,7 +325,6 @@ check_os () {
   os_is_debian_based;
   os_is_rhel_based;
   os_is_suse_based;
-  os_is_unsupported;
 }
 
 # Dependencies #################################################################
@@ -727,7 +726,6 @@ install_package_apt () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
   # If package is already installed, say so.
-  #local PACKAGE_IS_INSTALLED=$(dpkg-query -s $PACKAGE_ID >/dev/null 2>&1);
   if dpkg -s $PACKAGE_ID >/dev/null 2>&1; then
     msg_already_installed "$PACKAGE_NAME";
   # Otherwise,
@@ -835,7 +833,7 @@ install_package_flatpak () {
   local PACKAGE_NAME=$2;
   # If flatpak isn't installed, try to install flatpak.
   if ! package_is_installed flatpak; then
-    msg_not_installed "flatpak";
+    msg_not_installed "flatpak" "install $PACKAGE_NAME";
     if $OS_IS_DEBIAN_BASED; then
       install_package_apt "flatpak" "flatpak";
       if [ $? == 0 ]; then
@@ -893,6 +891,44 @@ install_package_go () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
   msg_todo "go installation";
+  if ! package_is_installed go; then
+    msg_not_installed "go" "install $PACKAGE_NAME";
+    if $OS_IS_DEBIAN_BASED; then
+      install_package_apt golang-go;
+    elif $OS_IS_RHEL_BASED; then
+      install_package_dnf golang-go;
+    elif $OS_IS_SUSE_based; then
+      install_package_zypper "go" "go";
+      if [ $? == 0 ]; then
+        export PATH=$PATH:~/go/bin;
+        go install ~/Downloads/gum;
+      else
+        msg_cannot_install "go";
+      fi
+    fi
+  else
+    if go list | grep -q "$PACKAGE_ID"; then
+      msg_already_installed "$PACKAGE_NAME";
+    else
+      if ! package_is_installed gum; then
+        msg_installing "$PACKAGE_NAME" "$PACKAGE_ID" "go";
+        go install $PACKAGE_ID;
+      else
+        gum spin \
+          --spinner globe \
+          --title "$(msg_installing "$PACKAGE_NAME" "$PACKAGE_ID" "yum")" \
+          -- go install $PACKAGE_ID;
+      fi
+      if [ $? == 0 ]; then
+        msg_installed "$PACKAGE_NAME" "go";
+        ((PACKAGES_INSTALLED++));
+        return 0;
+      # Otherwise, tell 'em the package cannot be installed.
+      else
+        msg_cannot_install "$PACKAGE_NAME";
+      fi
+    fi
+  fi
 }
 
 # Installs a package using npm package manager.
@@ -970,7 +1006,7 @@ install_package_yum () {
   local PACKAGE_NAME=$2;
   # If yum is not installed, the package cannot be installed.
   if ! package_is_installed yum; then
-    msg_not_installed "yum";
+    msg_not_installed "yum" "install $PACKAGE_NAME";
     msg_cannot_install "$PACKAGE_NAME" "yum is the installation method for $PACKAGE_NAME, but yum is not installed.";
   # Otherwise, try installing the package using yum:
   else
@@ -1010,7 +1046,7 @@ install_package_zypper () {
   local PACKAGE_NAME=$2;
   # If zypper is not installed, the package cannot be installed.
   if ! package_is_installed zypper; then
-    msg_not_installed "zypper";
+    msg_not_installed "zypper" "install $PACKAGE_NAME";
     msg_cannot_install "$PACKAGE_NAME";
   # Otherwise, try installing the package using zypper:
   else
@@ -1078,10 +1114,10 @@ baseurl=https://repo.charm.sh/yum/
 enabled=1
 gpgcheck=1
 gpgkey=https://repo.charm.sh/yum/gpg.key" | sudo tee /etc/yum.repos.d/charm.repo;
-    if ! package_is_installed dnf; then
-      install_package_yum gum gum;
-    else 
+    if package_is_installed dnf; then
       install_package_dnf gum gum;
+    else 
+      install_package_yum gum gum;
     fi
   # Otherwise, install go to install gum.
   else
