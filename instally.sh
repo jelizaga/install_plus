@@ -324,6 +324,10 @@ check_dependencies () {
       msg_dependency_needed "curl";
       if $OS_IS_DEBIAN_BASED; then
         install_package_apt curl curl;
+      elif $OS_IS_RHEL_BASED; then
+        install_package_dnf curl curl;
+      elif $OS_IS_SUSE_BASED; then
+        install_package_zupper curl curl;
       fi
     fi
     # Install gum:
@@ -341,6 +345,10 @@ check_dependencies () {
       msg_dependency_needed "jq";
       if $OS_IS_DEBIAN_BASED; then
         install_package_apt jq jq;
+      elif $OS_IS_RHEL_BASED; then
+        install_package_dnf jq jq;
+      elif $OS_IS_SUSE_BASED; then
+        install_package_zypper jq jq;
       fi
     fi
   fi
@@ -1014,10 +1022,13 @@ gpgkey=https://repo.charm.sh/yum/gpg.key" | sudo tee /etc/yum.repos.d/charm.repo
     wget -P ~/Downloads https://github.com/charmbracelet/gum/releases/download/v0.10.0/gum-0.10.0.tar.gz;
     mkdir ~/Downloads/gum;
     tar -zxvf ~/Downloads/gum-0.10.0.tar.gz -C ~/Downloads/gum;
-    if $OS_IS_SUSE_BASED; then
-      install_package_zypper gcc-go;
+    if ! package_is_installed go; then
+      if $OS_IS_SUSE_BASED; then
+        install_package_zypper "go" "go";
+      fi
+      export PATH=$PATH:~/go/bin;
     fi
-    go install ~/Downloads/gum-0.10.0.tar.gz;
+    go install ~/Downloads/gum;
   fi
 }
 
