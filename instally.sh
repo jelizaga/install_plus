@@ -899,6 +899,7 @@ install_package_manager_go () {
       sudo zypper install -y gcc-go;
       msg_installing "go" "go" "zypper";
       sudo zypper install -y go;
+      sudo zypper remove -y gcc-go;
     else
       gum spin \
         --spinner globe \
@@ -906,12 +907,11 @@ install_package_manager_go () {
         -- sudo zypper install -y gcc-go;
       gum spin \
         --spinner globe \
-        --title "$(msg_installing "go" "gcc-go" "zypper")" \
+        --title "$(msg_installing "go" "go" "zypper")" \
         -- sudo zypper install -y go;
     fi
     if [ $? == 0 ]; then
-      export PATH=$PATH:~/go/bin;
-      install_package_go "$PACKAGE_ID" "$PACKAGE_NAME";
+      export PATH=$PATH:$HOME/go/bin;
     else
       msg_cannot_install "go";
     fi
@@ -1140,12 +1140,13 @@ gpgkey=https://repo.charm.sh/yum/gpg.key" | sudo tee /etc/yum.repos.d/charm.repo
   else
     if ! package_is_installed go; then
       install_package_manager_go;
-      wget -P ~/Downloads https://github.com/charmbracelet/gum/releases/download/v0.10.0/gum-0.10.0.tar.gz;
-      mkdir ~/Downloads/gum;
-      tar -zxvf ~/Downloads/gum-0.10.0.tar.gz -C ~/Downloads/gum;
-      cd ~/Downloads/gum;
+      wget -P $HOME/Downloads https://github.com/charmbracelet/gum/releases/download/v0.10.0/gum-0.10.0.tar.gz;
+      mkdir $HOME/Downloads/gum;
+      tar -zxvf $HOME/Downloads/gum-0.10.0.tar.gz -C $HOME/Downloads/gum;
+      cd $HOME/Downloads/gum;
       go install;
-      rm -rf ~/Downloads/gum;
+      rm -rf $HOME/Downloads/gum;
+      rm -rf $HOME/Downloads/gum/gum-0.10.0.tar.gz;
     fi
   fi
 }
