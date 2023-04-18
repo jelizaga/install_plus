@@ -887,32 +887,42 @@ install_package_flatpak () {
   fi
 }
 
+install_package_manager_go () {
+  msg_not_installed "go" "install $PACKAGE_NAME";
+  if $OS_IS_DEBIAN_BASED; then
+    install_package_apt golang-go;
+  elif $OS_IS_RHEL_BASED; then
+    install_package_dnf golang-go;
+  elif $OS_IS_SUSE_BASED; then
+    if ! package_is_installed gum; then
+      msg_installing "go" "gcc-go" "zypper";
+      sudo zypper install -y gcc-go;
+      msg_installing "go" "go" "zypper";
+      sudo zypper install -y go;
+    else
+      gum spin \
+        --spinner globe \
+        --title "$(msg_installing "go" "gcc-go" "zypper")" \
+        -- sudo zypper install -y gcc-go;
+      gum spin \
+        --spinner globe \
+        --title "$(msg_installing "go" "gcc-go" "zypper")" \
+        -- sudo zypper install -y go;
+    fi
+    if [ $? == 0 ]; then
+      export PATH=$PATH:~/go/bin;
+      install_package_go "$PACKAGE_ID" "$PACKAGE_NAME";
+    else
+      msg_cannot_install "go";
+    fi
+  fi
+}
+
 install_package_go () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
   if ! package_is_installed go; then
-    msg_not_installed "go" "install $PACKAGE_NAME";
-    if $OS_IS_DEBIAN_BASED; then
-      install_package_apt golang-go;
-    elif $OS_IS_RHEL_BASED; then
-      install_package_dnf golang-go;
-    elif $OS_IS_SUSE_BASED; then
-      if ! package_is_installed gum; then
-        msg_installing "go" "go" "zypper";
-        sudo zypper install -y gcc-go;
-      else
-        gum spin \
-          --spinner globe \
-          --title "$(msg_installing "go" "gcc-go" "zypper")" \
-          -- sudo zypper install -y go;
-      fi
-      if [ $? == 0 ]; then
-        export PATH=$PATH:~/go/bin;
-        go install "$PACKAGE_ID";
-      else
-        msg_cannot_install "go";
-      fi
-    fi
+    install_package_manager_go;
   else
     if go list | grep -q "$PACKAGE_ID"; then
       msg_already_installed "$PACKAGE_NAME";
@@ -923,7 +933,7 @@ install_package_go () {
       else
         gum spin \
           --spinner globe \
-          --title "$(msg_installing "$PACKAGE_NAME" "$PACKAGE_ID" "yum")" \
+          --title "$(msg_installing "$PACKAGE_NAME" "$PACKAGE_ID" "go")" \
           -- go install $PACKAGE_ID;
       fi
       if [ $? == 0 ]; then
@@ -1128,10 +1138,15 @@ gpgkey=https://repo.charm.sh/yum/gpg.key" | sudo tee /etc/yum.repos.d/charm.repo
     fi
   # Otherwise, install go to install gum.
   else
-    wget -P ~/Downloads https://github.com/charmbracelet/gum/releases/download/v0.10.0/gum-0.10.0.tar.gz;
-    mkdir ~/Downloads/gum;
-    tar -zxvf ~/Downloads/gum-0.10.0.tar.gz -C ~/Downloads/gum;
-    install_package_go ~/Downloads/gum gum;
+    if ! package_is_installed go; then
+      install_package_manager_go;
+      wget -P ~/Downloads https://github.com/charmbracelet/gum/releases/download/v0.10.0/gum-0.10.0.tar.gz;
+      mkdir ~/Downloads/gum;
+      tar -zxvf ~/Downloads/gum-0.10.0.tar.gz -C ~/Downloads/gum;
+      cd ~/Downloads/gum;
+      go install;
+      rm -rf ~/Downloads/gum;
+    fi
   fi
 }
 
