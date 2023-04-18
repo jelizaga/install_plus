@@ -1,5 +1,17 @@
 #!/bin/bash
 
+################################################################################
+#   "                    m           ""#    ""#          #######################
+# mmm    m mm    mmm   mm#mm   mmm     #      #    m   m #######################
+#   #    #"  #  #   "    #    "   #    #      #    "m m" #######################
+#   #    #   #   """m    #    m"""#    #      #     #m#  #######################
+# mm#mm  #   #  "mmm"    "mm  "mm"#    "mm    "mm   "#   #######################
+#                                                   m"   #######################
+#                                                  ""    #######################
+################################################################################
+
+# Global variables #############################################################
+
 # OS data
 OS_NAME=$(grep '^NAME=' /etc/os-release | cut -d= -f2 | tr -d '"');
 OS_PRETTY_NAME=$(grep '^PRETTY_NAME=' /etc/os-release | cut -d= -f2 | tr -d '"');
@@ -31,6 +43,8 @@ GUM_CONFIRM_SELECTED_BACKGROUND="$COLOR_ACTIVE";
 # Delimiter
 DELIMITER="|";
 IFS="$DELIMITER";
+
+# Printing #####################################################################
 
 # print_title
 # Prints install+'s title.
@@ -311,13 +325,14 @@ check_os () {
   os_is_debian_based;
   os_is_rhel_based;
   os_is_suse_based;
+  os_is_unsupported;
 }
 
 # Dependencies #################################################################
 
 check_dependencies () {
   if ! package_is_installed curl || ! package_is_installed gum || ! package_is_installed jq; then
-    printf "Welcome to install+! You're using $OS.\n";
+    printf "Welcome to instally! You're using $OS.\n";
     printf "We need some dependencies to get started:\n";
     # Install curl:
     if ! package_is_installed curl; then
@@ -327,18 +342,13 @@ check_dependencies () {
       elif $OS_IS_RHEL_BASED; then
         install_package_dnf curl curl;
       elif $OS_IS_SUSE_BASED; then
-        install_package_zupper curl curl;
+        install_package_zypper curl curl;
       fi
     fi
     # Install gum:
     if ! package_is_installed gum; then
       msg_dependency_needed "gum";
       install_dependency_gum;
-      if [ $? == 1 ]; then
-        printf "❗ gum could not be installed.";
-      else
-        msg_installed gum;
-      fi
     fi
     # Install jq:
     if ! package_is_installed jq; then
@@ -436,13 +446,26 @@ msg_installing () {
   if ! package_is_installed gum; then
     printf "🌎 Installing $PACKAGE_NAME ($PACKAGE_ID) using $INSTALLATION_METHOD...\n"
   else
-    printf "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic "$PACKAGE_ID") using $(gum style --bold "$INSTALLATION_METHOD")";
+    printf "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic "$PACKAGE_ID")) using $(gum style --bold "$INSTALLATION_METHOD")...";
   fi
 }
 
 msg_not_installed () {
   local PACKAGE_NAME=$1;
-  printf "❌ $(gum style --bold "$PACKAGE_NAME") is missing.\n";
+  if [ -n "$2" ]; then
+    local REQUIREMENT=$2;
+    if ! package_is_installed gum; then
+      printf "❌ $PACKAGE_NAME is required to $REQUIREMENT, but $PACKAGE_NAME is missing.\n";
+    else
+      printf "❌ $(gum style --bold "$PACKAGE_NAME") is required to $REQUIREMENT, but $PACKAGE_NAME is missing.\n";
+    fi
+  else
+    if ! package_is_installed gum; then
+      printf "❌ $PACKAGE_NAME is missing.\n";
+    else
+      printf "❌ $(gum style --bold "$PACKAGE_NAME") is missing.\n";
+    fi
+  fi
 }
 
 msg_empty () {
@@ -550,7 +573,7 @@ msg_todo () {
   fi
 }
 
-# Package Installation  ########################################################
+# Package installation  ########################################################
 # Functions related to installing packages.
 
 # Determines and `echo`s the install method of a package, given `PACKAGE_DATA`
@@ -729,9 +752,13 @@ install_package_apt () {
     fi
     # And install the package.
     if ! package_is_installed gum; then
+      msg_installing "$PACKAGE_NAME" "$PACKAGE_ID" "apt";
       sudo apt-get install -y $PACKAGE_ID;
     else
-      gum spin --spinner globe --title "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic $PACKAGE_ID)) using $(gum style --italic 'apt')..." -- sudo apt-get install -y $PACKAGE_ID;
+      gum spin \
+        --spinner globe \
+        --title "$(msg_installing "$PACKAGE_NAME" "$PACKAGE_ID" "apt")" \
+        -- sudo apt-get install -y $PACKAGE_ID;
     fi
     # If package is successfully installed, say so.
     if [ $? == 0 ]; then
@@ -764,11 +791,14 @@ install_package_apt () {
 install_package_dnf () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
+  # If dnf isn't installed, try to install dnf.
   if ! package_is_installed dnf; then
-    msg_not_installed "dnf";
+    msg_not_installed "dnf" "install $PACKAGE_NAME";
     if $OS_IS_DEBIAN_BASED; then
       install_package_apt "dnf" "dnf";
-      install_package_dnf "$PACKAGE_ID" "$PACKAGE_NAME";
+      if [ $? == 0 ]; then
+        install_package_dnf "$PACKAGE_ID" "$PACKAGE_NAME";
+      fi
     elif $OS_IS_RHEL_BASED; then
       install_package_yum "$PACKAGE_ID" "$PACKAGE_NAME";
     fi
@@ -776,10 +806,15 @@ install_package_dnf () {
     if dnf list installed | grep -q "$PACKAGE_ID"; then
       msg_already_installed "$PACKAGE_NAME";
     else
-      gum spin \
-        --spinner globe \
-        --title "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic $PACKAGE_ID)) using $(gum style --italic 'dnf')..." \
-        -- sudo dnf install -y $PACKAGE_ID;
+      if ! package_is_installed gum; then
+        msg_installing "$PACKAGE_NAME" "$PACKAGE_ID" "dnf";
+        sudo dnf install -y $PACKAGE_ID;
+      else
+        gum spin \
+          --spinner globe \
+          --title "$(msg_installing "$PACKAGE_NAME" "$PACKAGE_ID" "dnf")" \
+          -- sudo dnf install -y $PACKAGE_ID;
+      fi
       if [ $? == 0 ]; then
         msg_installed "$PACKAGE_NAME" "dnf";
         ((PACKAGES_INSTALLED++));
@@ -798,7 +833,7 @@ install_package_dnf () {
 install_package_flatpak () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
-  # Check if flatpak is installed, and install it if not.
+  # If flatpak isn't installed, try to install flatpak.
   if ! package_is_installed flatpak; then
     msg_not_installed "flatpak";
     if $OS_IS_DEBIAN_BASED; then
@@ -812,13 +847,22 @@ install_package_flatpak () {
         install_package_flatpak "$PACKAGE_ID" "$PACKAGE_NAME";
       fi
     fi
+  # Otherwise, try installing the package using flatpak,
   else
-    # If package is already installed, say so.
+    # Check if the package is already installed using flatpak,
     if flatpak list | grep -q "$PACKAGE_ID"; then
       msg_already_installed "$PACKAGE_NAME";
     # Otherwise, install package.
     else
-      gum spin --spinner globe --title "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic $PACKAGE_ID)) using $(gum style --italic 'flatpak')..." -- flatpak install -y $PACKAGE_ID;
+      if ! package_is_installed gum; then
+        msg_installing "$PACKAGE_NAME" "$PACKAGE_ID" "flatpak";
+        flatpak install -y $PACKAGE_ID;
+      else
+        gum spin \
+          --spinner globe \
+          --title "$(msg_installing "$PACKAGE_NAME" "$PACKAGE_ID" "flatpak")" \
+          -- flatpak install -y $PACKAGE_ID;
+      fi
       # If package is successfully installed, say so.
       if [ $? == 0 ]; then
         msg_installed "$PACKAGE_NAME" "flatpak";
@@ -880,23 +924,36 @@ install_package_pip () {
 install_package_snap () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
+  # If snap isn't installed, try to install snap,
   if ! package_is_installed snap; then
-    msg_not_installed "snap";
+    msg_not_installed "snap" "install $PACKAGE_NAME";
     if $OS_IS_DEBIAN_BASED; then
       install_package_apt "snapd";
       if [ $? == 0 ]; then
         install_package_snap "$PACKAGE_ID" "$PACKAGE_NAME";
       fi
+    elif $OS_IS_RHEL_BASED; then
+      install_package_dnf "snapd";
+      if [ $? == 0 ]; then
+        install_package_snap "$PACKAGE_ID" "$PACKAGE_NAME";
+      fi
+    elif $OS_IS_SUSE_BASED; then
+      msg_cannot_install "snap" "Try instructions @ https://snapcraft.io/install/$PACKAGE_ID/opensuse#install to install snap and $PACKAGE_NAME.";
     fi
+  # Otherwise, try installing the package using snap:
   else
+    # Check if the package is already installed using snap,
     if snap list | grep -q "$PACKAGE_ID"; then
       msg_already_installed "$PACKAGE_NAME";
+    # And install the package.
     else
       snap install $PACKAGE_ID;
+      # If the package was successfully installed, then say so.
       if [ $? == 0 ]; then
         msg_installed "$PACKAGE_NAME" "snap";
         ((PACKAGES_INSTALLED++));
         return 0;
+      # Otherwise, tell 'em the package can't be installed.
       else
         msg_cannot_install "$PACKAGE_NAME";
       fi
@@ -911,21 +968,32 @@ install_package_snap () {
 install_package_yum () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
+  # If yum is not installed, the package cannot be installed.
   if ! package_is_installed yum; then
     msg_not_installed "yum";
-    msg_cannot_install "$PACKAGE_NAME";
+    msg_cannot_install "$PACKAGE_NAME" "yum is the installation method for $PACKAGE_NAME, but yum is not installed.";
+  # Otherwise, try installing the package using yum:
   else
+    # Check if the package is installed using yum,
     if yum list installed | grep -q "$PACKAGE_ID"; then
       msg_already_installed "$PACKAGE_NAME";
+    # And install the package.
     else
-      gum spin \
-        --spinner globe \
-        --title "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic $PACKAGE_ID)) using $(gum style --italic 'yum')..." \
-        -- sudo yum install -y $PACKAGE_ID;
+      if ! package_is_installed gum; then
+        msg_installing "$PACKAGE_NAME" "$PACKAGE_ID" yum;
+        sudo yum install -y $PACKAGE_ID;
+      else
+        gum spin \
+          --spinner globe \
+          --title "$(msg_installing "$PACKAGE_NAME" "$PACKAGE_ID" "yum")" \
+          -- sudo yum install -y $PACKAGE_ID;
+      fi
+      # If the package was successfully installed, say so.
       if [ $? == 0 ]; then
         msg_installed "$PACKAGE_NAME" "yum";
         ((PACKAGES_INSTALLED++));
         return 0;
+      # Otherwise, tell 'em the package can't be installed.
       else
         msg_cannot_install "$PACKAGE_NAME";
       fi
@@ -940,11 +1008,16 @@ install_package_yum () {
 install_package_zypper () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
+  # If zypper is not installed, the package cannot be installed.
   if ! package_is_installed zypper; then
     msg_not_installed "zypper";
+    msg_cannot_install "$PACKAGE_NAME";
+  # Otherwise, try installing the package using zypper:
   else
+    # Check if the package is already installed using zypper,
     if zypper pa -i | grep -q "$PACKAGE_ID"; then
       msg_already_installed "$PACKAGE_NAME";
+    # And install the package.
     else
       if ! package_is_installed gum; then
         msg_installing "gum" "gum" "zypper";
@@ -955,10 +1028,12 @@ install_package_zypper () {
           --title "$(msg_installing "$PACKAGE_NAME" "$PACKAGE_ID" "zypper")" \
           -- sudo zypper install -y $PACKAGE_ID;
       fi
+      # If the package was successfully installed, say so.
       if [ $? == 0 ]; then
         msg_installed "$PACKAGE_NAME" "zypper";
         ((PACKAGES_INSTALLED++));
         return 0;
+      # Otherwise, tell 'em the package cannot be installed.
       else
         msg_cannot_install "$PACKAGE_NAME";
       fi
@@ -973,9 +1048,9 @@ install_package_zypper () {
 install_package_command () {
   local COMMAND=$1;
   local PACKAGE_NAME=$2;
-  msg_warning "Installing $(gum style --bold "$PACKAGE_NAME") via $(gum style --italic 'command').";
+  msg_warning "Installing $(gum style --bold "$PACKAGE_NAME") using $(gum style --italic 'command').";
   eval $COMMAND;
-  #gum spin --spinner globe --title "Installing $(gum style --bold "$PACKAGE_NAME") via $(gum style --italic 'command')..." -- eval $COMMAND;
+  # If command exited 0, assume the package was successfully installed.
   if [ $? == 0 ]; then
     msg_installed "$PACKAGE_NAME";
     ((PACKAGES_INSTALLED++));
@@ -987,25 +1062,15 @@ install_package_command () {
   fi
 }
 
-# Installs curl.
-install_dependency_curl () {
-  echo "🌎 Installing curl..."
-  if $OS_IS_DEBIAN_BASED; then
-    sudo apt install curl;
-  elif $OS_IS_RHEL_BASED; then
-    sudo dnf install curl;
-  fi
-}
-
-# Installs gum.
+# Installs gum for instally's interactivity.
 install_dependency_gum () {
-  echo "🌎 Installing gum..."
+  # If the OS is Debian-based, use apt to install gum;
   if $OS_IS_DEBIAN_BASED; then
     sudo mkdir -p /etc/apt/keyrings;
     curl -fsSL https://repo.charm.sh/apt/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg
     echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | sudo tee /etc/apt/sources.list.d/charm.list;
-    sudo apt -y update;
-    sudo apt install -y gum;
+    install_package_apt gum gum;
+  # If OS is RHEL-based, use dnf or yum to install gum;
   elif $OS_IS_RHEL_BASED; then
     echo "[charm]
 name=Charm
@@ -1014,10 +1079,11 @@ enabled=1
 gpgcheck=1
 gpgkey=https://repo.charm.sh/yum/gpg.key" | sudo tee /etc/yum.repos.d/charm.repo;
     if ! package_is_installed dnf; then
-      sudo yum install -y gum;
+      install_package_yum gum gum;
     else 
-      sudo dnf install -y gum;
+      install_package_dnf gum gum;
     fi
+  # Otherwise, install go to install gum.
   else
     wget -P ~/Downloads https://github.com/charmbracelet/gum/releases/download/v0.10.0/gum-0.10.0.tar.gz;
     mkdir ~/Downloads/gum;
@@ -1025,10 +1091,14 @@ gpgkey=https://repo.charm.sh/yum/gpg.key" | sudo tee /etc/yum.repos.d/charm.repo
     if ! package_is_installed go; then
       if $OS_IS_SUSE_BASED; then
         install_package_zypper "go" "go";
+        if [ $? == 0 ]; then
+          export PATH=$PATH:~/go/bin;
+          go install ~/Downloads/gum;
+        fi
+      else
+        msg_cannot_install "gum" "instally does not support $OS_NAME.";
       fi
-      export PATH=$PATH:~/go/bin;
     fi
-    go install ~/Downloads/gum;
   fi
 }
 
