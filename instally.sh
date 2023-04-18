@@ -331,7 +331,7 @@ check_os () {
 
 check_dependencies () {
   if ! package_is_installed curl || ! package_is_installed gum || ! package_is_installed jq; then
-    printf "Welcome to instally! You're using $OS.\n";
+    printf "Welcome to instally! You're using $OS_PRETTY_NAME.\n";
     printf "We need some dependencies to get started:\n";
     # Install curl:
     if ! package_is_installed curl; then
@@ -890,18 +890,25 @@ install_package_flatpak () {
 install_package_go () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
-  msg_todo "go installation";
   if ! package_is_installed go; then
     msg_not_installed "go" "install $PACKAGE_NAME";
     if $OS_IS_DEBIAN_BASED; then
       install_package_apt golang-go;
     elif $OS_IS_RHEL_BASED; then
       install_package_dnf golang-go;
-    elif $OS_IS_SUSE_based; then
-      install_package_zypper "go" "go";
+    elif $OS_IS_SUSE_BASED; then
+      if ! package_is_installed gum; then
+        msg_installing "go" "go" "zypper";
+        sudo zypper install -y go;
+      else
+        gum spin \
+          --spinner globe \
+          --title "$(msg_installing "go" "go" "zypper")" \
+          -- sudo zypper install -y go;
+      fi
       if [ $? == 0 ]; then
         export PATH=$PATH:~/go/bin;
-        go install ~/Downloads/gum;
+        go install "$PACKAGE_ID";
       else
         msg_cannot_install "go";
       fi
@@ -1124,17 +1131,7 @@ gpgkey=https://repo.charm.sh/yum/gpg.key" | sudo tee /etc/yum.repos.d/charm.repo
     wget -P ~/Downloads https://github.com/charmbracelet/gum/releases/download/v0.10.0/gum-0.10.0.tar.gz;
     mkdir ~/Downloads/gum;
     tar -zxvf ~/Downloads/gum-0.10.0.tar.gz -C ~/Downloads/gum;
-    if ! package_is_installed go; then
-      if $OS_IS_SUSE_BASED; then
-        install_package_zypper "go" "go";
-        if [ $? == 0 ]; then
-          export PATH=$PATH:~/go/bin;
-          go install ~/Downloads/gum;
-        fi
-      else
-        msg_cannot_install "gum" "instally does not support $OS_NAME.";
-      fi
-    fi
+    install_package_go ~/Downloads/gum;
   fi
 }
 
