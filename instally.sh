@@ -8,7 +8,7 @@ OS_IS_RHEL_BASED=false;
 OS_IS_SUSE_BASED=false;
 
 # Packages file
-PACKAGES_FILE="$HOME/.instally/packages.json";
+PACKAGES_FILE="$HOME/.instally/package.json";
 
 # Packages
 PACKAGES_INSTALLED=0;
@@ -351,7 +351,7 @@ check_dependencies () {
   fi
 }
 
-# Checks for ~/.instally & ~/.instally/packages.json.
+# Checks for ~/.instally & ~/.instally/package.json.
 # Creates either if they've yet to exist.
 check_packages_file () {
   if ! [ -e $HOME/.instally ]; then
@@ -359,12 +359,12 @@ check_packages_file () {
     make_packages_file;
     prompt_edit_packages_file;
     check_packages_file;
-  elif ! [ -e $HOME/.instally/packages.json ]; then
+  elif ! [ -e $HOME/.instally/package.json ]; then
     make_packages_file;
     prompt_edit_packages_file;
     check_packages_file;
   elif ! [ -s $PACKAGES_FILE ]; then
-    msg_empty "packages.json" "📒";
+    msg_empty "package.json" "📒";
     prompt_edit_packages_file;
     check_packages_file;
   else
@@ -381,22 +381,22 @@ make_instally_dir () {
   msg_created "~/.instally" "📁";
 }
 
-# Makes ~/.instally/packages.json and reports this action.
+# Makes ~/.instally/package.json and reports this action.
 make_packages_file () {
-  touch $HOME/.instally/packages.json;
-  msg_created "~/.instally/packages.json" "📒";
+  touch $HOME/.instally/package.json;
+  msg_created "~/.instally/package.json" "📒";
 }
 
-# Prompts user whether they'd like to edit packages.json.
+# Prompts user whether they'd like to edit package.json.
 prompt_edit_packages_file () {
   printf "$(gum style --italic \
     'To define packages for instally to install, edit') ";
   printf "$(gum style --bold \
-    'packages.json').\n";
+    'package.json').\n";
   printf "$(gum style --bold --italic 'Instructions:') ";
   printf "https://github.com/jelizaga/instally/#-packagesjson\n";
   EDIT_PACKAGES_FILE=$(gum confirm \
-    "📒 Edit $(gum style --bold 'packages.json')?" \
+    "📒 Edit $(gum style --bold 'package.json')?" \
     --selected.background="$GUM_CONFIRM_SELECTED_BACKGROUND");
   if [ $? == 0 ]; then
     if [ -z $EDITOR ]; then
@@ -995,8 +995,10 @@ gpgkey=https://repo.charm.sh/yum/gpg.key" | sudo tee /etc/yum.repos.d/charm.repo
       sudo dnf install -y gum;
     fi
   elif $OS_IS_SUSE_BASED; then
-    sudo zypper install -y gcc-go;
-    go install github.com/charmbracelet/gum@latest;
+    wget -P ~/Downloads https://github.com/charmbracelet/gum/releases/download/v0.10.0/gum-0.10.0.tar.gz;
+    mkdir ~/Downloads/gum;
+    tar -zxvf "~/Downloads/gum-0.10.0.tar.gz" -C ~/Downloads/gum;
+    ~/Downloads/gum-0.10.0.tar.gz/configure
   fi
 }
 

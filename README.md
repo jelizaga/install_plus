@@ -22,7 +22,7 @@ installing your favorite packages en masse.
 * [💽 Installation](#-installation)
   * [🔩 Dependencies](#-dependencies)
 * [🙂 Usage](#-usage)
-  * [📒 packages.json](#-packagesjson)
+  * [📒 package.json](#-packagejson)
     * [Package objects](#package-objects)
     * [Installation methods](#installation-methods)
       * [Installation by package manager](#installation-by-package-manager)
@@ -57,22 +57,22 @@ they're missing upon initial run:
   fallback installation method.
 * [`gum`](https://github.com/charmbracelet/gum) - For interactivity.
 * [`jq`](https://github.com/stedolan/jq) - For reading your 
-  [`packages.json`](#-packagesjson) file and installing packages.
+  [`package.json`](#-packagesjson) file and installing packages.
 
 ## 🙂 Usage
 
 1. Specify the packages you'd like to be installed in the 
-   [`packages.json`](#-packagesjson) file.
-2. Run `instally`. `instally` will read `packages.json` and provide an
+   [`package.json`](#-packagesjson) file.
+2. Run `instally`. `instally` will read `package.json` and provide an
    interactive CLI for package selection and installation.
 
-Now you can take your custom `packages.json` file anywhere with `instally`, and
+Now you can take your custom `package.json` file anywhere with `instally`, and
 install your favorite packages on (almost) anything!
 
-### 📒 packages.json
+### 📒 package.json
 
-`packages.json` is the brains behind your `instally` experience. Using
-`packages.json`, you can configure:
+`package.json` is the brains behind your `instally` experience. Using
+`package.json`, you can configure:
 
 * What packages `instally` can install,
 * Installation methods and fallback installation methods,
@@ -81,7 +81,7 @@ install your favorite packages on (almost) anything!
 
 ---
 
-Here's a *simple example* of a `packages.json`:
+Here's a *simple example* of a `package.json`:
 
 ```json
 {
@@ -293,7 +293,7 @@ you during the installation run.
 
 #### Installation order
 
-`instally` installs packages from  `packages.json` sequentially, from the top
+`instally` installs packages from  `package.json` sequentially, from the top
 to the bottom of the file, so the order of package installation is up to the
 user.
 
