@@ -421,6 +421,17 @@ msg_dependency_needed () {
   fi
 }
 
+msg_installing () {
+  local PACKAGE_NAME=$1;
+  local PACKAGE_ID=$2;
+  local INSTALLATION_METHOD=$3;
+  if ! package_is_installed gum; then
+    printf "🌎 Installing $PACKAGE_NAME ($PACKAGE_ID) using $INSTALLATION_METHOD...\n"
+  else
+    printf "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic "$PACKAGE_ID") using $(gum style --bold "$INSTALLATION_METHOD")";
+  fi
+}
+
 msg_not_installed () {
   local PACKAGE_NAME=$1;
   printf "❌ $(gum style --bold "$PACKAGE_NAME") is missing.\n";
@@ -927,10 +938,15 @@ install_package_zypper () {
     if zypper pa -i | grep -q "$PACKAGE_ID"; then
       msg_already_installed "$PACKAGE_NAME";
     else
-      gum spin \
-        --spinner globe \
-        --title "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic $PACKAGE_ID)) using $(gum style --italic 'zypper')..." \
-        -- sudo zypper install -y $PACKAGE_ID;
+      if ! package_is_installed gum; then
+        msg_installing "gum" "gum" "zypper";
+        sudo zypper install -y $PACKAGE_ID;
+      else
+        gum spin \
+          --spinner globe \
+          --title "$(msg_installing "$PACKAGE_NAME" "$PACKAGE_ID" "zypper")" \
+          -- sudo zypper install -y $PACKAGE_ID;
+      fi
       if [ $? == 0 ]; then
         msg_installed "$PACKAGE_NAME" "zypper";
         ((PACKAGES_INSTALLED++));
@@ -980,8 +996,8 @@ install_dependency_gum () {
     sudo mkdir -p /etc/apt/keyrings;
     curl -fsSL https://repo.charm.sh/apt/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg
     echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | sudo tee /etc/apt/sources.list.d/charm.list;
-    sudo apt update;
-    sudo apt install gum;
+    sudo apt -y update;
+    sudo apt install -y gum;
   elif $OS_IS_RHEL_BASED; then
     echo "[charm]
 name=Charm
@@ -994,11 +1010,14 @@ gpgkey=https://repo.charm.sh/yum/gpg.key" | sudo tee /etc/yum.repos.d/charm.repo
     else 
       sudo dnf install -y gum;
     fi
-  elif $OS_IS_SUSE_BASED; then
+  else
     wget -P ~/Downloads https://github.com/charmbracelet/gum/releases/download/v0.10.0/gum-0.10.0.tar.gz;
     mkdir ~/Downloads/gum;
-    tar -zxvf "~/Downloads/gum-0.10.0.tar.gz" -C ~/Downloads/gum;
-    ~/Downloads/gum-0.10.0.tar.gz/configure
+    tar -zxvf ~/Downloads/gum-0.10.0.tar.gz -C ~/Downloads/gum;
+    if $OS_IS_SUSE_BASED; then
+      install_package_zypper gcc-go;
+    fi
+    go install ~/Downloads/gum-0.10.0.tar.gz;
   fi
 }
 
