@@ -196,9 +196,13 @@ gpgkey=https://repo.charm.sh/yum/gpg.key" | \
     else
       install_dependency_gum_using_go;
       if ! package_is_installed gum; then
-        print_error "go is installed, and gum also might be installed, but go is
-not finding gum.\n  Ensure your go binaries (/go/bin) are included in your
-PATH variable:\n  $PATH";
+        print_error "Go is installed, and gum also might be installed, but Go is
+not finding gum.\n  Ensure your Go binaries (/go/bin) are included in your
+PATH variable:\n  $PATH\n
+  See https://github.com/jelizaga/instally/#gum-is-installed-but-wont-run \
+for help.";
+        exit 1;
+        #export PATH=$PATH:$HOME/go/bin;
       fi
     fi
   fi
