@@ -14,9 +14,10 @@
 # Data used throughout the `instally` experience.
 ################################################################################
 
-# OS data
+# OS
 OS_NAME=$(grep '^NAME=' /etc/os-release | cut -d= -f2 | tr -d '"');
-OS_PRETTY_NAME=$(grep '^PRETTY_NAME=' /etc/os-release | cut -d= -f2 | tr -d '"');
+OS_PRETTY_NAME=$(grep '^PRETTY_NAME=' /etc/os-release | cut -d= -f2 | \
+  tr -d '"');
 OS_IS_DEBIAN_BASED=false;
 OS_IS_RHEL_BASED=false;
 OS_IS_SUSE_BASED=false;
@@ -45,152 +46,6 @@ GUM_CONFIRM_SELECTED_BACKGROUND="$COLOR_ACTIVE";
 # Delimiter
 DELIMITER="|";
 IFS="$DELIMITER";
-
-# Menus ########################################################################
-# `instally`'s system of interactive menus.
-################################################################################
-
-# Main menu presented on start-up and at the completion of certain tasks.
-menu_main () {
-  print_title
-  print_os
-  printf "\n"
-  SELECTED=$(gum choose \
-    --cursor="$GUM_CHOOSE_CURSOR " \
-    --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
-    --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
-    "Install Packages" \
-    "Settings" \
-    "Quit");
-  case $SELECTED in
-    "Install Packages")
-      menu_select_groups;
-      ;;
-    "Settings")
-      menu_settings;
-      ;;
-    "Quit")
-      exit 0;
-      ;;
-    *)
-      exit 1;
-      ;;
-  esac
-}
-
-# Settings menu where `instally` can be configured.
-menu_settings () {
-  print_error "To be complete.";
-}
-
-# Prompts user to select package groups and provides instructions.
-# Associated with `menu_select_groups`.
-prompt_select_groups () {
-  printf "\n";
-  printf "$(gum style --bold --underline 'Select Groups')\n";
-  printf "$(gum style --italic 'Press ')";
-  printf "$(gum style --bold --foreground '#E60000' 'x')";
-  printf "$(gum style --italic ' to select package groups')\n";
-  printf "$(gum style --italic 'press ')"
-  printf "$(gum style --bold --foreground '#E60000' 'a')";
-  printf "$(gum style --italic ' to select all')\n"
-  printf "$(gum style --italic 'press ')"
-  printf "$(gum style --bold --foreground '#E60000' 'enter')"
-  printf "$(gum style --italic ' to confirm your selection:')\n"
-}
-
-# Menu used to select groups of packages for installation.
-# Invokes `menu_package_select` after user selects (or doesn't select)
-# groups of packages.
-menu_select_groups () {
-  PACKAGES_INSTALLED=0;
-  check_package_json;
-  HAS_GROUPS=$(jq 'has("groups")' $PACKAGE_JSON);
-  if [ "$HAS_GROUPS" = "true" ]; then
-    prompt_select_groups;
-    SELECTED_PACKAGE_GROUPS=$(jq -r '.groups | map(.group)[]' $PACKAGE_JSON | \
-      gum choose \
-      --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
-      --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
-      --cursor="$GUM_CHOOSE_CURSOR " \
-      --cursor-prefix="$GUM_CHOOSE_CURSOR_PREFIX " \
-      --selected-prefix="$GUM_CHOOSE_SELECTED_PREFIX " \
-      --unselected-prefix="$GUM_CHOOSE_UNSELECTED_PREFIX " \
-      --no-limit);
-    SELECTED_PACKAGE_GROUPS_ARRAY=();
-    readarray -t SELECTED_PACKAGE_GROUPS_ARRAY <<< "$SELECTED_PACKAGE_GROUPS"
-    if [ "${#SELECTED_PACKAGE_GROUPS_ARRAY[@]}" -eq 1 ] \
-      && [[ ${SELECTED_PACKAGE_GROUPS_ARRAY[0]} == "" ]]; then
-      menu_install_packages;
-    else
-      menu_install_packages "${SELECTED_PACKAGE_GROUPS_ARRAY[@]}";
-    fi
-  else
-    menu_install_packages;
-  fi
-}
-
-# Prompts user to select package groups and provides instructions.
-# Associated with `menu_select_groups`.
-prompt_install_packages () {
-  printf "\n"
-  printf "$(gum style --bold --underline 'Install Packages')\n";
-  printf "$(gum style --italic 'Press ')";
-  printf "$(gum style --bold --foreground '#E60000' 'x')";
-  printf "$(gum style --italic ' to select packages to install')\n";
-  printf "$(gum style --italic 'press ')"
-  printf "$(gum style --bold --foreground '#E60000' 'a')";
-  printf "$(gum style --italic ' to select all')\n";
-  printf "$(gum style --italic 'press ')";
-  printf "$(gum style --bold --foreground '#E60000' 'enter')";
-  printf "$(gum style --italic ' to confirm your selection:')\n";
-}
-
-# Menu used to select packages for installation.
-# Args:
-#   `$@` - Array of selected package groups.
-menu_install_packages () {
-  # Get the eligible package menu items for display, given the selected package
-  # groups.
-  local MENU_ITEMS=($(get_menu_items "$@"));
-  IFS=$'\n';
-  readarray -t MENU_ITEMS_ARRAY <<< "$MENU_ITEMS";
-  IFS="$DELIMITER";
-  prompt_install_packages;
-  # User selects packages to install:
-  local SELECTED_PACKAGES=$(gum choose --no-limit \
-    --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
-    --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
-    --cursor="$GUM_CHOOSE_CURSOR " \
-    --cursor-prefix="$GUM_CHOOSE_CURSOR_PREFIX " \
-    --selected-prefix="$GUM_CHOOSE_SELECTED_PREFIX " \
-    --unselected-prefix="$GUM_CHOOSE_UNSELECTED_PREFIX " \
-    "${MENU_ITEMS_ARRAY[@]}");
-  # Roll selected packages into an array.
-  local SELECTED_PACKAGES_ARRAY=();
-  readarray -t SELECTED_PACKAGES_ARRAY <<< "$SELECTED_PACKAGES";
-  # If no packages are selected, return to main menu.
-  if [ "${#SELECTED_PACKAGES_ARRAY[@]}" -eq 1 ] && [[ ${SELECTED_PACKAGES_ARRAY[0]} == "" ]]; then
-    printf "No packages selected.\n"
-    menu_main;
-  # Otherwise, install the selected packages.
-  else
-    install_packages "${SELECTED_PACKAGES_ARRAY[@]}";
-  fi
-}
-
-# Prompts the user whether or not they'd like to install more packages.
-# Returns to main menu if not.
-# Returns to package group select if so.
-menu_install_more_packages () {
-  INSTALL_MORE=$(gum confirm "Install more packages?" \
-    --selected.background="$GUM_CONFIRM_SELECTED_BACKGROUND");
-  if [ $? == 0 ]; then
-    menu_select_groups;
-  else
-    menu_main;
-  fi
-}
 
 # OS Detection #################################################################
 # Functions related to detecting the OS in order to determine the default
@@ -259,7 +114,9 @@ check_os () {
 # missing.
 check_dependencies () {
   # Detect missing dependencies,
-  if ! package_is_installed curl || ! package_is_installed gum || ! package_is_installed jq; then
+  if ! package_is_installed curl || \
+    ! package_is_installed gum || \
+    ! package_is_installed jq; then
     printf "Welcome to instally! You're using $OS_PRETTY_NAME.\n";
     printf "We need some dependencies to get started:\n";
     # Install curl:
@@ -302,8 +159,10 @@ install_dependency_gum () {
   # If the OS is Debian-based, use apt to install gum;
   if $OS_IS_DEBIAN_BASED; then
     sudo mkdir -p /etc/apt/keyrings;
-    curl -fsSL https://repo.charm.sh/apt/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg
-    echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | sudo tee /etc/apt/sources.list.d/charm.list;
+    curl -fsSL https://repo.charm.sh/apt/gpg.key | \
+      sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg;
+    echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | \
+      sudo tee /etc/apt/sources.list.d/charm.list;
     install_package_apt gum gum;
   # If OS is RHEL-based,
   elif $OS_IS_RHEL_BASED; then
@@ -312,7 +171,8 @@ name=Charm
 baseurl=https://repo.charm.sh/yum/
 enabled=1
 gpgcheck=1
-gpgkey=https://repo.charm.sh/yum/gpg.key" | sudo tee /etc/yum.repos.d/charm.repo;
+gpgkey=https://repo.charm.sh/yum/gpg.key" | \
+  sudo tee /etc/yum.repos.d/charm.repo;
     # Use dnf to install gum,
     if package_is_installed dnf; then
       install_package_dnf gum gum;
@@ -413,10 +273,124 @@ prompt_edit_package_json () {
   fi 
 }
 
-# Printing #####################################################################
-# Functions related to printing reusable messages.
+# Menus ########################################################################
+# `instally`'s system of interactive menus and prompts.
+################################################################################
 
-# print_title
+# Main menu presented on start-up and at the completion of certain tasks.
+menu_main () {
+  print_title
+  print_os
+  printf "\n"
+  SELECTED=$(gum choose \
+    --cursor="$GUM_CHOOSE_CURSOR " \
+    --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
+    --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
+    "Install Packages" \
+    "Settings" \
+    "Quit");
+  case $SELECTED in
+    "Install Packages")
+      menu_select_groups;
+      ;;
+    "Settings")
+      menu_settings;
+      ;;
+    "Quit")
+      exit 0;
+      ;;
+    *)
+      exit 1;
+      ;;
+  esac
+}
+
+# Settings menu where `instally` can be configured.
+menu_settings () {
+  print_error "To be complete.";
+}
+
+# Menu used to select groups of packages for installation.
+# Invokes `menu_package_select` after user selects (or doesn't select)
+# groups of packages.
+menu_select_groups () {
+  PACKAGES_INSTALLED=0;
+  check_package_json;
+  HAS_GROUPS=$(jq 'has("groups")' $PACKAGE_JSON);
+  if [ "$HAS_GROUPS" = "true" ]; then
+    print_select_groups;
+    SELECTED_PACKAGE_GROUPS=$(jq -r '.groups | map(.group)[]' $PACKAGE_JSON | \
+      gum choose \
+      --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
+      --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
+      --cursor="$GUM_CHOOSE_CURSOR " \
+      --cursor-prefix="$GUM_CHOOSE_CURSOR_PREFIX " \
+      --selected-prefix="$GUM_CHOOSE_SELECTED_PREFIX " \
+      --unselected-prefix="$GUM_CHOOSE_UNSELECTED_PREFIX " \
+      --no-limit);
+    SELECTED_PACKAGE_GROUPS_ARRAY=();
+    readarray -t SELECTED_PACKAGE_GROUPS_ARRAY <<< "$SELECTED_PACKAGE_GROUPS"
+    if [ "${#SELECTED_PACKAGE_GROUPS_ARRAY[@]}" -eq 1 ] \
+      && [[ ${SELECTED_PACKAGE_GROUPS_ARRAY[0]} == "" ]]; then
+      menu_install_packages;
+    else
+      menu_install_packages "${SELECTED_PACKAGE_GROUPS_ARRAY[@]}";
+    fi
+  else
+    menu_install_packages;
+  fi
+}
+
+# Menu used to select packages for installation.
+# Args:
+#   `$@` - Array of selected package groups.
+menu_install_packages () {
+  # Get the eligible package menu items for display, given the selected package
+  # groups.
+  local MENU_ITEMS=($(get_menu_items "$@"));
+  IFS=$'\n';
+  readarray -t MENU_ITEMS_ARRAY <<< "$MENU_ITEMS";
+  IFS="$DELIMITER";
+  print_install_packages;
+  # User selects packages to install:
+  local SELECTED_PACKAGES=$(gum choose --no-limit \
+    --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
+    --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
+    --cursor="$GUM_CHOOSE_CURSOR " \
+    --cursor-prefix="$GUM_CHOOSE_CURSOR_PREFIX " \
+    --selected-prefix="$GUM_CHOOSE_SELECTED_PREFIX " \
+    --unselected-prefix="$GUM_CHOOSE_UNSELECTED_PREFIX " \
+    "${MENU_ITEMS_ARRAY[@]}");
+  # Roll selected packages into an array.
+  local SELECTED_PACKAGES_ARRAY=();
+  readarray -t SELECTED_PACKAGES_ARRAY <<< "$SELECTED_PACKAGES";
+  # If no packages are selected, return to main menu.
+  if [ "${#SELECTED_PACKAGES_ARRAY[@]}" -eq 1 ] && \
+    [[ ${SELECTED_PACKAGES_ARRAY[0]} == "" ]]; then
+    printf "No packages selected.\n"
+    menu_main;
+  # Otherwise, install the selected packages.
+  else
+    install_packages "${SELECTED_PACKAGES_ARRAY[@]}";
+  fi
+}
+
+# Prompts the user whether or not they'd like to install more packages.
+# Returns to main menu if not.
+# Returns to package group select if so.
+menu_install_more_packages () {
+  INSTALL_MORE=$(gum confirm "Install more packages?" \
+    --selected.background="$GUM_CONFIRM_SELECTED_BACKGROUND");
+  if [ $? == 0 ]; then
+    menu_select_groups;
+  else
+    menu_main;
+  fi
+}
+
+# Printing #####################################################################
+# Functions related to printing reusable messages and text.
+
 # Prints install+'s title.
 print_title () {
   printf "\n";
@@ -430,10 +404,46 @@ print_title () {
   printf "                                                  \"\"    \n";
 }
 
+# Prints the OS of the system running `instally`.
 print_os () {
   printf "$(gum style --bold 'OS:') $OS_PRETTY_NAME\n"
 }
 
+# Prompts user to select package groups and provides instructions.
+# Associated with `menu_select_groups`.
+print_select_groups () {
+  printf "\n";
+  printf "$(gum style --bold --underline 'Select Groups')\n";
+  printf "$(gum style --italic 'Press ')";
+  printf "$(gum style --bold --foreground '#E60000' 'x')";
+  printf "$(gum style --italic ' to select package groups')\n";
+  printf "$(gum style --italic 'press ')"
+  printf "$(gum style --bold --foreground '#E60000' 'a')";
+  printf "$(gum style --italic ' to select all')\n"
+  printf "$(gum style --italic 'press ')"
+  printf "$(gum style --bold --foreground '#E60000' 'enter')"
+  printf "$(gum style --italic ' to confirm your selection:')\n"
+}
+
+# Prompts user to select packages for installation and provides instructions.
+# Associated with `menu_install_packages`.
+print_install_packages () {
+  printf "\n"
+  printf "$(gum style --bold --underline 'Install Packages')\n";
+  printf "$(gum style --italic 'Press ')";
+  printf "$(gum style --bold --foreground '#E60000' 'x')";
+  printf "$(gum style --italic ' to select packages to install')\n";
+  printf "$(gum style --italic 'press ')"
+  printf "$(gum style --bold --foreground '#E60000' 'a')";
+  printf "$(gum style --italic ' to select all')\n";
+  printf "$(gum style --italic 'press ')";
+  printf "$(gum style --bold --foreground '#E60000' 'enter')";
+  printf "$(gum style --italic ' to confirm your selection:')\n";
+}
+
+# Prints declaration that a dependency is missing.
+# Args:
+#   `$1` - Name of the dependency required.
 print_dependency_needed () {
   local DEPENDENCY=$1;
   if ! package_is_installed gum; then
@@ -443,6 +453,11 @@ print_dependency_needed () {
   fi
 }
 
+# Prints declaration that a package is currently being installed.
+# Args:
+#   `$1` - Name of the package being installed.
+#   `$2` - ID of the package being installed (`"id"` in `package.json`).
+#   `$3` - Installation method being used to install the package.
 print_installing () {
   local PACKAGE_NAME=$1;
   local PACKAGE_ID=$2;
@@ -457,6 +472,10 @@ using $(gum style --bold "$INSTALLATION_METHOD")...";
   fi
 }
 
+# Prints warning that an expected package is missing.
+# Args:
+#   `$1` - Name of the missing package.
+#   `$2` - Optional requirement that would be fulfilled by having package `$1`.
 print_not_installed () {
   local PACKAGE_NAME=$1;
   if [ -n "$2" ]; then
@@ -479,6 +498,10 @@ but $PACKAGE_NAME is missing.\n";
   fi
 }
 
+# Prints warning that something is empty.
+# Args:
+#   `$1` - Name of item that is empty.
+#   `$2` - Icon prefixing this message—an emoji or some unicode glyph.
 print_empty () {
   local ITEM=$1;
   if [ -n "$2" ]; then
@@ -489,18 +512,28 @@ print_empty () {
   fi
 }
 
+# Prints warning that an expected field is missing from `package.json`.
+# Args:
+#    `$1` - Name of field missing from `package.json`.
 print_packages_file_missing_field () {
   local FIELD=$1;
   printf "❗ No $(gum style --bold "$FIELD") field \
 found in $(gum style --bold "$PACKAGE_JSON").\n";
 }
 
+# Prints declaration that something has been created.
+# Args:
+#   `$1` - Name of item that has been created.
+#   `$2` - Icon prefixing this message—an emoji or some unicode glyph.
 print_created () {
   local ITEM=$1;
   local ICON=$2;
   printf "$ICON $(gum style --bold "$ITEM") created.\n";
 }
 
+# Prints declaration that a package has already been installed.
+# Args:
+#   `$1` - Name of the installed package.
 print_already_installed () {
   local PACKAGE_NAME=$1;
   if ! package_is_installed gum; then
@@ -510,6 +543,10 @@ print_already_installed () {
   fi
 }
 
+# Prints declaration that a package has been successfully installed.
+# Args:
+#   `$1` - Name of the installed package.
+#   `$2` - Optional name of the installation method used to install the package.
 print_installed () {
   local PACKAGE_NAME=$1;
   if [ -n "$2" ]; then
@@ -530,6 +567,9 @@ installed using $(gum style --bold "$INSTALLATION_METHOD").\n";
   fi
 }
 
+# Prints declaration that a package manager has been successfully updated.
+# Args:
+#   `$1` - Name of the updated package manager.
 print_updated () {
   local PACKAGE_MANAGER=$1;
   if ! package_is_installed gum; then
@@ -539,6 +579,10 @@ print_updated () {
   fi
 }
 
+# Prints a message declaring that a given package could not be installed.
+# Args:
+#   `$1` - Name of package that could not be installed.
+#   `$2` - Optional reason why the package could not be installed.
 print_cannot_install () {
   local PACKAGE_NAME=$1;
   if [ -n "$2" ]; then
@@ -559,6 +603,7 @@ $REASON\n";
   fi
 }
 
+# Prints the amount of packages installed.
 print_packages_installed () {
   if [ $PACKAGES_INSTALLED  -gt 1 ]; then
     printf "🏡🚛 $PACKAGES_INSTALLED packages installed.\n"
@@ -569,16 +614,25 @@ print_packages_installed () {
   fi
 }
 
+# Prints error message.
+# Args:
+#   `$1` - Message to print.
 print_error () {
   local MESSAGE=$1;
   printf "🐛 $(gum style --bold 'Error:') $MESSAGE\n";
 }
 
+# Prints warning message.
+# Args:
+#   `$1` - Message to print.
 print_warning () {
   local MESSAGE=$1;
   printf "⚠️ $(gum style --bold 'Warning:') $MESSAGE\n";
 }
 
+# Prints an 'under construction' message.
+# Args:
+#   `$1` - Optional name of incomplete feature.
 print_todo () {
   if [ -n "$1" ]; then
     local FEATURE=$1;
@@ -1067,13 +1121,16 @@ install_package_flatpak () {
         return 0;
       # Otherwise, print error messages.
       elif [ $? == 1 ]; then
-        print_cannot_install "$PACKAGE_NAME" "Installation interrupted by user.";
+        print_cannot_install "$PACKAGE_NAME" \
+"Installation interrupted by user.";
         return 1;
       elif [ $? == 3 ]; then
-        print_cannot_install "$PACKAGE_NAME" "User does not have permission to install packages with Flatpak."
+        print_cannot_install "$PACKAGE_NAME" "User does not have permission \
+to install packages with Flatpak."
         return 3;
       elif [ $? == 4 ]; then
-        print_cannot_install "$PACKAGE_NAME" "Unresolvable dependencies. Try installing $(gum style --bold "$PACKAGE_NAME") manually.";
+        print_cannot_install "$PACKAGE_NAME" "Unresolvable dependencies. \
+Try installing $(gum style --bold "$PACKAGE_NAME") manually.";
         return 4;
       elif [ $? == 5 ]; then
         print_already_installed "$PACKAGE_NAME";
@@ -1088,7 +1145,8 @@ install_package_flatpak () {
         print_cannot_install "$PACKAGE_NAME" "No such remote repository.";
         return 8;
       elif [ $? == 9 ]; then
-        print_cannot_install "$PACKAGE_NAME" "Could not be downloaded from remote repository.";
+        print_cannot_install "$PACKAGE_NAME" "Could not \
+be downloaded from remote repository.";
         return 9;
       fi
     fi
@@ -1179,7 +1237,9 @@ install_package_snap () {
         install_package_snap "$PACKAGE_ID" "$PACKAGE_NAME";
       fi
     elif $OS_IS_SUSE_BASED; then
-      print_cannot_install "snap" "Try instructions @ https://snapcraft.io/install/$PACKAGE_ID/opensuse#install to install snap and $PACKAGE_NAME.";
+      print_cannot_install "snap" "Try instructions @ \
+https://snapcraft.io/install/$PACKAGE_ID/opensuse#install \
+to install snap and $PACKAGE_NAME.";
     fi
   # Otherwise, try installing the package using snap:
   else
@@ -1212,7 +1272,8 @@ install_package_yum () {
   # If yum is not installed, the package cannot be installed.
   if ! package_is_installed yum; then
     print_not_installed "yum" "install $PACKAGE_NAME";
-    print_cannot_install "$PACKAGE_NAME" "yum is the installation method for $PACKAGE_NAME, but yum is not installed.";
+    print_cannot_install "$PACKAGE_NAME" "yum is the installation method for \
+$PACKAGE_NAME, but yum is not installed.";
   # Otherwise, try installing the package using yum:
   else
     # Check if the package is installed using yum,
@@ -1291,7 +1352,8 @@ install_package_zypper () {
 install_package_command () {
   local COMMAND=$1;
   local PACKAGE_NAME=$2;
-  print_warning "Installing $(gum style --bold "$PACKAGE_NAME") using $(gum style --italic 'command').";
+  print_warning "Installing $(gum style --bold "$PACKAGE_NAME") \
+using $(gum style --italic 'command').";
   eval $COMMAND;
   # If command exited 0, assume the package was successfully installed.
   if [ $? == 0 ]; then
@@ -1299,9 +1361,13 @@ install_package_command () {
     ((PACKAGES_INSTALLED++));
   else
     print_warning "The last command exited with non-0 status.";
-    printf "  $(gum style --bold "$PACKAGE_NAME") may not have been installed:\n"
-    printf "  $(gum style --bold "1.") Check if $(gum style --bold "$PACKAGE_NAME") is installed.\n";
-    printf "  $(gum style --bold "2.") Confirm that the $(gum style --bold "$PACKAGE_NAME") installation command in $PACKAGE_JSON is valid.\n";
+    printf "  $(gum style --bold "$PACKAGE_NAME") \
+may not have been installed:\n";
+    printf "  $(gum style --bold "1.") \
+Check if $(gum style --bold "$PACKAGE_NAME") is installed.\n";
+    printf "  $(gum style --bold "2.") \
+Confirm that the $(gum style --bold "$PACKAGE_NAME") \
+installation command in $PACKAGE_JSON is valid.\n";
   fi
 }
 
