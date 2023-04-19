@@ -251,28 +251,6 @@ create_package_json () {
   print_created "~/.instally/package.json" "📒";
 }
 
-# Prompts user whether they'd like to edit `package.json`.
-prompt_edit_package_json () {
-  printf "$(gum style --italic \
-    'To define packages for instally to install, edit') ";
-  printf "$(gum style --bold \
-    'package.json').\n";
-  printf "$(gum style --bold --italic 'Instructions:') ";
-  printf "https://github.com/jelizaga/instally/#-packagesjson\n";
-  EDIT_PACKAGE_JSON=$(gum confirm \
-    "📒 Edit $(gum style --bold 'package.json')?" \
-    --selected.background="$GUM_CONFIRM_SELECTED_BACKGROUND");
-  if [ $? == 0 ]; then
-    if [ -z $EDITOR ]; then
-      nano $PACKAGE_JSON;
-    elif [ -n $EDITOR ]; then
-      $EDITOR $PACKAGE_JSON;
-    fi
-  else
-    menu_main;
-  fi 
-}
-
 # Menus ########################################################################
 # `instally`'s system of interactive menus and prompts.
 ################################################################################
@@ -376,8 +354,8 @@ menu_install_packages () {
 }
 
 # Prompts the user whether or not they'd like to install more packages.
+# Returns to package group select if so,
 # Returns to main menu if not.
-# Returns to package group select if so.
 menu_install_more_packages () {
   INSTALL_MORE=$(gum confirm "Install more packages?" \
     --selected.background="$GUM_CONFIRM_SELECTED_BACKGROUND");
@@ -386,6 +364,32 @@ menu_install_more_packages () {
   else
     menu_main;
   fi
+}
+
+# Prompts user whether they'd like to edit `package.json`.
+# Opens `package.json` in an editor if so,
+# Returns to main menu if not.
+prompt_edit_package_json () {
+  printf "$(gum style --italic \
+    'To define packages for instally to install, edit') ";
+  printf "$(gum style --bold \
+    'package.json').\n";
+  printf "$(gum style --bold --italic 'Instructions:') ";
+  printf "https://github.com/jelizaga/instally/#-packagejson\n";
+  EDIT_PACKAGE_JSON=$(gum confirm \
+    "📒 Edit $(gum style --bold 'package.json')?" \
+    --selected.background="$GUM_CONFIRM_SELECTED_BACKGROUND");
+  if [ $? == 0 ]; then
+    # If user hasn't set their `$EDITOR`, use `nano` to edit `package.json`,
+    if [ -z $EDITOR ]; then
+      nano $PACKAGE_JSON;
+    # Otherwise, use their `$EDITOR` to edit `package.json`.
+    elif [ -n $EDITOR ]; then
+      $EDITOR $PACKAGE_JSON;
+    fi
+  else
+    menu_main;
+  fi 
 }
 
 # Printing #####################################################################
