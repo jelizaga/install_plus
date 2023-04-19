@@ -43,6 +43,7 @@ installing your favorite packages en masse.
     * [yum](#yum)
     * [zypper](#zypper)
 * [🔧 Troubleshooting](#-troubleshooting)
+    * [gum is installed, but won't run](#gum-is-installed-but-wont-run)
 
 <!-- vim-markdown-toc -->
 
@@ -391,3 +392,39 @@ tiddlywiki                | a non-linear…        | =jermolene      | 2023-03-2
 #### zypper
 
 ## 🔧 Troubleshooting
+
+#### gum is installed, but won't run
+
+If you have an error like this:
+
+```
+instally.sh: line 401: gum: command not found
+
+   "                    m           ""#    ""#          
+ mmm    m mm    mmm   mm#mm   mmm     #      #    m   m
+   #    #"  #  #   "    #    "   #    #      #    "m m" 
+   #    #   #   """m    #    m"""#    #      #     #m#  
+ mm#mm  #   #  "mmm"    "mm  "mm"#    "mm    "mm   "#  
+                                                   m"   
+                                                  ""    
+instally.sh: line 413: gum: command not found
+ openSUSE Tumbleweed
+```
+
+... it's likely that `gum` was successfully installed using Go, but you haven't
+added Go binaries to your `$PATH` yet, so `gum` can't be found.
+
+Make sure you've added your Go binaries to your `$PATH` variable:
+
+```bash
+# Prints the contents of your $PATH. Make sure there's a /go/bin:
+→ echo $PATH
+```
+
+If your Go binaries are in `~/go/bin` (Go's default binary location), add the
+path to `/go/bin` to your `$PATH` like so:
+
+```bash
+# Adds ~/go/bin to your $PATH:
+→ export PATH=$PATH:$HOME/go/bin
+```

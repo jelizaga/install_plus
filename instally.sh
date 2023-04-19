@@ -195,6 +195,11 @@ gpgkey=https://repo.charm.sh/yum/gpg.key" | \
       fi
     else
       install_dependency_gum_using_go;
+      if ! package_is_installed gum; then
+        print_error "go is installed, and gum also might be installed, but go is
+not finding gum.\n  Ensure your go binaries (/go/bin) are included in your
+PATH variable:\n  $PATH";
+      fi
     fi
   fi
 }
@@ -796,11 +801,11 @@ install_package_manager_go () {
         --spinner globe \
         --title "$(print_installing "go" "go" "zypper")" \
         -- sudo zypper install -y go;
-    fi
-    if [ $? == 0 ]; then
-      export PATH=$PATH:$HOME/go/bin;
-    else
-      print_cannot_install "go";
+      if [ $? == 0 ]; then
+        export PATH=$PATH:$HOME/go/bin;
+      else
+        print_cannot_install "go" "Please try installing go manually.";
+      fi
     fi
   fi
 }
@@ -989,7 +994,7 @@ install_package_apt () {
     print_already_installed "$PACKAGE_NAME";
   # Otherwise,
   else
-    # Update apt if it isn't already updated,
+    # Update apt if it isn't already updated, update apt,
     if ! $APT_IS_UPDATED; then
       if ! package_is_installed gum; then
         printf "Updating apt...\n";
@@ -1317,7 +1322,6 @@ install_package_zypper () {
   # If zypper is not installed, the package cannot be installed.
   if ! package_is_installed zypper; then
     print_not_installed "zypper" "install $PACKAGE_NAME";
-    print_cannot_install "$PACKAGE_NAME";
   # Otherwise, try installing the package using zypper:
   else
     # Check if the package is already installed using zypper,
@@ -1326,7 +1330,7 @@ install_package_zypper () {
     # And install the package.
     else
       if ! package_is_installed gum; then
-        print_installing "gum" "gum" "zypper";
+        print_installing "$PACKAGE_NAME" "$PACKAGE_ID" "zypper";
         sudo zypper install -y $PACKAGE_ID;
       else
         gum spin \
