@@ -11,6 +11,8 @@
 ################################################################################
 
 # Global variables #############################################################
+# Data used throughout the `instally` experience.
+################################################################################
 
 # OS data
 OS_NAME=$(grep '^NAME=' /etc/os-release | cut -d= -f2 | tr -d '"');
@@ -44,9 +46,9 @@ GUM_CONFIRM_SELECTED_BACKGROUND="$COLOR_ACTIVE";
 DELIMITER="|";
 IFS="$DELIMITER";
 
-
 # Menus ########################################################################
 # `instally`'s system of interactive menus.
+################################################################################
 
 # Main menu presented on start-up and at the completion of certain tasks.
 menu_main () {
@@ -144,81 +146,18 @@ prompt_install_packages () {
   printf "$(gum style --italic ' to confirm your selection:')\n";
 }
 
-get_grouped_menu_items () {
-  local GROUPS_ARRAY=("$@");
-  local MENU_ITEMS_ARRAY=();
-  local GROUP_COUNT=0;
-  for GROUP in "${GROUPS_ARRAY[@]}"; do
-    ((GROUP_COUNT++));
-    # Create an array of packages in that group,
-    PACKAGES_IN_GROUP=$(jq -r --arg GROUP "$GROUP" \
-      '.groups | map(select(.group == $GROUP))[0].packages' \
-      $PACKAGE_JSON);
-    # And if the array isn't empty,
-    if ! [[ "$PACKAGES_IN_GROUP" == "null" ]]; then
-      local MENU_ITEMS_FROM_GROUP=$(get_menu_items_from_array "${PACKAGES_IN_GROUP[@]}");
-      MENU_ITEMS_ARRAY+=( "${MENU_ITEMS_FROM_GROUP[@]}" );
-    fi
-  done
-  echo "${MENU_ITEMS_ARRAY[@]}";
-}
-
-get_ungrouped_menu_items () {
-  local MENU_ITEMS_ARRAY=();
-  local UNGROUPED_PACKAGES=$(jq -r '.packages' \
-    $PACKAGE_JSON);
-  if ! [[ "$UNGROUPED_PACKAGES" == "null" ]]; then
-    local UNGROUPED_MENU_ITEMS=$(get_menu_items_from_array "${UNGROUPED_PACKAGES[@]}");
-    MENU_ITEMS_ARRAY+=( "${UNGROUPED_MENU_ITEMS[@]}" );
-  fi
-  #echo "${MENU_ITEMS_ARRAY[@]}";
-  printf '%s\n' "${MENU_ITEMS_ARRAY[@]}";
-}
-
-get_menu_items_from_array () {
-  local ARRAY=("$@");
-  local ARRAY_LENGTH=$(echo "$ARRAY" | \
-    jq 'length');
-  local MENU_ITEMS_ARRAY=();
-  for (( i=0; i<$ARRAY_LENGTH; i++ )); do
-    local PACKAGE=$(echo "$ARRAY" | \
-      jq --argjson INDEX $i '.[$INDEX]');
-    PACKAGE_NAME=$(echo "$PACKAGE" | jq -r '.name');
-    PACKAGE_HAS_DESCRIPTION=$(echo "$PACKAGE" | jq -r 'has("description")');
-    if [ "$PACKAGE_HAS_DESCRIPTION" = "true" ]; then
-      PACKAGE_DESCRIPTION=$(echo "$PACKAGE" | jq -r '.description');
-      MENU_ITEM="$(gum style --bold "$PACKAGE_NAME »") $PACKAGE_DESCRIPTION";
-      MENU_ITEMS_ARRAY+=("$MENU_ITEM");
-    else
-      MENU_ITEM="$(gum style --bold "$PACKAGE_NAME")"
-      MENU_ITEMS_ARRAY+=("$MENU_ITEM");
-    fi
-  done
-  #echo "${MENU_ITEMS_ARRAY[@]}";
-  printf '%s\n' "${MENU_ITEMS_ARRAY[@]}";
-}
-
-get_menu_items () {
-  local PACKAGES_ARRAY=();
-  local GROUPED_PACKAGES=();
-  local UNGROUPED_PACKAGES=();
-  if ! [ $# -eq 0 ]; then
-    local GROUPS_ARRAY=("$@");
-    GROUPED_PACKAGES=($(get_grouped_menu_items "${GROUPS_ARRAY[@]}"));
-    PACKAGES_ARRAY+=( "${GROUPED_PACKAGES[@]}" );
-  fi
-  UNGROUPED_PACKAGES=($(get_ungrouped_menu_items));
-  PACKAGES_ARRAY+=( "${UNGROUPED_PACKAGES[@]}" );
-  printf '%s\n' "${PACKAGES_ARRAY[@]}";
-}
-
 # Menu used to select packages for installation.
+# Args:
+#   `$@` - Array of selected package groups.
 menu_install_packages () {
+  # Get the eligible package menu items for display, given the selected package
+  # groups.
   local MENU_ITEMS=($(get_menu_items "$@"));
   IFS=$'\n';
   readarray -t MENU_ITEMS_ARRAY <<< "$MENU_ITEMS";
   IFS="$DELIMITER";
   prompt_install_packages;
+  # User selects packages to install:
   local SELECTED_PACKAGES=$(gum choose --no-limit \
     --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
     --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
@@ -227,17 +166,22 @@ menu_install_packages () {
     --selected-prefix="$GUM_CHOOSE_SELECTED_PREFIX " \
     --unselected-prefix="$GUM_CHOOSE_UNSELECTED_PREFIX " \
     "${MENU_ITEMS_ARRAY[@]}");
+  # Roll selected packages into an array.
   local SELECTED_PACKAGES_ARRAY=();
   readarray -t SELECTED_PACKAGES_ARRAY <<< "$SELECTED_PACKAGES";
-  if [ "${#SELECTED_PACKAGES_ARRAY[@]}" -eq 1 ] \
-    && [[ ${SELECTED_PACKAGES_ARRAY[0]} == "" ]]; then
+  # If no packages are selected, return to main menu.
+  if [ "${#SELECTED_PACKAGES_ARRAY[@]}" -eq 1 ] && [[ ${SELECTED_PACKAGES_ARRAY[0]} == "" ]]; then
     printf "No packages selected.\n"
     menu_main;
+  # Otherwise, install the selected packages.
   else
     install_packages "${SELECTED_PACKAGES_ARRAY[@]}";
   fi
 }
 
+# Prompts the user whether or not they'd like to install more packages.
+# Returns to main menu if not.
+# Returns to package group select if so.
 menu_install_more_packages () {
   INSTALL_MORE=$(gum confirm "Install more packages?" \
     --selected.background="$GUM_CONFIRM_SELECTED_BACKGROUND");
@@ -251,6 +195,7 @@ menu_install_more_packages () {
 # OS Detection #################################################################
 # Functions related to detecting the OS in order to determine the default
 # package manager available.
+################################################################################
 
 # Detects whether the user's OS is Debian-based,
 # Assigns `OS_IS_DEBIAN_BASED` to true if so.
@@ -308,6 +253,7 @@ check_os () {
 
 # Dependencies #################################################################
 # Functions related to detecting and installing `instally`'s dependencies.
+################################################################################
 
 # Checks for `instally`'s dependencies, and installs whatever dependencies are
 # missing.
@@ -409,7 +355,8 @@ install_dependency_gum_using_go () {
 }
 
 # File system ##################################################################
-# Functions related to instally's interactions with the file system.
+# Functions related to `instally`'s interactions with the file system.
+################################################################################
 
 # Checks for `~/.instally` & `~/.instally/package.json`.
 # Creates either if they've yet to exist.
@@ -501,9 +448,12 @@ print_installing () {
   local PACKAGE_ID=$2;
   local INSTALLATION_METHOD=$3;
   if ! package_is_installed gum; then
-    printf "🌎 Installing $PACKAGE_NAME ($PACKAGE_ID) using $INSTALLATION_METHOD...\n"
+    printf "🌎 Installing $PACKAGE_NAME ($PACKAGE_ID) \
+using $INSTALLATION_METHOD...\n"
   else
-    printf "Installing $(gum style --bold "$PACKAGE_NAME") ($(gum style --italic "$PACKAGE_ID")) using $(gum style --bold "$INSTALLATION_METHOD")...";
+    printf "Installing $(gum style --bold "$PACKAGE_NAME") \
+($(gum style --italic "$PACKAGE_ID")) \
+using $(gum style --bold "$INSTALLATION_METHOD")...";
   fi
 }
 
@@ -512,9 +462,13 @@ print_not_installed () {
   if [ -n "$2" ]; then
     local REQUIREMENT=$2;
     if ! package_is_installed gum; then
-      printf "❌ $PACKAGE_NAME is required to $REQUIREMENT, but $PACKAGE_NAME is missing.\n";
+      printf "❌ $PACKAGE_NAME \
+is required to $REQUIREMENT, \
+but $PACKAGE_NAME is missing.\n";
     else
-      printf "❌ $(gum style --bold "$PACKAGE_NAME") is required to $REQUIREMENT, but $PACKAGE_NAME is missing.\n";
+      printf "❌ $(gum style --bold "$PACKAGE_NAME") \
+is required to $REQUIREMENT, \
+but $PACKAGE_NAME is missing.\n";
     fi
   else
     if ! package_is_installed gum; then
@@ -537,8 +491,8 @@ print_empty () {
 
 print_packages_file_missing_field () {
   local FIELD=$1;
-  printf "❗ No $(gum style --bold "$FIELD") field found in $(gum style --bold \
-    "$PACKAGE_JSON").\n";
+  printf "❗ No $(gum style --bold "$FIELD") field \
+found in $(gum style --bold "$PACKAGE_JSON").\n";
 }
 
 print_created () {
@@ -561,9 +515,11 @@ print_installed () {
   if [ -n "$2" ]; then
     local INSTALLATION_METHOD=$2;
     if ! package_is_installed gum; then
-      printf "🎁 $PACKAGE_NAME installed via $INSTALLATION_METHOD.\n";
+      printf "🎁 $PACKAGE_NAME \
+installed using $INSTALLATION_METHOD.\n";
     else
-      printf "🎁 $(gum style --bold "$PACKAGE_NAME") installed using $(gum style --bold "$INSTALLATION_METHOD").\n";
+      printf "🎁 $(gum style --bold "$PACKAGE_NAME") \
+installed using $(gum style --bold "$INSTALLATION_METHOD").\n";
     fi
   else
     if ! package_is_installed gum; then
@@ -588,9 +544,11 @@ print_cannot_install () {
   if [ -n "$2" ]; then
     local REASON=$2;
     if ! package_is_installed gum; then
-      printf "❗ $PACKAGE_NAME could not be installed: $REASON\n";
+      printf "❗ $PACKAGE_NAME could not be installed: \
+$REASON\n";
     else
-      printf "❗ $(gum style --bold "$PACKAGE_NAME") could not be installed: $REASON\n";
+      printf "❗ $(gum style --bold "$PACKAGE_NAME") could not be installed: \
+$REASON\n";
     fi
   else
     if ! package_is_installed gum; then
@@ -630,8 +588,105 @@ print_todo () {
   fi
 }
 
+# Getting data #################################################################
+# Functions related to getting, shaping, and printing data from `package.json`.
+################################################################################
+
+# Prints array of package menu items from a given array of package groups
+# combined with all ungrouped packages from the `PACKAGE_JSON`.
+# Args:
+#   `$@` - Array of package groups.
+get_menu_items () {
+  local PACKAGES_ARRAY=();
+  local GROUPED_PACKAGES=();
+  local UNGROUPED_PACKAGES=();
+  if ! [ $# -eq 0 ]; then
+    local GROUPS_ARRAY=("$@");
+    GROUPED_PACKAGES=($(get_grouped_menu_items "${GROUPS_ARRAY[@]}"));
+    PACKAGES_ARRAY+=( "${GROUPED_PACKAGES[@]}" );
+  fi
+  UNGROUPED_PACKAGES=($(get_ungrouped_menu_items));
+  PACKAGES_ARRAY+=( "${UNGROUPED_PACKAGES[@]}" );
+  printf '%s\n' "${PACKAGES_ARRAY[@]}";
+}
+
+# Given an array of package groups, prints a combined array of package menu
+# items from the given package groups.
+# Items are `\n` separated.
+# Args:
+#   `$@` - Array of package groups.
+get_grouped_menu_items () {
+  local GROUPS_ARRAY=("$@");
+  local GROUPED_MENU_ITEMS_ARRAY=();
+  local GROUP_COUNT=0;
+  # For every given package group,
+  for GROUP in "${GROUPS_ARRAY[@]}"; do
+    ((GROUP_COUNT++));
+    # Get an array of packages found in that group in `PACKAGE_JSON`,
+    PACKAGES_IN_GROUP=$(jq -r --arg GROUP "$GROUP" \
+      '.groups | map(select(.group == $GROUP))[0].packages' \
+      $PACKAGE_JSON);
+    # And if that array isn't empty,
+    if ! [[ "$PACKAGES_IN_GROUP" == "null" ]]; then
+      # Construct an array of menu items, one per package in the group.
+      local MENU_ITEMS_FROM_GROUP=$(get_menu_items_from_array \
+        "${PACKAGES_IN_GROUP[@]}");
+      GROUPED_MENU_ITEMS_ARRAY+=( "${MENU_ITEMS_FROM_GROUP[@]}" );
+    fi
+  done
+  # Print the resulting array of package menu items.
+  printf '%s\n' "${GROUPED_MENU_ITEMS_ARRAY[@]}";
+}
+
+# Prints an array of package menu items from the ungrouped packages found in
+# `PACKAGE_JSON`.
+# Items are `\n` separated.
+get_ungrouped_menu_items () {
+  # Get all ungrouped packages from `PACKAGE_JSON`,
+  local UNGROUPED_PACKAGES=$(jq -r '.packages' \
+    $PACKAGE_JSON);
+  # If there's any ungrouped packages at all,
+  if ! [[ "$UNGROUPED_PACKAGES" == "null" ]]; then
+    # Construct and print an array of menu items, one per ungrouped package.
+    local UNGROUPED_MENU_ITEMS_ARRAY=$(get_menu_items_from_array \
+      "${UNGROUPED_PACKAGES[@]}");
+    printf '%s\n' "${UNGROUPED_MENU_ITEMS_ARRAY[@]}";
+  fi
+}
+
+# Prints an array of package menu items, given an array of valid package data.
+# Items are `\n` separated.
+# Args:
+#   `$@` - Array of valid package data.
+get_menu_items_from_array () {
+  local ARRAY=("$@");
+  local ARRAY_LENGTH=$(echo "$ARRAY" | \
+    jq 'length');
+  local MENU_ITEMS_ARRAY=();
+  # For every package in the given array,
+  for (( i=0; i<$ARRAY_LENGTH; i++ )); do
+    # Construct a menu item string including the package name and its optional
+    # description, and stick it in an array of menu items.
+    local PACKAGE=$(echo "$ARRAY" | \
+      jq --argjson INDEX $i '.[$INDEX]');
+    PACKAGE_NAME=$(echo "$PACKAGE" | jq -r '.name');
+    PACKAGE_HAS_DESCRIPTION=$(echo "$PACKAGE" | jq -r 'has("description")');
+    if [ "$PACKAGE_HAS_DESCRIPTION" = "true" ]; then
+      PACKAGE_DESCRIPTION=$(echo "$PACKAGE" | jq -r '.description');
+      MENU_ITEM="$(gum style --bold "$PACKAGE_NAME »") $PACKAGE_DESCRIPTION";
+      MENU_ITEMS_ARRAY+=("$MENU_ITEM");
+    else
+      MENU_ITEM="$(gum style --bold "$PACKAGE_NAME")"
+      MENU_ITEMS_ARRAY+=("$MENU_ITEM");
+    fi
+  done
+  # Print the resulting array of menu items.
+  printf '%s\n' "${MENU_ITEMS_ARRAY[@]}";
+}
+
 # Package detection ############################################################
 # Functions related to detecting whether a package is installed or not.
+################################################################################
 
 # Determines whether a package is installed, given its command to run and
 # whether or not it returns `0`.
@@ -648,6 +703,7 @@ package_is_installed () {
 
 # Package manager installation #################################################
 # Functions related to installing package managers.
+################################################################################
 
 # Installs dnf.
 install_package_manager_dnf () {
@@ -731,7 +787,8 @@ get_installation_method () {
   YUM=$(echo "$PACKAGE_DATA" | jq 'has("yum")');
   ZYPPER=$(echo "$PACKAGE_DATA" | jq 'has("zypper")');
   COMMAND=$(echo "$PACKAGE_DATA" | jq 'has("command")');
-  HAS_PREFERRED_INSTALLATION_METHOD=$(echo "$PACKAGE_DATA" | jq 'has("prefer")');
+  HAS_PREFERRED_INSTALLATION_METHOD=$(echo "$PACKAGE_DATA" | \
+    jq 'has("prefer")');
   if [ "$HAS_PREFERRED_INSTALLATION_METHOD" = "true" ]; then
     INSTALLATION_METHOD=$(echo "$PACKAGE_DATA" | jq -r '.prefer');
   elif $OS_IS_DEBIAN_BASED; then
@@ -807,7 +864,8 @@ install_packages () {
         '.groups[] | select(.packages != null) | .packages[] | select(.name == $PACKAGE_NAME)' \
         $PACKAGE_JSON);
     fi
-    if [ -n "$GROUPED_PACKAGE_DATA" ] && [ "$GROUPED_PACKAGE_DATA" != $'\n' ]; then
+    if [ -n "$GROUPED_PACKAGE_DATA" ] && \
+      [ "$GROUPED_PACKAGE_DATA" != $'\n' ]; then
       PACKAGE_DATA="$GROUPED_PACKAGE_DATA";
     else
       PACKAGE_DATA="$UNGROUPED_PACKAGE_DATA";
@@ -834,7 +892,9 @@ install_package () {
     # Otherwise, capture the `PACKAGE_ID` for the `INSTALLATION_METHOD`
     # and install the package using said `INSTALLATION_METHOD`.
     else
-      local PACKAGE_ID=$(echo "$PACKAGE_DATA" | jq -r --arg INSTALLATION_METHOD "$INSTALLATION_METHOD" ".$INSTALLATION_METHOD.id");
+      local PACKAGE_ID=$(echo "$PACKAGE_DATA" | \
+        jq -r --arg INSTALLATION_METHOD "$INSTALLATION_METHOD" \
+        ".$INSTALLATION_METHOD.id");
       if [ "$INSTALLATION_METHOD" = "apt" ]; then
         install_package_apt "$PACKAGE_ID" "$PACKAGE_NAME";
       elif [ "$INSTALLATION_METHOD" = "dnf" ]; then
@@ -906,16 +966,19 @@ install_package_apt () {
       return 0;
     # Otherwise, print error messages.
     elif [ $? == 1 ] || [ $? == 100 ]; then
-      print_cannot_install "$PACKAGE_NAME" "Package not found. Is $(gum style --italic $PACKAGE_ID) the correct id?";
+      print_cannot_install "$PACKAGE_NAME" "Package not found. \
+Is $(gum style --italic $PACKAGE_ID) the correct id?";
       return 1;
     elif [ $? == 101 ]; then
       print_cannot_install "$PACKAGE_NAME" "Download interrupted.";
       return 101;
     elif [ $? == 102 ]; then
-      print_cannot_install "$PACKAGE_NAME" "Error encountered while unpacking package.";
+      print_cannot_install "$PACKAGE_NAME" "Error encountered while \
+unpacking package.";
       return 102;
     elif [ $? == 103 ]; then
-      print_cannot_install "$PACKAGE_NAME" "Error encountered while configuring package.";
+      print_cannot_install "$PACKAGE_NAME" "Error encountered while \
+configuring package.";
       return 103;
     elif [ $? == 104 ]; then
       print_already_installed "$PACKAGE_NAME";
