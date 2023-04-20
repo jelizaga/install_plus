@@ -1103,7 +1103,7 @@ install_package_dnf () {
   # If dnf isn't installed, try to install dnf.
   if ! package_is_installed dnf; then
     print_not_installed "dnf" "install $PACKAGE_NAME";
-    install_package_manager dnf;
+    install_package_manager_dnf;
   # Otherwise, try to install the package using dnf,
   else
     # Check if the package is already installed using dnf,

@@ -319,13 +319,13 @@ COLOR_ACCENT="VALUE" # Accent color; use a hex code.
 
 Search for the package:
 
-```bash
+```
 → apt search [PACKAGE NAME]
 ```
 
 The `"id"` is `"cmatrix"`:
 
-```bash
+```
 cmatrix/jammy,now 2.0-3 amd64 [installed]
   simulates the display from "The Matrix"
 ```
@@ -334,13 +334,13 @@ cmatrix/jammy,now 2.0-3 amd64 [installed]
 
 Search for the package:
 
-```bash
+```
 → dnf search [PACKAGE NAME]
 ```
 
 The `"id"` is `"task"` (or `"task.x86_64"`):
 
-```bash
+```
 Last metadata expiration check: 0:09:21 ago on Thu 13 Apr 2023 05:08:31 PM EDT.
 ========================= Summary Matched: taskwarrior =========================
 task.x86_64 : Taskwarrior - a command-line TODO list manager
@@ -353,13 +353,13 @@ vit.noarch : Visual Interactive Taskwarrior full-screen terminal interface
 
 Search for the package:
 
-```bash
+```
 → flatpak search [PACKAGE NAME]
 ```
 
 The `"id"` is `"com.spotify.Client"`, under `Application ID`:
 
-```bash
+```
 Name       Description                       Application ID        Version             Branch Remotes
 Spotify    Online music streaming service    com.spotify.Client    1.2.8.923.g4f94bf0d stable flathub
 ```
@@ -368,13 +368,13 @@ Spotify    Online music streaming service    com.spotify.Client    1.2.8.923.g4f
 
 Search for the package:
 
-```bash
+```
 → npm search [PACKAGE NAME]
 ```
 
 The `"id"` is `"tiddlywiki"`, under `NAME`:
 
-```bash
+```
 NAME                      | DESCRIPTION          | AUTHOR          | DATE       | VERSION  | KEYWORDS                   
 tiddlywiki                | a non-linear…        | =jermolene      | 2023-03-26 | 5.2.7    | tiddlywiki tiddlywiki5 wiki
 ```
