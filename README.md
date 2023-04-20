@@ -33,6 +33,7 @@ installing your favorite packages en masse.
       * [How does instally choose installation methods?](#how-does-instally-choose-installation-methods)
     * [Grouping packages](#grouping-packages)
     * [Installation order](#installation-order)
+  * [OS Compatibility](#os-compatibility)
 * [🎨 Configuration](#-configuration)
 * [👉 Protips](#-protips)
   * [Setting your default package.json editor](#setting-your-default-packagejson-editor)
@@ -320,6 +321,22 @@ user.
   on them.
 * 👉 *Protip:* Using [grouping](#grouping-packages), you can bundle packages
   together with their dependencies.
+
+### OS Compatibility
+
+`instally` has been successfully tested and ran on:
+
+* *Debian-based:*
+  * Debian 11
+  * Ubuntu 22.04 LTS
+  * Pop!\_OS 22.04 LTS
+* *RHEL-based:*
+  * Fedora Linux Workstation
+  * CentOS Linux 7
+* *SUSE-based:*
+  * openSUSE Tumbleweed
+
+Feel free to contribute and expand `instally`'s compatibility!
 
 ## 🎨 Configuration
 
