@@ -326,7 +326,7 @@ You can set your default `$EDITOR` to your preferred text editor like so:
 # Examples
 # Bash users: Set default $EDITOR to gedit:
 echo 'export EDITOR=gedit' >> ~/.bashrc
-# Zsh users: Set default $EDITOR to code:
+# Zsh users: Set default $EDITOR to gedit:
 echo 'export EDITOR=gedit' >> ~/.zshrc
 ```
 
