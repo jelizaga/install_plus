@@ -29,12 +29,13 @@ installing your favorite packages en masse.
         * [Supported package managers](#supported-package-managers)
       * [Installation by command](#installation-by-command)
       * [Preferring installation methods](#preferring-installation-methods)
+      * [Specifying installation methods by OS](#specifying-installation-methods-by-os)
       * [How does instally choose installation methods?](#how-does-instally-choose-installation-methods)
     * [Grouping packages](#grouping-packages)
     * [Installation order](#installation-order)
 * [🎨 Configuration](#-configuration)
 * [👉 Protips](#-protips)
-  * [Set your default package.json editor](#set-your-default-packagejson-editor)
+  * [Setting your default package.json editor](#setting-your-default-packagejson-editor)
   * [Getting package IDs](#getting-package-ids)
     * [apt](#apt)
     * [dnf](#dnf)
@@ -174,6 +175,7 @@ Specify as few or as many installation methods for a package as you'd like.
 * `flatpak`
 * `npm`
 * `pip`
+* `snap`
 * `yum`
 * `zypper`
 
@@ -222,13 +224,28 @@ method using the `"prefer"` field:
 Since `"prefer"` is `"flatpak"`, `instally` will install this package using
 `flatpak` instead of `apt`.
 
+##### Specifying installation methods by OS
+
+*Specify installation methods for a specific OS* by adding a field in the
+package object containing the OS's name:
+
+```json
+{
+  "name": "Visual Studio Code",
+  "apt": {
+    "id": "code"
+  },
+}
+```
+
+* 👉 *Protip:* You can find your current OS's name when you start `instally`:
+
+  [!instally printing the OS name of the host machine.](https://i.imgur.com/E0ntWq9.jpeg)
+
 ##### How does instally choose installation methods?
 
-`instally` will dynamically chose whatever methods are appropriate for your OS,
+`instally` will automatically chose whatever methods are appropriate for your OS,
 unless you [prefer an installation method](#preferring-installation-methods).
-
-For example, `instally` won't use `apt` if you're using a non-Debian-based
-distro, and won't use `dnf` if you're not using a RHEL-based distro.
 
 If `flatpak`, `npm`, or `pip` are missing but are specified to be used for
 installing a package, `instally` will automatically attempt to install them for
@@ -295,13 +312,14 @@ you during the installation run.
 
 #### Installation order
 
-`instally` installs packages from  `package.json` sequentially, from the top
+`instally` installs packages from `package.json` sequentially, from the top
 to the bottom of the file, so the order of package installation is up to the
 user.
 
-* 👉 *Protip:* Install dependencies before the packages that depend on them.
+* 👉 *Protip:* Remember to install dependencies before the packages that depend
+  on them.
 * 👉 *Protip:* Using [grouping](#grouping-packages), you can bundle packages
-  with their dependencies.
+  together with their dependencies.
 
 ## 🎨 Configuration
 
@@ -314,7 +332,7 @@ COLOR_ACCENT="VALUE" # Accent color; use a hex code.
 
 ## 👉 Protips
 
-### Set your default package.json editor
+### Setting your default package.json editor
 
 `instally` uses your `$EDITOR` to determine what application to edit
 `package.json` in. If your `$EDITOR` isn't set, `instally` will open
@@ -409,7 +427,7 @@ tiddlywiki                | a non-linear…        | =jermolene      | 2023-03-2
 Search for the package:
 
 ```
-→ yum search nano
+→ yum search [PACKAGE NAME]
 ```
 
 The `"id"` is `"nano"` (or `"nano.x86_64"`):
