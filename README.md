@@ -326,15 +326,16 @@ user.
 
 `instally` has been successfully tested and ran on:
 
-* *Debian-based:*
-  * Debian 11
-  * Ubuntu 22.04 LTS
-  * Pop!\_OS 22.04 LTS
-* *RHEL-based:*
-  * Fedora Linux Workstation
-  * CentOS Linux 7
-* *SUSE-based:*
-  * openSUSE Tumbleweed
+* *Linux:*
+  * *Debian-based:*
+    * Debian 11
+    * Ubuntu 22.04 LTS
+    * Pop!\_OS 22.04 LTS
+  * *RHEL-based:*
+    * Fedora Linux Workstation
+    * CentOS Linux 7
+  * *SUSE-based:*
+    * openSUSE Tumbleweed
 
 Feel free to contribute and expand `instally`'s compatibility!
 
