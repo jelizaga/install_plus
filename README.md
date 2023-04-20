@@ -317,15 +317,16 @@ COLOR_ACCENT="VALUE" # Accent color; use a hex code.
 ### Set your default package.json editor
 
 `instally` uses your `$EDITOR` to determine what application to edit
-`package.json` in. 
+`package.json` in. If your `$EDITOR` isn't set, `instally` will open
+`package.json` with `nano`.
 
 You can set your default `$EDITOR` to your preferred text editor like so:
 
 ```bash
 # Examples
-# Bash users: Set $EDITOR to gedit:
+# Bash users: Set default $EDITOR to gedit:
 echo 'export EDITOR=gedit' >> ~/.bashrc
-# Zsh users: Set $EDITOR to code:
+# Zsh users: Set default $EDITOR to code:
 echo 'export EDITOR=gedit' >> ~/.zshrc
 ```
 
