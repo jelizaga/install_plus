@@ -6,14 +6,14 @@ installing your favorite packages en masse.
 *See also:* [.dotfiles](https://github.com/jelizaga/.dotfiles)
 
 * ⛺ **Minimal dependencies:** Owing to its simplicity, you can bring `instally`
-  to any machine that's capable of running Bash and `jq`.
+  to any[\*](#os-compatibility) machine that's capable of running Bash and `jq`.
 * 🚚 **JSON-driven flexibility:** Specify packages for `instally` to install
   using JSON and enjoy support for grouping, preferred methods of installation, 
   fallback methods, multiple package managers, and even running your own
   installation commands.
 * 💼 **Super portable:** With `instally` and your own custom `package.json`
-  file, you can bring your favorite packages to (almost) any distro and install
-  them right away.
+  file, you can bring your favorite packages to
+  [(almost) any distro](#os-compatibility) and install them right away.
 
 ## Contents
 
