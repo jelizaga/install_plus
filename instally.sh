@@ -189,6 +189,7 @@ gpgkey=https://repo.charm.sh/yum/gpg.key" | \
   # Otherwise, install go to install gum.
   else
     if ! package_is_installed go; then
+      print_dependency_needed "gum" "Go";
       install_package_manager_go;
       if [ $? == 0 ]; then
         install_dependency_gum_using_go;
@@ -199,9 +200,8 @@ gpgkey=https://repo.charm.sh/yum/gpg.key" | \
         printf "\n";
         print_error "Go is installed, and gum also might be installed, but Go \
 is not finding gum.\n  Ensure your Go binaries (/go/bin) are included in your \
-PATH variable below:\n\n  $PATH\n\n
-  See https://github.com/jelizaga/instally/#gum-is-installed-but-wont-run \
-for help.";
+PATH variable below:\n\n  $PATH\n\n See \
+https://github.com/jelizaga/instally/#gum-is-installed-but-wont-run for help.";
         exit 1;
       fi
     fi
@@ -210,13 +210,14 @@ for help.";
 
 # Installs gum for `instally`s interactivity using go.
 install_dependency_gum_using_go () {
+  print_installing "gum" "gum" "go";
   # Get the gum tarball off the GitHub repo,
-  wget -P $HOME/Downloads \
+  wget -qP $HOME/Downloads \
     https://github.com/charmbracelet/gum/releases/download/v0.10.0/gum-0.10.0.tar.gz \
     > /dev/null;
   # Extract the tarball in `~/Downloads/gum`,
   mkdir $HOME/Downloads/gum;
-  tar -zxvf $HOME/Downloads/gum-0.10.0.tar.gz -C $HOME/Downloads/gum > \
+  tar -zxvfq $HOME/Downloads/gum-0.10.0.tar.gz -C $HOME/Downloads/gum > \
     /dev/null;
   cd $HOME/Downloads/gum;
   # Install gum using go,
@@ -462,10 +463,20 @@ print_install_packages () {
 #   `$1` - Name of the dependency required.
 print_dependency_needed () {
   local DEPENDENCY=$1;
-  if ! package_is_installed gum; then
-    printf "🔩 We need $DEPENDENCY.\n";
+  if [ -n $2 ]; then 
+    local DEPENDENCY_DEPENDENCY=$2;
+    if ! package_is_installed gum; then
+      printf "🔩 We need $DEPENDENCY_DEPENDENCY to install $DEPENDENCY.\n";
+    else
+      printf "🔩 We need $(gum style --bold "$DEPENDENCY_DEPENDENCY") \
+to install $(gum style --bold "$DEPENDENCY").\n";
+    fi
   else
-    printf "🔩 We need $(gum style --bold "$DEPENDENCY").\n";
+    if ! package_is_installed gum; then
+      printf "🔩 We need $DEPENDENCY.\n";
+    else
+      printf "🔩 We need $(gum style --bold "$DEPENDENCY").\n";
+    fi
   fi
 }
 
