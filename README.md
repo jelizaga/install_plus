@@ -389,6 +389,21 @@ tiddlywiki                | a non-linear…        | =jermolene      | 2023-03-2
 
 #### yum
 
+Search for the package:
+
+```
+→ yum search nano
+```
+
+The `"id"` is `"nano"` (or `"nano.x86_64"`):
+
+```
+================================== N/S matched: nano ==================================
+nano.x86_64 : A small text editor
+ 
+  Name and summary matches only, use "search all" for everything.
+```
+
 #### zypper
 
 Search for the package:
