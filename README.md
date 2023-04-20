@@ -398,7 +398,7 @@ tiddlywiki                | a non-linear…        | =jermolene      | 2023-03-2
 If you encounter an error like this:
 
 ```bash
-"🐛 Error: Go is installed, and gum also might be installed, but Go is not finding gum.
+🐛 Error: Go is installed, and gum also might be installed, but Go is not finding gum.
   Ensure your Go binaries (/go/bin) are included in your PATH variable below:
 
 ...
@@ -423,7 +423,7 @@ path to `/go/bin` to your `$PATH` like so:
 # Bash users: Adds ~/go/bin to your $PATH:
 → echo 'export PATH=$PATH:$HOME/go/bin' >> ~/.bashrc
 # Zsh users: Also adds ~/go/bin to your $PATH:
-→ echo 'export PATH=$PATH:$HOME/go/bin' >> ~/.bashrc
+→ echo 'export PATH=$PATH:$HOME/go/bin' >> ~/.zshrc
 ```
 
-Now try `instally` again.
+Now restart your terminal, then try `instally` again.
