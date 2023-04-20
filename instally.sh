@@ -196,13 +196,13 @@ gpgkey=https://repo.charm.sh/yum/gpg.key" | \
     else
       install_dependency_gum_using_go;
       if ! package_is_installed gum; then
-        print_error "Go is installed, and gum also might be installed, but Go is
-not finding gum.\n  Ensure your Go binaries (/go/bin) are included in your
-PATH variable:\n  $PATH\n
+        printf "\n";
+        print_error "Go is installed, and gum also might be installed, but Go \
+is not finding gum.\n  Ensure your Go binaries (/go/bin) are included in your \
+PATH variable below:\n\n  $PATH\n\n
   See https://github.com/jelizaga/instally/#gum-is-installed-but-wont-run \
 for help.";
         exit 1;
-        #export PATH=$PATH:$HOME/go/bin;
       fi
     fi
   fi
@@ -211,13 +211,16 @@ for help.";
 # Installs gum for `instally`s interactivity using go.
 install_dependency_gum_using_go () {
   # Get the gum tarball off the GitHub repo,
-  wget -P $HOME/Downloads https://github.com/charmbracelet/gum/releases/download/v0.10.0/gum-0.10.0.tar.gz;
+  wget -P $HOME/Downloads \
+    https://github.com/charmbracelet/gum/releases/download/v0.10.0/gum-0.10.0.tar.gz \
+    > /dev/null;
   # Extract the tarball in `~/Downloads/gum`,
   mkdir $HOME/Downloads/gum;
-  tar -zxvf $HOME/Downloads/gum-0.10.0.tar.gz -C $HOME/Downloads/gum;
+  tar -zxvf $HOME/Downloads/gum-0.10.0.tar.gz -C $HOME/Downloads/gum > \
+    /dev/null;
   cd $HOME/Downloads/gum;
   # Install gum using go,
-  go install;
+  go install > /dev/null;
   # Clean up `/gum` and its tarball.
   rm -rf $HOME/Downloads/gum;
   rm -rf $HOME/Downloads/gum/gum-0.10.0.tar.gz;
@@ -632,7 +635,11 @@ print_packages_installed () {
 #   `$1` - Message to print.
 print_error () {
   local MESSAGE=$1;
-  printf "🐛 $(gum style --bold 'Error:') $MESSAGE\n";
+  if ! package_is_installed gum; then
+    printf "🐛 Error: $MESSAGE\n";
+  else
+    printf "🐛 $(gum style --bold 'Error:') $MESSAGE\n";
+  fi
 }
 
 # Prints warning message.
@@ -783,33 +790,48 @@ install_package_manager_dnf () {
   fi
 }
 
-# Installs go.
+# Installs Go.
 install_package_manager_go () {
   if $OS_IS_DEBIAN_BASED; then
     install_package_apt golang-go;
   elif $OS_IS_RHEL_BASED; then
     install_package_dnf golang-go;
+  # If OS is SUSE-based, install Go using Zypper,
   elif $OS_IS_SUSE_BASED; then
     if ! package_is_installed gum; then
-      print_installing "go" "gcc-go" "zypper";
-      sudo zypper install -y gcc-go;
-      print_installing "go" "go" "zypper";
-      sudo zypper install -y go;
-      sudo zypper remove -y gcc-go;
+      # No, I really have no idea wtf we have to install `gcc-go`, then `go`,
+      # then remove `gcc-go` (in that exact order) to get Go working on SUSE.
+      # I should really fix this in the future, but it's what works atm.
+      print_installing "Go" "gcc-go" "zypper";
+      sudo zypper install -y gcc-go > /dev/null;
+      print_installing "Go" "go" "zypper";
+      sudo zypper install -y go > /dev/null;
+      sudo zypper remove -y gcc-go > /dev/null;
     else
       gum spin \
         --spinner globe \
-        --title "$(print_installing "go" "gcc-go" "zypper")" \
+        --title "$(print_installing "Go" "gcc-go" "zypper")" \
         -- sudo zypper install -y gcc-go;
       gum spin \
         --spinner globe \
-        --title "$(print_installing "go" "go" "zypper")" \
+        --title "$(print_installing "Go" "go" "zypper")" \
         -- sudo zypper install -y go;
-      if [ $? == 0 ]; then
-        export PATH=$PATH:$HOME/go/bin;
-      else
-        print_cannot_install "go" "Please try installing go manually.";
-      fi
+      sudo zypper remove -y gcc-go > /dev/null;
+    fi
+    # If Go was successfully installed,
+    if [ $? == 0 ]; then
+      # Add the Go binaries to the user's `$PATH`,
+      export PATH=$PATH:$HOME/go/bin;
+      # Add them permanently to the user's `$PATH` if they have a `.bashrc` or
+      # `.zshrc`.
+      if [ -s $HOME/.bashrc ]; then
+        echo 'export PATH=$PATH:$HOME/go/bin' >> $HOME/.bashrc;
+      fi 
+      if [ -s $HOME/.zshrc ]; then
+        echo 'export PATH=$PATH:$HOME/go/bin' >> $HOME/.zshrc;
+      fi 
+    else
+      print_cannot_install "Go" "Please try installing Go manually.";
     fi
   fi
 }

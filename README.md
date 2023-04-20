@@ -425,6 +425,10 @@ If your Go binaries are in `~/go/bin` (Go's default binary location), add the
 path to `/go/bin` to your `$PATH` like so:
 
 ```bash
-# Adds ~/go/bin to your $PATH:
-→ export PATH=$PATH:$HOME/go/bin
+# Bash users: Adds ~/go/bin to your $PATH:
+→ echo 'export PATH=$PATH:$HOME/go/bin' >> ~/.bashrc
+# Zsh users: Also adds ~/go/bin to your $PATH:
+→ echo 'export PATH=$PATH:$HOME/go/bin' >> ~/.bashrc
 ```
+
+Now try `instally` again.
