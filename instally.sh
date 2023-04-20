@@ -217,7 +217,7 @@ install_dependency_gum_using_go () {
     > /dev/null;
   # Extract the tarball in `~/Downloads/gum`,
   mkdir $HOME/Downloads/gum;
-  tar -zxvfq $HOME/Downloads/gum-0.10.0.tar.gz -C $HOME/Downloads/gum > \
+  tar -zxvf $HOME/Downloads/gum-0.10.0.tar.gz -C $HOME/Downloads/gum > \
     /dev/null;
   cd $HOME/Downloads/gum;
   # Install gum using go,
