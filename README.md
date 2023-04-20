@@ -395,20 +395,15 @@ tiddlywiki                | a non-linear…        | =jermolene      | 2023-03-2
 
 #### gum is installed, but won't run
 
-If you have an error like this:
+If you encounter an error like this:
 
-```
-instally.sh: line 401: gum: command not found
+```bash
+"🐛 Error: Go is installed, and gum also might be installed, but Go is not finding gum.
+  Ensure your Go binaries (/go/bin) are included in your PATH variable below:
 
-   "                    m           ""#    ""#          
- mmm    m mm    mmm   mm#mm   mmm     #      #    m   m
-   #    #"  #  #   "    #    "   #    #      #    "m m" 
-   #    #   #   """m    #    m"""#    #      #     #m#  
- mm#mm  #   #  "mmm"    "mm  "mm"#    "mm    "mm   "#  
-                                                   m"   
-                                                  ""    
-instally.sh: line 413: gum: command not found
- openSUSE Tumbleweed
+...
+
+See https://github.com/jelizaga/instally/#gum-is-installed-but-wont-run for help.
 ```
 
 ... it's likely that `gum` was successfully installed using Go, but you haven't
