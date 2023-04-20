@@ -391,6 +391,22 @@ tiddlywiki                | a non-linear…        | =jermolene      | 2023-03-2
 
 #### zypper
 
+Search for the package:
+
+```
+→ zypper search [PACKAGE NAME]
+```
+
+The `"id"` is `"blender"` under `Name`:
+
+```
+S | Name         | Summary                              | Type
+--+--------------+--------------------------------------+--------
+  | blender      | A 3D Modelling And Rendering Package | package
+  | blender-demo | Some Blender demo files              | package
+  | blender-lang | Translations for package blender     | package
+```
+
 ## 🔧 Troubleshooting
 
 #### gum is installed, but won't run
@@ -409,7 +425,8 @@ See https://github.com/jelizaga/instally/#gum-is-installed-but-wont-run for help
 ... it's likely that `gum` was successfully installed using Go, but you haven't
 added Go binaries to your `$PATH` yet, so `gum` can't be found.
 
-Make sure you've added your Go binaries to your `$PATH` variable:
+Make sure you've added your Go binaries to your `$PATH` variable, so they can be
+used:
 
 ```bash
 # Prints the contents of your $PATH. Make sure there's a /go/bin:
