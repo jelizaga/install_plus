@@ -34,6 +34,7 @@ installing your favorite packages en masse.
     * [Installation order](#installation-order)
 * [🎨 Configuration](#-configuration)
 * [👉 Protips](#-protips)
+  * [Set your default package.json editor](#set-your-default-packagejson-editor)
   * [Getting package IDs](#getting-package-ids)
     * [apt](#apt)
     * [dnf](#dnf)
@@ -312,6 +313,21 @@ COLOR_ACCENT="VALUE" # Accent color; use a hex code.
 ```
 
 ## 👉 Protips
+
+### Set your default package.json editor
+
+`instally` uses your `$EDITOR` to determine what application to edit
+`package.json` in. 
+
+You can set your default `$EDITOR` to your preferred text editor like so:
+
+```bash
+# Examples
+# Bash users: Set $EDITOR to gedit:
+echo 'export EDITOR=gedit' >> ~/.bashrc
+# Zsh users: Set $EDITOR to code:
+echo 'export EDITOR=gedit' >> ~/.zshrc
+```
 
 ### Getting package IDs
 
