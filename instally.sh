@@ -602,7 +602,8 @@ print_updated () {
   if ! package_is_installed gum; then
     printf "✨ $PACKAGE_MANAGER updated.\n";
   else
-    printf "✨ $(gum style --italic "$PACKAGE_MANAGER updated.")\n";
+    printf "✨ $(gum style --italic --bold "$PACKAGE_MANAGER") \
+$(gum style --italic 'updated.')\n";
   fi
 }
 
@@ -628,6 +629,29 @@ $REASON\n";
       printf "❗ $(gum style --bold "$PACKAGE_NAME") could not be installed.\n";
     fi
   fi
+}
+
+print_protip () {
+  local PROTIP=$1;
+  if ! package_is_installed gum; then
+    printf "👉 Protip: $PROTIP\n";
+  else
+    printf "$(gum style --bold 'Protip:') $PROTIP\n";
+  fi
+}
+
+# Prints a message declaring that a given package could not be installed due to
+# its installation method missing.
+# Args:
+#   `$1` - Name of the package that could not be installed.
+#   `$2` - Name of the installation method for `$1` that is missing.
+print_installation_method_missing () {
+  local PACKAGE_NAME=$1;
+  local INSTALLATION_METHOD=$2;
+  print_cannot_install "$PACKAGE_NAME" "$INSTALLATION_METHOD is \
+$PACKAGE_NAME's installation method, but $INSTALLATION_METHOD is missing.\n\
+  Try updating $PACKAGE_JSON with an available installation method for \
+$PACKAGE_NAME.";
 }
 
 # Prints the amount of packages installed.
@@ -794,10 +818,27 @@ package_is_installed () {
 install_package_manager_dnf () {
   if $OS_IS_DEBIAN_BASED; then
     install_package_apt "dnf" "dnf";
+    if [ $? == 0 ]; then
+      return 0;
+    else
+      return 1;
+    fi
   elif $OS_IS_RHEL_BASED; then
     install_package_yum "dnf" "dnf";
+    if [ $? == 0 ]; then
+      return 0;
+    else
+      return 1;
+    fi
   elif $OS_IS_SUSE_BASED; then
     install_package_zypper "dnf" "dnf";
+    if [ $? == 0 ]; then
+      return 0;
+    else
+      return 1;
+    fi
+  else
+    return 1;
   fi
 }
 
@@ -837,12 +878,15 @@ install_package_manager_go () {
       # `.zshrc`.
       if [ -s $HOME/.bashrc ]; then
         echo 'export PATH=$PATH:$HOME/go/bin' >> $HOME/.bashrc;
+        return 0;
       fi 
       if [ -s $HOME/.zshrc ]; then
         echo 'export PATH=$PATH:$HOME/go/bin' >> $HOME/.zshrc;
+        return 0;
       fi 
     else
       print_cannot_install "Go" "Please try installing Go manually.";
+      return 1;
     fi
   fi
 }
@@ -853,17 +897,48 @@ install_package_manager_flatpak () {
     install_package_apt "flatpak" "flatpak";
     if [ $? == 0 ]; then
       return 0;
+    else
+      return 1;
     fi
   elif $OS_IS_RHEL_BASED; then
     install_package_dnf "flatpak" "flatpak";
     if [ $? == 0 ]; then
       return 0;
+    else
+      return 1;
     fi
   elif $OS_IS_SUSE_BASED; then
     install_package_zypper "flatpak" "flatpak";
     if [ $? == 0 ]; then
       return 0;
+    else
+      return 1;
     fi
+  else
+    return 1;
+  fi
+}
+
+# Installs snap.
+install_package_manager_snap () {
+  if $OS_IS_DEBIAN_BASED; then
+    install_package_apt "snapd";
+    if [ $? == 0 ]; then
+      return 0;
+    else
+      return 1;
+    fi
+  elif $OS_IS_RHEL_BASED; then
+    install_package_dnf "snapd";
+    if [ $? == 0 ]; then
+      return 0;
+    else
+      return 1;
+    fi
+  elif $OS_IS_SUSE_BASED; then
+    print_cannot_install "snap" "Try instructions @ \
+https://snapcraft.io/install/$PACKAGE_ID/opensuse#install \
+to install snap and $PACKAGE_NAME.";
   fi
 }
 
@@ -878,6 +953,7 @@ install_package_manager_flatpak () {
 get_installation_method () {
   local PACKAGE_DATA="$1";
   local INSTALLATION_METHOD="";
+  # Get all available installation methods for the given package,
   APT=$(echo "$PACKAGE_DATA" | jq 'has("apt")');
   DNF=$(echo "$PACKAGE_DATA" | jq 'has("dnf")');
   FLATPAK=$(echo "$PACKAGE_DATA" | jq 'has("flatpak")');
@@ -887,10 +963,15 @@ get_installation_method () {
   YUM=$(echo "$PACKAGE_DATA" | jq 'has("yum")');
   ZYPPER=$(echo "$PACKAGE_DATA" | jq 'has("zypper")');
   COMMAND=$(echo "$PACKAGE_DATA" | jq 'has("command")');
+  # Determine the installation method for the given package:
   HAS_PREFERRED_INSTALLATION_METHOD=$(echo "$PACKAGE_DATA" | \
     jq 'has("prefer")');
+  # If there's a preferred installation method, use that—otherwise,
   if [ "$HAS_PREFERRED_INSTALLATION_METHOD" = "true" ]; then
     INSTALLATION_METHOD=$(echo "$PACKAGE_DATA" | jq -r '.prefer');
+  # For Debian-based OS:
+  # Prefer apt, then third-party, then command, and lastly
+  # installation methods that are likely to be incompatible;
   elif $OS_IS_DEBIAN_BASED; then
     if [ "$APT" = "true" ]; then
       INSTALLATION_METHOD="apt";
@@ -904,7 +985,16 @@ get_installation_method () {
       INSTALLATION_METHOD="snap";
     elif [ "$COMMAND" = "true" ]; then
       INSTALLATION_METHOD="command";
+    elif [ "$DNF" = "true" ]; then
+      INSTALLATION_METHOD="dnf"
+    elif [ "$YUM" = "true" ]; then
+      INSTALLATION_METHOD="yum"
+    elif [ "$ZYPPER" = "true" ]; then
+      INSTALLATION_METHOD="zypper";
     fi
+  # For RHEL-based OS:
+  # Prefer dnf, then yum, then third-party, then command, and lastly
+  # installation methods that are likely to be incompatible;
   elif $OS_IS_RHEL_BASED; then
     if [ "$DNF" = "true" ]; then
       INSTALLATION_METHOD="dnf";
@@ -920,7 +1010,14 @@ get_installation_method () {
       INSTALLATION_METHOD="snap";
     elif [ "$COMMAND" = "true" ]; then
       INSTALLATION_METHOD="command";
+    elif [ "$APT" = "true" ]; then
+      INSTALLATION_METHOD="apt";
+    elif [ "$ZYPPER" = "true" ]; then
+      INSTALLATION_METHOD="zypper";
     fi
+  # For SUSE-based OS:
+  # Prefer zypper, then third-party, then command, and lastly
+  # installation methods that are likely to be incompatible.
   elif $OS_IS_SUSE_BASED; then
     if [ "$ZYPPER" = "true" ]; then
       INSTALLATION_METHOD="zypper";
@@ -934,8 +1031,15 @@ get_installation_method () {
       INSTALLATION_METHOD="snap";
     elif [ "$COMMAND" = "true" ]; then
       INSTALLATION_METHOD="command";
+    elif [ "$APT" = "true" ]; then
+      INSTALLATION_METHOD="apt";
+    elif [ "$DNF" = "true" ]; then
+      INSTALLATION_METHOD="dnf";
+    elif [ "$YUM" = "true" ]; then
+      INSTALLATION_METHOD="yum";
     fi
   fi
+  # Report the preferred installation method.
   echo "$INSTALLATION_METHOD";
 }
 
@@ -1019,76 +1123,95 @@ install_package () {
   fi
 }
 
-# Installs a package using apt package manager.
+# Installs a package using APT package manager.
 # Args:
 #   `$1` - Valid package ID.
 #   `$2` - Package name.
 install_package_apt () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
-  # If package is already installed, say so.
-  if dpkg -s $PACKAGE_ID >/dev/null 2>&1; then
-    print_already_installed "$PACKAGE_NAME";
-  # Otherwise,
+  # If apt isn't installed, the package cannot be installed.
+  if ! package_is_installed apt; then
+    print_not_installed "apt" "install $PACKAGE_NAME";
+    print_installation_method_missing "$PACKAGE_NAME" "apt";
+    if $OS_IS_DEBIAN_BASED; then
+      print_protip "$OS_NAME is a Debian-based OS, but appears to be missing \
+apt.\n  Try using a dpkg command to reinstall apt.";
+    fi
+    if $OS_IS_RHEL_BASED; then
+      print_protip "Since $OS_NAME is a RHEL-based OS, try using yum or dnf \
+as $PACKAGE_NAME's installation method instead.";
+    fi
+    if $OS_IS_SUSE_BASED; then
+      print_protip "Since $OS_NAME is a SUSE-based OS, try using zypper \
+as $PACKAGE_NAME's installation method instead.";
+    fi
+    return 1;
   else
-    # Update apt if it isn't already updated, update apt,
-    if ! $APT_IS_UPDATED; then
-      if ! package_is_installed gum; then
-        printf "Updating apt...\n";
-        sudo apt-get update -y;
-        print_updated "apt";
-      else
-        gum spin --spinner globe --title \
-          "Updating $(gum style --bold "apt")..." \
-          -- sudo apt-get update -y;
-      fi
-      if [ $? == 0 ]; then
-        APT_IS_UPDATED=true;
-        print_updated "apt";
-      else
-        print_warning "apt could not be updated.";
-      fi
-    fi
-    # And install the package.
-    if ! package_is_installed gum; then
-      print_installing "$PACKAGE_NAME" "$PACKAGE_ID" "apt";
-      sudo apt-get install -y $PACKAGE_ID;
-    else
-      gum spin \
-        --spinner globe \
-        --title "$(print_installing "$PACKAGE_NAME" "$PACKAGE_ID" "apt")" \
-        -- sudo apt-get install -y $PACKAGE_ID;
-    fi
-    # If package is successfully installed, say so.
-    if [ $? == 0 ]; then
-      print_installed "$PACKAGE_NAME" "apt";
-      ((PACKAGES_INSTALLED++));
-      return 0;
-    # Otherwise, print error messages.
-    elif [ $? == 1 ] || [ $? == 100 ]; then
-      print_cannot_install "$PACKAGE_NAME" "Package not found. \
-Is $(gum style --italic $PACKAGE_ID) the correct id?";
-      return 1;
-    elif [ $? == 101 ]; then
-      print_cannot_install "$PACKAGE_NAME" "Download interrupted.";
-      return 101;
-    elif [ $? == 102 ]; then
-      print_cannot_install "$PACKAGE_NAME" "Error encountered while \
-unpacking package.";
-      return 102;
-    elif [ $? == 103 ]; then
-      print_cannot_install "$PACKAGE_NAME" "Error encountered while \
-configuring package.";
-      return 103;
-    elif [ $? == 104 ]; then
+    # If package is already installed, say so.
+    if dpkg -s $PACKAGE_ID >/dev/null 2>&1; then
       print_already_installed "$PACKAGE_NAME";
-      return 104;
-    elif [ $? == 106 ]; then
-      print_cannot_install "$PACKAGE_NAME" "Unsatisfied dependencies.";
-      return 106;
-    elif [ $? == 130 ]; then
-      print_cannot_install "$PACKAGE_NAME" "Installation interrupted by user.";
-      return 130;
+    # Otherwise,
+    else
+      # Update apt if it isn't already updated,
+      if ! $APT_IS_UPDATED; then
+        if ! package_is_installed gum; then
+          printf "Updating apt to install $PACKAGE_NAME...\n";
+          sudo apt-get update -y;
+          print_updated "apt";
+        else
+          gum spin --spinner globe --title \
+            "Updating $(gum style --bold "apt") to install $PACKAGE_NAME..." \
+            -- sudo apt-get update -y;
+        fi
+        if [ $? == 0 ]; then
+          APT_IS_UPDATED=true;
+          print_updated "apt";
+        else
+          print_warning "apt could not be updated.";
+        fi
+      fi
+      # And install the package.
+      if ! package_is_installed gum; then
+        print_installing "$PACKAGE_NAME" "$PACKAGE_ID" "apt";
+        sudo apt-get install -y $PACKAGE_ID;
+      else
+        gum spin \
+          --spinner globe \
+          --title "$(print_installing "$PACKAGE_NAME" "$PACKAGE_ID" "apt")" \
+          -- sudo apt-get install -y $PACKAGE_ID;
+      fi
+      # If package is successfully installed, say so.
+      if [ $? == 0 ]; then
+        print_installed "$PACKAGE_NAME" "apt";
+        ((PACKAGES_INSTALLED++));
+        return 0;
+      # Otherwise, print error messages.
+      elif [ $? == 1 ] || [ $? == 100 ]; then
+        print_cannot_install "$PACKAGE_NAME" "Package not found. \
+  Is $PACKAGE_ID the correct id?";
+        return 1;
+      elif [ $? == 101 ]; then
+        print_cannot_install "$PACKAGE_NAME" "Download interrupted.";
+        return 101;
+      elif [ $? == 102 ]; then
+        print_cannot_install "$PACKAGE_NAME" "Error encountered while \
+  unpacking package.";
+        return 102;
+      elif [ $? == 103 ]; then
+        print_cannot_install "$PACKAGE_NAME" "Error encountered while \
+  configuring package.";
+        return 103;
+      elif [ $? == 104 ]; then
+        print_already_installed "$PACKAGE_NAME";
+        return 104;
+      elif [ $? == 106 ]; then
+        print_cannot_install "$PACKAGE_NAME" "Unsatisfied dependencies.";
+        return 106;
+      elif [ $? == 130 ]; then
+        print_cannot_install "$PACKAGE_NAME" "Installation interrupted by user.";
+        return 130;
+      fi
     fi
   fi
 }
@@ -1104,6 +1227,15 @@ install_package_dnf () {
   if ! package_is_installed dnf; then
     print_not_installed "dnf" "install $PACKAGE_NAME";
     install_package_manager_dnf;
+    # If dnf is successfully installed, try installing the package again.
+    if [ $? == 0 ]; then
+      install_package_dnf "$PACKAGE_ID" "$PACKAGE_NAME";
+    # Otherwise, try installing the package using yum.
+    else
+      printf "⏭️ dnf is missing. We'll try to install $PACKAGE_NAME with yum \
+instead.\n"
+      install_package_yum "$PACKAGE_ID" "$PACKAGE_NAME";
+    fi
   # Otherwise, try to install the package using dnf,
   else
     # Check if the package is already installed using dnf,
@@ -1144,11 +1276,19 @@ install_package_flatpak () {
   # If flatpak isn't installed, try to install flatpak.
   if ! package_is_installed flatpak; then
     print_not_installed "flatpak" "install $PACKAGE_NAME";
+    install_package_manager_flatpak;
+    if [ $? == 0 ]; then
+      install_package_flatpak "$PACKAGE_ID" "$PACKAGE_NAME";
+    else
+      print_installation_method_missing "$PACKAGE_NAME" "flatpak";
+      return 2;
+    fi
   # Otherwise, try installing the package using flatpak,
   else
     # Check if the package is already installed using flatpak,
     if flatpak list | grep -q "$PACKAGE_ID"; then
       print_already_installed "$PACKAGE_NAME";
+      return 0;
     # Otherwise, install package.
     else
       if ! package_is_installed gum; then
@@ -1199,7 +1339,7 @@ be downloaded from remote repository.";
   fi
 }
 
-# Installs a go package using go.
+# Installs a Go package using go.
 # Args:
 #   `$1` - Valid package ID.
 #   `$2` - Package name.
@@ -1210,6 +1350,12 @@ install_package_go () {
   if ! package_is_installed go; then
     print_not_installed "go" "install $PACKAGE_NAME";
     install_package_manager_go;
+    if [ $? == 0 ]; then
+      install_package_go "$PACKAGE_ID" "$PACKAGE_NAME";
+    else
+      print_installation_method_missing "$PACKAGE_NAME" "go";
+      return 2;
+    fi
   # Otherwise, try installing the package using go.
   else
     # Check if the package is already installed using go,
@@ -1272,20 +1418,11 @@ install_package_snap () {
   # If snap isn't installed, try to install snap,
   if ! package_is_installed snap; then
     print_not_installed "snap" "install $PACKAGE_NAME";
-    if $OS_IS_DEBIAN_BASED; then
-      install_package_apt "snapd";
-      if [ $? == 0 ]; then
-        install_package_snap "$PACKAGE_ID" "$PACKAGE_NAME";
-      fi
-    elif $OS_IS_RHEL_BASED; then
-      install_package_dnf "snapd";
-      if [ $? == 0 ]; then
-        install_package_snap "$PACKAGE_ID" "$PACKAGE_NAME";
-      fi
-    elif $OS_IS_SUSE_BASED; then
-      print_cannot_install "snap" "Try instructions @ \
-https://snapcraft.io/install/$PACKAGE_ID/opensuse#install \
-to install snap and $PACKAGE_NAME.";
+    if [ $? == 0 ]; then
+      install_package_manager_snap;
+    else
+      print_installation_method_missing "$PACKAGE_NAME" "snap";
+      return 2;
     fi
   # Otherwise, try installing the package using snap:
   else
@@ -1303,6 +1440,7 @@ to install snap and $PACKAGE_NAME.";
       # Otherwise, tell 'em the package can't be installed.
       else
         print_cannot_install "$PACKAGE_NAME";
+        return 1;
       fi
     fi
   fi
@@ -1318,8 +1456,20 @@ install_package_yum () {
   # If yum is not installed, the package cannot be installed.
   if ! package_is_installed yum; then
     print_not_installed "yum" "install $PACKAGE_NAME";
-    print_cannot_install "$PACKAGE_NAME" "yum is the installation method for \
-$PACKAGE_NAME, but yum is not installed.";
+    print_installation_method_missing "$PACKAGE_NAME" "yum";
+    if $OS_IS_RHEL_BASED; then
+      print_protip "$OS_NAME is a RHEL-based OS, but appears to be missing \
+yum.\n  Try using an rpm command to reinstall yum.";
+    fi
+    if $OS_IS_DEBIAN_BASED; then
+      print_protip "Since $OS_NAME is a Debian-based OS, try using apt \
+as $PACKAGE_NAME's installation method instead.";
+    fi
+    if $OS_IS_SUSE_BASED; then
+      print_protip "Since $OS_NAME is a SUSE-based OS, try using zypper \
+as $PACKAGE_NAME's installation method instead.";
+    fi
+    return 2;
   # Otherwise, try installing the package using yum:
   else
     # Check if the package is installed using yum,
@@ -1344,6 +1494,7 @@ $PACKAGE_NAME, but yum is not installed.";
       # Otherwise, tell 'em the package can't be installed.
       else
         print_cannot_install "$PACKAGE_NAME";
+        return 1;
       fi
     fi
   fi
@@ -1359,6 +1510,20 @@ install_package_zypper () {
   # If zypper is not installed, the package cannot be installed.
   if ! package_is_installed zypper; then
     print_not_installed "zypper" "install $PACKAGE_NAME";
+    print_installation_method_missing "$PACKAGE_NAME" "zypper";
+    if $OS_IS_RHEL_BASED; then
+      print_protip "Since $OS_NAME is a RHEL-based OS, try using dnf or yum \
+as $PACKAGE_NAME's installation method instead.";
+    fi
+    if $OS_IS_DEBIAN_BASED; then
+      print_protip "Since $OS_NAME is a Debian-based OS, try using apt \
+as $PACKAGE_NAME's installation method instead.";
+    fi
+    if $OS_IS_SUSE_BASED; then
+      print_protip "$OS_NAME is a SUSE-based OS, but appears to be missing \
+zypper.\n  Try reinstalling zypper.";
+    fi
+    return 2;
   # Otherwise, try installing the package using zypper:
   else
     # Check if the package is already installed using zypper,
