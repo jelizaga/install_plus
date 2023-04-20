@@ -240,7 +240,7 @@ package object containing the OS's name:
 
 * 👉 *Protip:* You can find your current OS's name when you start `instally`:
 
-  [!instally printing the OS name of the host machine.](https://i.imgur.com/E0ntWq9.jpeg)
+  ![instally printing the OS name of the host machine.](https://i.imgur.com/E0ntWq9.jpeg)
 
 ##### How does instally choose installation methods?
 
