@@ -397,7 +397,7 @@ tiddlywiki                | a non-linear…        | =jermolene      | 2023-03-2
 
 If you encounter an error like this:
 
-```bash
+```
 🐛 Error: Go is installed, and gum also might be installed, but Go is not finding gum.
   Ensure your Go binaries (/go/bin) are included in your PATH variable below:
 
