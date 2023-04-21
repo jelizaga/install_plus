@@ -27,8 +27,13 @@ PACKAGE_JSON="$HOME/.instally/package.json";
 
 # Packages
 PACKAGES_INSTALLED=0;
+
+# apt
 APT_IS_UPDATED=false;
-SNAPS="";
+
+# npm
+NODE_VERSION_MANAGER_NEWLY_INSTALLED=false;
+NEWLY_INSTALLED_NODE_VERSION_MANAGER="";
 
 # UI
 GUM_CHOOSE_CURSOR="▶";
@@ -631,6 +636,17 @@ $REASON\n";
   fi
 }
 
+# Prints a message declaring that a given package cannot be installed until
+# the new Node.js version manager is loaded by a reloaded terminal.
+# Args:
+#   `$1` - Name of the package that could not be installed.
+print_cannot_install_new_node_version_manager () {
+  local PACKAGE_NAME=$1;
+  print_cannot_install "$PACKAGE_NAME" "$NEWLY_INSTALLED_NODE_VERSION_MANAGER \
+was installed as a Node.js version manager,\n  but $(gum style --bold "npm") \
+cannot install anything until you restart the terminal.";
+}
+
 print_protip () {
   local PROTIP=$1;
   if ! package_is_installed gum; then
@@ -919,6 +935,81 @@ install_package_manager_flatpak () {
   fi
 }
 
+# Installs npm.
+install_package_manager_npm () {
+  if ! package_is_installed node; then
+    printf "  NodeJS is not installed.\n";
+    install_node_version_manager;
+  else
+    printf "  NodeJS is installed, but npm is missing. instally cannot resolve \
+this.\n";
+    printf "  ↑ Refer to https://nodejs.org/ for help.\n"
+    return 1;
+  fi
+}
+
+# Installs a NodeJS version manager.
+install_node_version_manager () {
+  printf "\n";
+  printf "$(gum style --bold --underline 'Select Node.js Version Manager')\n";
+  printf "$(gum style --italic 'Choose a Node.js version manager to install:')\n";
+  SELECTED=$(gum choose \
+    --cursor="$GUM_CHOOSE_CURSOR " \
+    --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
+    --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
+    "$(gum style --bold 'nvm »') https://github.com/nvm-sh/nvm" \
+    "$(gum style --bold 'fnm »') https://github.com/Schniz/fnm" \
+    "$(gum style --bold 'None')");
+  SELECTED=$(echo "$SELECTED" | \
+    sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g" | \
+    awk -F " »" '{print $1}');
+  printf "💬 \"$SELECTED.\"\n"
+  case $SELECTED in
+    "nvm")
+      install_node_version_manager_nvm;
+      printf "\n";
+      return 0;
+      ;;
+    "fnm")
+      install_node_version_manager_fnm;
+      printf "\n";
+      return 0;
+      ;;
+    "None")
+      return 1;
+      printf "\n";
+      ;;
+    *)
+      return 1;
+      printf "\n";
+      ;;
+  esac 
+}
+
+# Installs nvm Node Version Manager.
+install_node_version_manager_nvm () {
+  gum spin --spinner globe --title \
+    "$(print_installing "nvm")" \
+    -- curl -o- \
+      https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash;
+}
+
+# Installs fnm Node Version Manager.
+install_node_version_manager_fnm () {
+  printf "\n";
+  printf "$(gum style --bold --underline "Installing Node.js Version Manager: \
+fnm")\n"
+  curl -fsSL https://fnm.vercel.app/install | bash;
+  printf "$(gum style --bold '')\n";
+  if [ $? == 0 ]; then
+    printf "\n";
+    printf "$(gum style --bold --underline 'Installing Packages')\n";
+    print_installed "fnm" "script @ https://fnm.vercel.app/install";
+    NODE_VERSION_MANAGER_NEWLY_INSTALLED=true;
+    NEWLY_INSTALLED_NODE_VERSION_MANAGER="fnm";
+  fi
+}
+
 # Installs snap.
 install_package_manager_snap () {
   if $OS_IS_DEBIAN_BASED; then
@@ -1043,11 +1134,12 @@ get_installation_method () {
   echo "$INSTALLATION_METHOD";
 }
 
-
 # Installs packages given an array of package names.
 # Args:
 #   `$@` - Array of packages to install.
 install_packages () {
+  printf "\n";
+  printf "$(gum style --bold --underline 'Installing Packages')\n";
   local PACKAGES_TO_INSTALL=("$@");
   # For every PACKAGE...
   for PACKAGE in "${PACKAGES_TO_INSTALL[@]}"; do
@@ -1393,9 +1485,44 @@ install_package_go () {
 install_package_npm () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
-  print_todo "npm installation";
-  #gum spin --spinner globe --title "Installing $(gum style --bold $1)..." npm install $1
-  #npm install $1 >& /dev/null
+  # If Node isn't installed, try to install Node,
+  if ! package_is_installed npm; then
+    print_not_installed "npm" "install $(gum style --bold "$PACKAGE_NAME")";
+    install_package_manager_npm;
+    if [ $? == 0 ]; then
+      print_cannot_install_new_node_version_manager "$PACKAGE_NAME";
+    else
+      print_installation_method_missing "$PACKAGE_NAME" "npm";
+      return 2;
+    fi
+  # Otherwise, try installing the package using npm:
+  else
+    # Check if the package is already installed,
+    if npm list -g --depth 0 | grep -q "$PACKAGE_ID"; then
+      print_already_installed "$PACKAGE_NAME";
+    # And install the package.
+    else
+      if ! package_is_installed gum; then
+        print_installing "$PACKAGE_NAME" "$PACKAGE_ID" "npm";
+        npm install -g $PACKAGE_ID;
+      else
+        gum spin \
+          --spinner globe \
+          --title "$(print_installing "$PACKAGE_NAME" "$PACKAGE_ID" "npm")" \
+          -- npm install -g $PACKAGE_ID;
+      fi
+      # If the package was successfully installed, say so.
+      if [ $? == 0 ]; then
+        print_installed "$PACKAGE_NAME" "npm";
+        ((PACKAGES_INSTALLED++));
+        return 0;
+      # Otherwise, tell 'em the package can't be installed.
+      else
+        print_cannot_install "$PACKAGE_NAME";
+        return 1;
+      fi
+    fi
+  fi
 }
 
 # Installs a package using pip package manager.

@@ -332,12 +332,14 @@ user.
     * Ubuntu 22.04 LTS
     * Pop!\_OS 22.04 LTS
   * *RHEL-based:*
-    * Fedora Linux Workstation
+    * Fedora Linux 37
     * CentOS Linux 7
   * *SUSE-based:*
     * openSUSE Tumbleweed
 
 Feel free to contribute and expand `instally`'s compatibility!
+
+*See also:* [Supported package managers](#supported-package-managers)
 
 ## 🎨 Configuration
 
