@@ -642,11 +642,15 @@ $REASON\n";
 #   `$1` - Name of the package that could not be installed.
 print_cannot_install_new_node_version_manager () {
   local PACKAGE_NAME=$1;
-  print_cannot_install "$PACKAGE_NAME" "$NEWLY_INSTALLED_NODE_VERSION_MANAGER \
+  print_cannot_install "$PACKAGE_NAME" "\n\
+  $(gum style --bold "$NEWLY_INSTALLED_NODE_VERSION_MANAGER") \
 was installed as a Node.js version manager,\n  but $(gum style --bold "npm") \
 cannot install anything until you restart the terminal.";
 }
 
+# Prints a useful protip.
+# Args:
+#   `$1` - Protip to print.
 print_protip () {
   local PROTIP=$1;
   if ! package_is_installed gum; then
@@ -952,7 +956,8 @@ this.\n";
 install_node_version_manager () {
   printf "\n";
   printf "$(gum style --bold --underline 'Select Node.js Version Manager')\n";
-  printf "$(gum style --italic 'Choose a Node.js version manager to install:')\n";
+  printf "$(gum style --italic 'Choose a') $(gum style --italic --bold \
+'Node.js version manager') $(gum style --italic 'to install:')\n";
   SELECTED=$(gum choose \
     --cursor="$GUM_CHOOSE_CURSOR " \
     --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
@@ -967,41 +972,49 @@ install_node_version_manager () {
   case $SELECTED in
     "nvm")
       install_node_version_manager_nvm;
-      printf "\n";
       return 0;
       ;;
     "fnm")
       install_node_version_manager_fnm;
-      printf "\n";
       return 0;
       ;;
     "None")
-      return 1;
       printf "\n";
+      printf "$(gum style --bold --underline 'Installing Packages')\n";
+      return 1;
       ;;
     *)
-      return 1;
       printf "\n";
+      printf "$(gum style --bold --underline 'Installing Packages')\n";
+      return 1;
       ;;
   esac 
 }
 
 # Installs nvm Node Version Manager.
 install_node_version_manager_nvm () {
-  gum spin --spinner globe --title \
-    "$(print_installing "nvm")" \
-    -- curl -o- \
-      https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash;
+  printf "\n";
+  printf "$(gum style --bold --underline "Installing Node.js Version Manager: \
+nvm")\n";
+  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash;
+  if [ $? == 0 ]; then
+    printf "$(gum style --bold '▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔')\n";
+    printf "\n";
+    printf "$(gum style --bold --underline 'Installing Packages')\n";
+    print_installed "nvm" "script @ https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh";
+    NODE_VERSION_MANAGER_NEWLY_INSTALLED=true;
+    NEWLY_INSTALLED_NODE_VERSION_MANAGER="nvm";
+  fi
 }
 
 # Installs fnm Node Version Manager.
 install_node_version_manager_fnm () {
   printf "\n";
   printf "$(gum style --bold --underline "Installing Node.js Version Manager: \
-fnm")\n"
+fnm")\n";
   curl -fsSL https://fnm.vercel.app/install | bash;
-  printf "$(gum style --bold '')\n";
   if [ $? == 0 ]; then
+    printf "$(gum style --bold '▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔')\n";
     printf "\n";
     printf "$(gum style --bold --underline 'Installing Packages')\n";
     print_installed "fnm" "script @ https://fnm.vercel.app/install";
