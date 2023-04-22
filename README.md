@@ -43,6 +43,7 @@ installing your favorite packages en masse.
     * [flatpak](#flatpak)
     * [npm](#npm)
     * [pip](#pip)
+    * [snap](#snap)
     * [yum](#yum)
     * [zypper](#zypper)
 * [🔧 Troubleshooting](#-troubleshooting)
@@ -441,6 +442,21 @@ tiddlywiki                | a non-linear…        | =jermolene      | 2023-03-2
    Example: in `pip install buku`, `"buku"` is the `"id"`.
 
 `pip search [PACKAGE NAME]` isn't supported by PyPI.
+
+#### snap
+
+Search for the package:
+
+```
+→ snap search [PACKAGE NAME]
+```
+
+The `"id"` is `"krita"` under `"Name"`:
+
+```
+Name   Version  Publisher  Notes  Summary
+krita  5.1.5    krita✓     -      Digital Painting, Creative Freedom
+```
 
 #### yum
 
