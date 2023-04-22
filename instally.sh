@@ -952,7 +952,7 @@ this.\n";
   fi
 }
 
-# Installs a NodeJS version manager.
+# Installs a Node.js version manager.
 install_node_version_manager () {
   printf "\n";
   printf "$(gum style --bold --underline 'Select Node.js Version Manager')\n";
@@ -989,6 +989,31 @@ install_node_version_manager () {
       return 1;
       ;;
   esac 
+}
+
+# Prompts user to install a version of Node.js to install using either
+# `nvm` or `fnm`.
+# Args:
+#   `$1` - Node version manager used to install Node.js.
+install_node () {
+  local NODE_VERSION_MANAGER=$1;
+  printf "\n";
+  printf "$(gum style --bold --underline "Select Node.js Version")\n";
+  printf "$(gum style --italic "Which version of Node.js would you like") \
+$(gum style --italic --bold "$NODE_VERSION_MANAGER") \
+$(gum style --italic "to install?")\n";
+  NODE_VERSION=$(gum input --placeholder "19");
+  printf "💻 $NODE_VERSION_MANAGER install $NODE_VERSION\n";
+  $NODE_VERSION_MANAGER install $NODE_VERSION;
+  if [ $? == 0 ]; then
+    printf "\n";
+    printf "$(gum style --bold --underline 'Installing Packages')\n";
+    return 0;
+  else
+    printf "❌ $(gum style --bold "$NODE_VERSION") \
+is not a valid Node.js version.\n";
+    install_node "$NODE_VERSION_MANAGER";
+  fi
 }
 
 # Installs nvm Node Version Manager.
@@ -1498,8 +1523,30 @@ install_package_go () {
 install_package_npm () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
+  # If nvm is installed, but Node isn't, install Node,
+  if package_is_installed nvm && ! package_is_installed npm; then
+    print_not_installed "Node.js" "install $(gum style --bold \ 
+"$PACKAGE_NAME")";
+    install_node "nvm";
+    if [ $? == 0 ]; then
+      install_package_npm "$PACKAGE_ID" "$PACKAGE_NAME";
+    else
+      print_cannot_install "$PACKAGE_NAME";
+    fi
+  # If fnm is installed, but Node isn't, install Node,
+  elif package_is_installed fnm && ! package_is_installed npm; then
+    print_not_installed "Node.js" "install $(gum style --bold \ 
+"$PACKAGE_NAME")";
+    install_node "fnm";
+    if [ $? == 0 ]; then
+      install_package_npm "$PACKAGE_ID" "$PACKAGE_NAME";
+    else
+      print_cannot_install "$PACKAGE_NAME";
+    fi
   # If Node isn't installed, try to install Node,
-  if ! package_is_installed npm; then
+  elif ! package_is_installed npm && \
+    ! package_is_installed nvm && \
+    ! package_is_installed fnm; then
     print_not_installed "npm" "install $(gum style --bold "$PACKAGE_NAME")";
     install_package_manager_npm;
     if [ $? == 0 ]; then
