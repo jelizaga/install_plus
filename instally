@@ -1662,7 +1662,7 @@ install_package_pip () {
     PIP="pip3";
   fi
   # If pip isn't installed, try installing pip.
-  if ! package_is_installed "$PIP" then
+  if ! package_is_installed "$PIP"; then
     print_not_installed "pip" "install $PACKAGE_NAME";
     install_package_manager_pip;
     if [ $? == 0 ]; then
