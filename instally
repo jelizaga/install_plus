@@ -1067,14 +1067,14 @@ install_package_manager_pip () {
       return 1;
     fi
   elif $OS_IS_RHEL_BASED; then
-    install_package_dnf "pip3" "pip";
+    install_package_dnf "python3-pip" "pip";
     if [ $? == 0 ]; then
       return 0;
     else
       return 1;
     fi
   elif $OS_IS_ZYPPER_BASED; then
-    install_package_zypper "pip3" "pip";
+    install_package_zypper "python3-pip" "pip";
     if [ $? == 0 ]; then
       return 0;
     else
