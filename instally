@@ -250,6 +250,7 @@ install_dependency_jq_using_binary () {
       mkdir $HOME/.local/bin;
     fi
     mv $HOME/Downloads/jq-linux64 $HOME/.local/bin/jq; 
+    chmod +x $HOME/.local/bin/jq;
     print_installed "jq" "downloaded binary \
 (https://stedolan.github.io/jq/download/)";
   fi
