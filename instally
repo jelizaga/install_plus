@@ -1657,8 +1657,12 @@ install_package_npm () {
 install_package_pip () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
+  local PIP="pip";
+  if [ "$OS_NAME" = "CentOS Linux" ]; then
+    PIP="pip3";
+  fi
   # If pip isn't installed, try installing pip.
-  if ! package_is_installed pip; then
+  if ! package_is_installed "$PIP" then
     print_not_installed "pip" "install $PACKAGE_NAME";
     install_package_manager_pip;
     if [ $? == 0 ]; then
@@ -1671,7 +1675,7 @@ install_package_pip () {
     # Check if the package is already installed using pip,
     # (This is done by piping the output of `pip list` to a temporary file—
     # (why `pip list` won't `grep` normally, I have no idea.)
-    pip list --format=freeze > $HOME/.instally/pip_list_$PACKAGE_ID.temp;
+    $PIP list --format=freeze > $HOME/.instally/pip_list_$PACKAGE_ID.temp;
     if grep -q "$PACKAGE_ID" $HOME/.instally/pip_list_$PACKAGE_ID.temp; then
       print_already_installed "$PACKAGE_NAME";
       rm $HOME/.instally/pip_list_$PACKAGE_ID.temp;
@@ -1680,12 +1684,12 @@ install_package_pip () {
       rm $HOME/.instally/pip_list_$PACKAGE_ID.temp;
       if ! package_is_installed gum; then
         print_installing "$PACKAGE_NAME" "$PACKAGE_ID" "pip";
-        pip install -q $PACKAGE_NAME;
+        $PIP install -q $PACKAGE_NAME;
       else
         gum spin \
           --spinner globe \
           --title "$(print_installing "$PACKAGE_NAME" "$PACKAGE_ID" "pip")" \
-          -- pip install -q $PACKAGE_ID;
+          -- $PIP install -q $PACKAGE_ID;
       fi
       # If the package is successfully installed, then say so.
       if [ $? == 0 ]; then
