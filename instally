@@ -246,6 +246,9 @@ install_dependency_jq_using_binary () {
     $HOME/Downloads https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 \
     > /dev/null;
   if [ $? == 0 ]; then
+    if ! [ -e $HOME/.local/bin ]; then
+      mkdir $HOME/.local/bin;
+    fi
     mv $HOME/Downloads/jq-linux64 $HOME/.local/bin/jq; 
     print_installed "jq" "downloaded binary \
 (https://stedolan.github.io/jq/download/)";
