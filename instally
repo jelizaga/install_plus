@@ -410,57 +410,67 @@ prompt_edit_package_json () {
   fi 
 }
 
+################################################################################
 # Printing #####################################################################
+################################################################################
 # Functions related to printing reusable messages and text.
 
-# Prints install+'s title.
-print_title () {
-  printf "\n";
-  printf "$(gum style --italic '        welcome to')\n";
-  printf "   \"                    m           \"\"#    \"\"#          \n";
-  printf " mmm    m mm    mmm   mm#mm   mmm     #      #    m   m\n";
-  printf "   #    #\"  #  #   \"    #    \"   #    #      #    \"m m\" \n";
-  printf "   #    #   #   \"\"\"m    #    m\"\"\"#    #      #     #m#  \n";
-  printf " mm#mm  #   #  \"mmm\"    \"mm  \"mm\"#    \"mm    \"mm   \"#  \n";
-  printf "                                                   m\"   \n";
-  printf "                                                  \"\"    \n";
+# Prints declaration that a package has already been installed.
+# Args:
+#   `$1` - Name of the installed package.
+print_already_installed () {
+  local PACKAGE_NAME=$1;
+  if ! package_is_installed gum; then
+    printf "👍 $PACKAGE_NAME is already installed.\n";
+  else
+    printf "👍 $(gum style --bold "$PACKAGE_NAME") is already installed.\n";
+  fi
 }
 
-# Prints the OS of the system running `instally`.
-print_os () {
-  printf "$(gum style --bold 'OS:') $OS_PRETTY_NAME\n"
+# Prints a message declaring that a given package could not be installed.
+# Args:
+#   `$1` - Name of package that could not be installed.
+#   `$2` - Optional reason why the package could not be installed.
+print_cannot_install () {
+  local PACKAGE_NAME=$1;
+  if [ -n "$2" ]; then
+    local REASON=$2;
+    if ! package_is_installed gum; then
+      printf "❗ $PACKAGE_NAME could not be installed: \
+$REASON\n";
+    else
+      printf "❗ $(gum style --bold "$PACKAGE_NAME") could not be installed: \
+$REASON\n";
+    fi
+  else
+    if ! package_is_installed gum; then
+      printf "❗ $PACKAGE_NAME could not be installed.\n";
+    else
+      printf "❗ $(gum style --bold "$PACKAGE_NAME") could not be installed.\n";
+    fi
+  fi
 }
 
-# Prompts user to select package groups and provides instructions.
-# Associated with `menu_select_groups`.
-print_select_groups () {
-  printf "\n";
-  printf "$(gum style --bold --underline 'Select Groups')\n";
-  printf "$(gum style --italic 'Press ')";
-  printf "$(gum style --bold --foreground '#E60000' 'x')";
-  printf "$(gum style --italic ' to select package groups')\n";
-  printf "$(gum style --italic 'press ')"
-  printf "$(gum style --bold --foreground '#E60000' 'a')";
-  printf "$(gum style --italic ' to select all')\n"
-  printf "$(gum style --italic 'press ')"
-  printf "$(gum style --bold --foreground '#E60000' 'enter')"
-  printf "$(gum style --italic ' to confirm your selection:')\n"
+# Prints a message declaring that a given package cannot be installed until
+# the new Node.js version manager is loaded by a reloaded terminal.
+# Args:
+#   `$1` - Name of the package that could not be installed.
+print_cannot_install_new_node_version_manager () {
+  local PACKAGE_NAME=$1;
+  print_cannot_install "$PACKAGE_NAME" "\n\
+  $(gum style --bold "$NEWLY_INSTALLED_NODE_VERSION_MANAGER") \
+was installed as a Node.js version manager,\n  but $(gum style --bold "npm") \
+cannot install anything until you restart the terminal.";
 }
 
-# Prompts user to select packages for installation and provides instructions.
-# Associated with `menu_install_packages`.
-print_install_packages () {
-  printf "\n"
-  printf "$(gum style --bold --underline 'Install Packages')\n";
-  printf "$(gum style --italic 'Press ')";
-  printf "$(gum style --bold --foreground '#E60000' 'x')";
-  printf "$(gum style --italic ' to select packages to install')\n";
-  printf "$(gum style --italic 'press ')"
-  printf "$(gum style --bold --foreground '#E60000' 'a')";
-  printf "$(gum style --italic ' to select all')\n";
-  printf "$(gum style --italic 'press ')";
-  printf "$(gum style --bold --foreground '#E60000' 'enter')";
-  printf "$(gum style --italic ' to confirm your selection:')\n";
+# Prints declaration that something has been created.
+# Args:
+#   `$1` - Name of item that has been created.
+#   `$2` - Icon prefixing this message—an emoji or some unicode glyph.
+print_created () {
+  local ITEM=$1;
+  local ICON=$2;
+  printf "$ICON $(gum style --bold "$ITEM") created.\n";
 }
 
 # Prints declaration that a dependency is missing.
@@ -481,6 +491,86 @@ to install $(gum style --bold "$DEPENDENCY").\n";
       printf "🔩 We need $DEPENDENCY.\n";
     else
       printf "🔩 We need $(gum style --bold "$DEPENDENCY").\n";
+    fi
+  fi
+}
+
+# Prints warning that something is empty.
+# Args:
+#   `$1` - Name of item that is empty.
+#   `$2` - Icon prefixing this message—an emoji or some unicode glyph.
+print_empty () {
+  local ITEM=$1;
+  if [ -n "$2" ]; then
+    local ICON=$2;
+    printf "$ICON $(gum style --bold "$ITEM") is empty.\n";
+  else
+    printf "❌ $(gum style --bold "$ITEM") is empty.\n";
+  fi
+}
+
+# Prints error message.
+# Args:
+#   `$1` - Message to print.
+print_error () {
+  local MESSAGE=$1;
+  if ! package_is_installed gum; then
+    printf "🐛 Error: $MESSAGE\n";
+  else
+    printf "🐛 $(gum style --bold 'Error:') $MESSAGE\n";
+  fi
+}
+
+# Prints a message declaring that a given package could not be installed due to
+# its installation method missing.
+# Args:
+#   `$1` - Name of the package that could not be installed.
+#   `$2` - Name of the installation method for `$1` that is missing.
+print_installation_method_missing () {
+  local PACKAGE_NAME=$1;
+  local INSTALLATION_METHOD=$2;
+  print_cannot_install "$PACKAGE_NAME" "$INSTALLATION_METHOD is \
+$PACKAGE_NAME's installation method, but $INSTALLATION_METHOD is missing.\n\
+  Try updating $PACKAGE_JSON with an available installation method for \
+$PACKAGE_NAME.";
+}
+
+# Prompts user to select packages for installation and provides instructions.
+# Associated with `menu_install_packages`.
+print_install_packages () {
+  printf "\n"
+  printf "$(gum style --bold --underline 'Install Packages')\n";
+  printf "$(gum style --italic 'Press ')";
+  printf "$(gum style --bold --foreground '#E60000' 'x')";
+  printf "$(gum style --italic ' to select packages to install')\n";
+  printf "$(gum style --italic 'press ')"
+  printf "$(gum style --bold --foreground '#E60000' 'a')";
+  printf "$(gum style --italic ' to select all')\n";
+  printf "$(gum style --italic 'press ')";
+  printf "$(gum style --bold --foreground '#E60000' 'enter')";
+  printf "$(gum style --italic ' to confirm your selection:')\n";
+}
+
+# Prints declaration that a package has been successfully installed.
+# Args:
+#   `$1` - Name of the installed package.
+#   `$2` - Optional name of the installation method used to install the package.
+print_installed () {
+  local PACKAGE_NAME=$1;
+  if [ -n "$2" ]; then
+    local INSTALLATION_METHOD=$2;
+    if ! package_is_installed gum; then
+      printf "🎁 $PACKAGE_NAME \
+installed using $INSTALLATION_METHOD.\n";
+    else
+      printf "🎁 $(gum style --bold "$PACKAGE_NAME") \
+installed using $(gum style --bold "$INSTALLATION_METHOD").\n";
+    fi
+  else
+    if ! package_is_installed gum; then
+      printf "🎁 $PACKAGE_NAME installed.\n";
+    else
+      printf "🎁 $(gum style --bold "$PACKAGE_NAME") installed.\n";
     fi
   fi
 }
@@ -530,73 +620,66 @@ but $PACKAGE_NAME is missing.\n";
   fi
 }
 
-# Prints warning that something is empty.
-# Args:
-#   `$1` - Name of item that is empty.
-#   `$2` - Icon prefixing this message—an emoji or some unicode glyph.
-print_empty () {
-  local ITEM=$1;
-  if [ -n "$2" ]; then
-    local ICON=$2;
-    printf "$ICON $(gum style --bold "$ITEM") is empty.\n";
-  else
-    printf "❌ $(gum style --bold "$ITEM") is empty.\n";
-  fi
+# Prints the OS of the system running `instally`.
+print_os () {
+  printf "$(gum style --bold 'OS:') $OS_PRETTY_NAME\n"
 }
 
 # Prints warning that an expected field is missing from `package.json`.
 # Args:
 #    `$1` - Name of field missing from `package.json`.
-print_packages_file_missing_field () {
+print_package_json_missing_field () {
   local FIELD=$1;
   printf "❗ No $(gum style --bold "$FIELD") field \
 found in $(gum style --bold "$PACKAGE_JSON").\n";
 }
 
-# Prints declaration that something has been created.
-# Args:
-#   `$1` - Name of item that has been created.
-#   `$2` - Icon prefixing this message—an emoji or some unicode glyph.
-print_created () {
-  local ITEM=$1;
-  local ICON=$2;
-  printf "$ICON $(gum style --bold "$ITEM") created.\n";
+# Prints the amount of packages installed.
+print_packages_installed () {
+  if [ $PACKAGES_INSTALLED  -gt 1 ]; then
+    printf "🏡🚛 $PACKAGES_INSTALLED packages installed.\n"
+  elif [ $PACKAGES_INSTALLED -eq 1 ]; then
+    printf "🏡🚚 One package installed.\n"
+  else
+    printf "🏡🛻 No packages installed.\n"
+  fi
 }
 
-# Prints declaration that a package has already been installed.
+# Prints a useful protip.
 # Args:
-#   `$1` - Name of the installed package.
-print_already_installed () {
-  local PACKAGE_NAME=$1;
+#   `$1` - Protip to print.
+print_protip () {
+  local PROTIP=$1;
   if ! package_is_installed gum; then
-    printf "👍 $PACKAGE_NAME is already installed.\n";
+    printf "👉 Protip: $PROTIP\n";
   else
-    printf "👍 $(gum style --bold "$PACKAGE_NAME") is already installed.\n";
+    printf "$(gum style --bold 'Protip:') $PROTIP\n";
   fi
 }
 
-# Prints declaration that a package has been successfully installed.
+# Prints an 'under construction' message.
 # Args:
-#   `$1` - Name of the installed package.
-#   `$2` - Optional name of the installation method used to install the package.
-print_installed () {
-  local PACKAGE_NAME=$1;
-  if [ -n "$2" ]; then
-    local INSTALLATION_METHOD=$2;
-    if ! package_is_installed gum; then
-      printf "🎁 $PACKAGE_NAME \
-installed using $INSTALLATION_METHOD.\n";
-    else
-      printf "🎁 $(gum style --bold "$PACKAGE_NAME") \
-installed using $(gum style --bold "$INSTALLATION_METHOD").\n";
-    fi
+#   `$1` - Optional name of incomplete feature.
+print_todo () {
+  if [ -n "$1" ]; then
+    local FEATURE=$1;
+    printf "🚧 $FEATURE is under construction.\n";
   else
-    if ! package_is_installed gum; then
-      printf "🎁 $PACKAGE_NAME installed.\n";
-    else
-      printf "🎁 $(gum style --bold "$PACKAGE_NAME") installed.\n";
-    fi
+    printf "🚧 Under construction.\n";
   fi
+}
+
+# Prints install+'s title.
+print_title () {
+  printf "\n";
+  printf "$(gum style --italic '        welcome to')\n";
+  printf "   \"                    m           \"\"#    \"\"#          \n";
+  printf " mmm    m mm    mmm   mm#mm   mmm     #      #    m   m\n";
+  printf "   #    #\"  #  #   \"    #    \"   #    #      #    \"m m\" \n";
+  printf "   #    #   #   \"\"\"m    #    m\"\"\"#    #      #     #m#  \n";
+  printf " mm#mm  #   #  \"mmm\"    \"mm  \"mm\"#    \"mm    \"mm   \"#  \n";
+  printf "                                                   m\"   \n";
+  printf "                                                  \"\"    \n";
 }
 
 # Prints declaration that a package manager has been successfully updated.
@@ -612,89 +695,20 @@ $(gum style --italic 'updated.')\n";
   fi
 }
 
-# Prints a message declaring that a given package could not be installed.
-# Args:
-#   `$1` - Name of package that could not be installed.
-#   `$2` - Optional reason why the package could not be installed.
-print_cannot_install () {
-  local PACKAGE_NAME=$1;
-  if [ -n "$2" ]; then
-    local REASON=$2;
-    if ! package_is_installed gum; then
-      printf "❗ $PACKAGE_NAME could not be installed: \
-$REASON\n";
-    else
-      printf "❗ $(gum style --bold "$PACKAGE_NAME") could not be installed: \
-$REASON\n";
-    fi
-  else
-    if ! package_is_installed gum; then
-      printf "❗ $PACKAGE_NAME could not be installed.\n";
-    else
-      printf "❗ $(gum style --bold "$PACKAGE_NAME") could not be installed.\n";
-    fi
-  fi
-}
-
-# Prints a message declaring that a given package cannot be installed until
-# the new Node.js version manager is loaded by a reloaded terminal.
-# Args:
-#   `$1` - Name of the package that could not be installed.
-print_cannot_install_new_node_version_manager () {
-  local PACKAGE_NAME=$1;
-  print_cannot_install "$PACKAGE_NAME" "\n\
-  $(gum style --bold "$NEWLY_INSTALLED_NODE_VERSION_MANAGER") \
-was installed as a Node.js version manager,\n  but $(gum style --bold "npm") \
-cannot install anything until you restart the terminal.";
-}
-
-# Prints a useful protip.
-# Args:
-#   `$1` - Protip to print.
-print_protip () {
-  local PROTIP=$1;
-  if ! package_is_installed gum; then
-    printf "👉 Protip: $PROTIP\n";
-  else
-    printf "$(gum style --bold 'Protip:') $PROTIP\n";
-  fi
-}
-
-# Prints a message declaring that a given package could not be installed due to
-# its installation method missing.
-# Args:
-#   `$1` - Name of the package that could not be installed.
-#   `$2` - Name of the installation method for `$1` that is missing.
-print_installation_method_missing () {
-  local PACKAGE_NAME=$1;
-  local INSTALLATION_METHOD=$2;
-  print_cannot_install "$PACKAGE_NAME" "$INSTALLATION_METHOD is \
-$PACKAGE_NAME's installation method, but $INSTALLATION_METHOD is missing.\n\
-  Try updating $PACKAGE_JSON with an available installation method for \
-$PACKAGE_NAME.";
-}
-
-# Prints the amount of packages installed.
-print_packages_installed () {
-  if [ $PACKAGES_INSTALLED  -gt 1 ]; then
-    printf "🏡🚛 $PACKAGES_INSTALLED packages installed.\n"
-  elif [ $PACKAGES_INSTALLED -eq 1 ]; then
-    printf "🏡🚚 One package installed.\n"
-  else
-    printf "🏡🛻 No packages installed.\n"
-  fi
-}
-
-# Prints error message.
-# Args:
-#   `$1` - Message to print.
-print_error () {
-  local MESSAGE=$1;
-  if ! package_is_installed gum; then
-    printf "🐛 Error: $MESSAGE\n";
-  else
-    printf "🐛 $(gum style --bold 'Error:') $MESSAGE\n";
-  fi
+# Prompts user to select package groups and provides instructions.
+# Associated with `menu_select_groups`.
+print_select_groups () {
+  printf "\n";
+  printf "$(gum style --bold --underline 'Select Groups')\n";
+  printf "$(gum style --italic 'Press ')";
+  printf "$(gum style --bold --foreground '#E60000' 'x')";
+  printf "$(gum style --italic ' to select package groups')\n";
+  printf "$(gum style --italic 'press ')"
+  printf "$(gum style --bold --foreground '#E60000' 'a')";
+  printf "$(gum style --italic ' to select all')\n"
+  printf "$(gum style --italic 'press ')"
+  printf "$(gum style --bold --foreground '#E60000' 'enter')"
+  printf "$(gum style --italic ' to confirm your selection:')\n"
 }
 
 # Prints warning message.
@@ -703,18 +717,6 @@ print_error () {
 print_warning () {
   local MESSAGE=$1;
   printf "⚠️ $(gum style --bold 'Warning:') $MESSAGE\n";
-}
-
-# Prints an 'under construction' message.
-# Args:
-#   `$1` - Optional name of incomplete feature.
-print_todo () {
-  if [ -n "$1" ]; then
-    local FEATURE=$1;
-    printf "🚧 $FEATURE is under construction.\n";
-  else
-    printf "🚧 Under construction.\n";
-  fi
 }
 
 # Getting data #################################################################
@@ -942,10 +944,10 @@ install_package_manager_flatpak () {
 # Installs npm.
 install_package_manager_npm () {
   if ! package_is_installed node; then
-    printf "  NodeJS is not installed.\n";
+    printf "  Node.js is not installed.\n";
     install_node_version_manager;
   else
-    printf "  NodeJS is installed, but npm is missing. instally cannot resolve \
+    printf "  Node.js is installed, but npm is missing. instally cannot resolve \
 this.\n";
     printf "  ↑ Refer to https://nodejs.org/ for help.\n"
     return 1;
@@ -1029,6 +1031,13 @@ nvm")\n";
     print_installed "nvm" "script @ https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh";
     NODE_VERSION_MANAGER_NEWLY_INSTALLED=true;
     NEWLY_INSTALLED_NODE_VERSION_MANAGER="nvm";
+    return 0;
+  else
+    printf "$(gum style --bold '▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔')\n";
+    printf "\n";
+    printf "$(gum style --bold --underline 'Installing Packages')\n";
+    print_cannot_install "nvm";
+    return 1;
   fi
 }
 
@@ -1048,8 +1057,42 @@ fnm")\n";
   fi
 }
 
+# Installs pip.
+install_package_manager_pip () {
+  if $OS_IS_DEBIAN_BASED; then
+    install_package_apt "pip3" "pip";
+    if [ $? == 0 ]; then
+      return 0;
+    else
+      return 1;
+    fi
+  elif $OS_IS_RHEL_BASED; then
+    install_package_dnf "pip3" "pip";
+    if [ $? == 0 ]; then
+      return 0;
+    else
+      return 1;
+    fi
+  elif $OS_IS_ZYPPER_BASED; then
+    install_package_zypper "pip3" "pip";
+    if [ $? == 0 ]; then
+      return 0;
+    else
+      return 1;
+    fi
+  else
+    print_cannot_install "pip" "Try instructions @ \
+https://pip.pypa.io/en/stable/installation/ \
+to install pip and $PACKAGE_NAME.";
+    return 1;
+  fi
+}
+
 # Installs snap.
+# Args:
+#   `$1` - Name of the package that requires snap to be installed.
 install_package_manager_snap () {
+  local PACKAGE_NAME=$1;
   if $OS_IS_DEBIAN_BASED; then
     install_package_apt "snapd";
     if [ $? == 0 ]; then
@@ -1064,10 +1107,8 @@ install_package_manager_snap () {
     else
       return 1;
     fi
-  elif $OS_IS_SUSE_BASED; then
-    print_cannot_install "snap" "Try instructions @ \
-https://snapcraft.io/install/$PACKAGE_ID/opensuse#install \
-to install snap and $PACKAGE_NAME.";
+  else
+    return 1;
   fi
 }
 
@@ -1592,7 +1633,48 @@ install_package_npm () {
 install_package_pip () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
-  print_todo "pip installation";
+  # If pip isn't installed, try installing pip.
+  if ! package_is_installed pip; then
+    print_not_installed "pip" "install $PACKAGE_NAME";
+    install_package_manager_pip;
+    if [ $? == 0 ]; then
+      install_package_pip "$PACKAGE_ID" "$PACKAGE_NAME";
+    else
+      print_cannot_install "$PACKAGE_NAME";
+    fi
+  # Otherwise, try installing the package using pip:
+  else
+    # Check if the package is already installed using pip,
+    # (This is done by piping the output of `pip list` to a temporary file—
+    # (why `pip list` won't `grep` normally, I have no idea.)
+    pip list --format=freeze > $HOME/.instally/pip_list_$PACKAGE_ID.temp;
+    if grep -q "$PACKAGE_ID" $HOME/.instally/pip_list_$PACKAGE_ID.temp; then
+      print_already_installed "$PACKAGE_NAME";
+      rm $HOME/.instally/pip_list_$PACKAGE_ID.temp;
+    # And install the package.
+    else
+      rm $HOME/.instally/pip_list_$PACKAGE_ID.temp;
+      if ! package_is_installed gum; then
+        print_installing "$PACKAGE_NAME" "$PACKAGE_ID" "pip";
+        pip install -q $PACKAGE_NAME;
+      else
+        gum spin \
+          --spinner globe \
+          --title "$(print_installing "$PACKAGE_NAME" "$PACKAGE_ID" "pip")" \
+          -- pip install -q $PACKAGE_ID;
+      fi
+      # If the package is successfully installed, then say so.
+      if [ $? == 0 ]; then
+        print_installed "$PACKAGE_NAME" "pip";
+        ((PACKAGES_INSTALLED++));
+        return 0;
+      # Otherwise, tell 'em the package could not be installed.
+      else
+        print_cannot_install "$PACKAGE_NAME";
+        return 1;
+      fi 
+    fi
+  fi
 }
 
 # Installs a package using snap package manager.
@@ -1605,9 +1687,15 @@ install_package_snap () {
   # If snap isn't installed, try to install snap,
   if ! package_is_installed snap; then
     print_not_installed "snap" "install $PACKAGE_NAME";
+    install_package_manager_snap "$PACKAGE_NAME";
+    # If snap is successfully installed, try installing the package again.
     if [ $? == 0 ]; then
-      install_package_manager_snap;
+      install_package_snap "$PACKAGE_ID" "$PACKAGE_NAME";
+    # Otherwise, tell 'em neither snap or the package could be installed.
     else
+      print_cannot_install "snap" "Try instructions @ \
+https://snapcraft.io/install/$PACKAGE_ID/opensuse#install \
+to install snap and $PACKAGE_NAME.";
       print_installation_method_missing "$PACKAGE_NAME" "snap";
       return 2;
     fi
