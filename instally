@@ -1060,7 +1060,7 @@ fnm")\n";
 # Installs pip.
 install_package_manager_pip () {
   if $OS_IS_DEBIAN_BASED; then
-    install_package_apt "pip3" "pip";
+    install_package_apt "python3-pip" "pip";
     if [ $? == 0 ]; then
       return 0;
     else
@@ -1360,18 +1360,18 @@ as $PACKAGE_NAME's installation method instead.";
       # Otherwise, print error messages.
       elif [ $? == 1 ] || [ $? == 100 ]; then
         print_cannot_install "$PACKAGE_NAME" "Package not found. \
-  Is $PACKAGE_ID the correct id?";
+Is $PACKAGE_ID the correct id?";
         return 1;
       elif [ $? == 101 ]; then
         print_cannot_install "$PACKAGE_NAME" "Download interrupted.";
         return 101;
       elif [ $? == 102 ]; then
         print_cannot_install "$PACKAGE_NAME" "Error encountered while \
-  unpacking package.";
+unpacking package.";
         return 102;
       elif [ $? == 103 ]; then
         print_cannot_install "$PACKAGE_NAME" "Error encountered while \
-  configuring package.";
+configuring package.";
         return 103;
       elif [ $? == 104 ]; then
         print_already_installed "$PACKAGE_NAME";
