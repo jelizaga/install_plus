@@ -146,9 +146,15 @@ check_dependencies () {
       if $OS_IS_DEBIAN_BASED; then
         install_package_apt jq jq;
       elif $OS_IS_RHEL_BASED; then
-        install_package_dnf jq jq;
+        if [ "$OS_NAME" = "Fedora Linux" ]; then
+          install_package_dnf jq jq;
+        else
+          install_dependency_jq_using_binary;
+        fi
       elif $OS_IS_SUSE_BASED; then
         install_package_zypper jq jq;
+      else
+        install_dependency_jq_using_binary;
       fi
     fi
   fi
@@ -213,7 +219,7 @@ https://github.com/jelizaga/instally/#gum-is-installed-but-wont-run for help.";
   fi
 }
 
-# Installs gum for `instally`s interactivity using go.
+# Installs `gum` for `instally`s interactivity using go.
 install_dependency_gum_using_go () {
   print_installing "gum" "gum" "go";
   # Get the gum tarball off the GitHub repo,
@@ -230,6 +236,20 @@ install_dependency_gum_using_go () {
   # Clean up `/gum` and its tarball.
   rm -rf $HOME/Downloads/gum;
   rm -rf $HOME/Downloads/gum/gum-0.10.0.tar.gz;
+}
+
+# Installs `jq` for `instally`'s data parsing using a downloaded binary.
+install_dependency_jq_using_binary () {
+  print_installing "jq" "jq" "downloaded binary \
+(https://stedolan.github.io/jq/download/)";
+  wget -qP \
+    $HOME/Downloads https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 \
+    > /dev/null;
+  if [ $? == 0 ]; then
+    mv $HOME/Downloads/jq-linux64 $HOME/.local/bin/jq; 
+    print_installed "jq" "downloaded binary \
+(https://stedolan.github.io/jq/download/)";
+  fi
 }
 
 # File system ##################################################################
