@@ -265,24 +265,36 @@ install_dependency_jq_using_binary () {
 # values.
 ################################################################################
 
-# 
+# Checks and applies the config file's user-customized values.
 check_conf () {
-  CONFIG_COLOR_ACTIVE=$(awk -F '=' '/^COLOR_ACTIVE=/ {print $2}' \
-    "$INSTALLY_CONF")
-  if ! [ -z "$CONFIG_COLOR_ACTIVE" ]; then
-    echo "$COLOR_ACTIVE";
-    COLOR_ACTIVE="$CONFIG_COLOR_ACTIVE";
-    echo "$COLOR_ACTIVE";
+  CONF_COLOR_ACTIVE=$(awk -F '=' '/^COLOR_ACTIVE=/ {print $2}' \
+    "$INSTALLY_CONF");
+  if ! [ -z "$CONF_COLOR_ACTIVE" ]; then
+    COLOR_ACTIVE="$CONF_COLOR_ACTIVE";
     GUM_CHOOSE_CURSOR_FOREGROUND="$COLOR_ACTIVE";
     GUM_CONFIRM_SELECTED_BACKGROUND="$COLOR_ACTIVE";
   fi
-  CONFIG_COLOR_ACCENT=$(awk -F '=' '/^COLOR_ACCENT=/ {print $2}' \
-    "$INSTALLY_CONF")
-  if ! [ -z "$CONFIG_COLOR_ACCENT" ]; then
-    echo "$COLOR_ACCENT";
-    COLOR_ACCENT="$CONFIG_COLOR_ACCENT";
-    echo "$COLOR_ACCENT";
+  CONF_COLOR_ACCENT=$(awk -F '=' '/^COLOR_ACCENT=/ {print $2}' \
+    "$INSTALLY_CONF");
+  if ! [ -z "$CONF_COLOR_ACCENT" ]; then
+    COLOR_ACCENT="$CONF_COLOR_ACCENT";
     GUM_CHOOSE_SELECTED_FOREGROUND="$COLOR_ACCENT";
+  fi
+  CONF_CURSOR=$(awk -F '=' '/^CURSOR=/ {print $2}' \
+    "$INSTALLY_CONF");
+  if ! [ -z "$CONF_COLOR" ]; then
+    GUM_CURSOR="$CONF_CURSOR ";
+  fi
+  CONF_CHOOSE_DEFAULT=$(awk -F '=' '/^CHOOSE_DEFAULT=/ {print $2}' \
+    "$INSTALLY_CONF");
+  if ! [ -z "$CONF_CHOOSE_DEFAULT" ]; then
+    GUM_CHOOSE_CURSOR_PREFIX="$CONF_CHOOSE_DEFAULT";
+    GUM_CHOOSE_UNSELECTED_PREFIX="$CONF_CHOOSE_DEFAULT";
+  fi
+  CONF_CHOOSE_SELECTED=$(awk -F '=' '/^CHOOSE_SELECTED=/ {print $2}' \
+    "$INSTALLY_CONF");
+  if ! [ -z "$CONF_CHOOSE_SELECTED" ]; then
+    GUM_CHOOSE_SELECTED_PREFIX="$CONF_CHOOSE_SELECTED";
   fi
 }
 
