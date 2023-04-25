@@ -85,6 +85,7 @@ os_is_rhel_based () {
     [ "$OS_NAME" = "Red Hat Enterprise Linux" ] || \
     [ "$OS_NAME" = "CentOS Linux" ] || \
     [ "$OS_NAME" = "Oracle Linux Server" ] || \
+    [ "$OS_NAME" = "Amazon Linux" ] || \
     [ "$OS_NAME" = "Rocky Linux" ] || \
     [ "$OS_NAME" = "AlmaLinux" ] || \
     [ "$OS_NAME" = "OpenMandriva Lx" ] ||\
@@ -336,25 +337,41 @@ menu_settings () {
 menu_select_groups () {
   PACKAGES_INSTALLED=0;
   check_package_json;
-  HAS_GROUPS=$(jq 'has("groups")' $PACKAGE_JSON);
+  local HAS_GROUPS=$(jq 'has("groups")' $PACKAGE_JSON);
   if [ "$HAS_GROUPS" = "true" ]; then
+    local GROUPS_ARRAY=$(jq '.groups' $PACKAGE_JSON);
+    local GROUPS_ARRAY_LENGTH=$(echo "$GROUPS_ARRAY" | jq 'length');
+    local MENU_ITEMS_ARRAY=();
+    for (( i=0; i<$GROUPS_ARRAY_LENGTH; i++ )); do
+      local GROUP=$(echo "$GROUPS_ARRAY" | \
+        jq --argjson INDEX $i '.[$INDEX]');
+      local GROUP_NAME=$(echo "$GROUP" | jq -r '.group'); 
+      local GROUP_HAS_DESCRIPTION=$(echo "$GROUP" | jq -r 'has("description")');
+      if [ "$GROUP_HAS_DESCRIPTION" = "true" ]; then
+        local GROUP_DESCRIPTION=$(echo "$GROUP" | jq -r '.description');
+        local MENU_ITEM="$(gum style --bold "$GROUP_NAME »") $GROUP_DESCRIPTION";
+        MENU_ITEMS_ARRAY+=("$MENU_ITEM");
+      else
+        local MENU_ITEM="$(gum style --bold "$GROUP_NAME")";
+        MENU_ITEMS_ARRAY+=("$MENU_ITEM");
+      fi
+    done
     print_select_groups;
-    SELECTED_PACKAGE_GROUPS=$(jq -r '.groups | map(.group)[]' $PACKAGE_JSON | \
-      gum choose \
+    SELECTED_GROUPS=$(gum choose --no-limit \
       --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
       --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
       --cursor="$GUM_CHOOSE_CURSOR " \
       --cursor-prefix="$GUM_CHOOSE_CURSOR_PREFIX " \
       --selected-prefix="$GUM_CHOOSE_SELECTED_PREFIX " \
       --unselected-prefix="$GUM_CHOOSE_UNSELECTED_PREFIX " \
-      --no-limit);
-    SELECTED_PACKAGE_GROUPS_ARRAY=();
-    readarray -t SELECTED_PACKAGE_GROUPS_ARRAY <<< "$SELECTED_PACKAGE_GROUPS"
-    if [ "${#SELECTED_PACKAGE_GROUPS_ARRAY[@]}" -eq 1 ] \
-      && [[ ${SELECTED_PACKAGE_GROUPS_ARRAY[0]} == "" ]]; then
+      "${MENU_ITEMS_ARRAY[@]}");
+    SELECTED_GROUPS_ARRAY=();
+    readarray -t SELECTED_GROUPS_ARRAY <<< "$SELECTED_GROUPS"
+    if [ "${#SELECTED_GROUPS_ARRAY[@]}" -eq 1 ] \
+      && [[ ${SELECTED_GROUPS_ARRAY[0]} == "" ]]; then
       menu_install_packages;
     else
-      menu_install_packages "${SELECTED_PACKAGE_GROUPS_ARRAY[@]}";
+      menu_install_packages "${SELECTED_GROUPS_ARRAY[@]}";
     fi
   else
     menu_install_packages;
@@ -365,9 +382,17 @@ menu_select_groups () {
 # Args:
 #   `$@` - Array of selected package groups.
 menu_install_packages () {
+  local SELECTED_GROUPS_ARRAY=("$@");
+  local GROUP_NAMES=();
+  for GROUP in "${SELECTED_GROUPS_ARRAY[@]}"; do
+    local GROUP_NAME=$(echo "$GROUP" | \
+      sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g" | \
+      awk -F " »" '{print $1}');
+    GROUP_NAMES+=("$GROUP_NAME");
+  done
   # Get the eligible package menu items for display, given the selected package
   # groups.
-  local MENU_ITEMS=($(get_menu_items "$@"));
+  local MENU_ITEMS=($(get_menu_items "${GROUP_NAMES[@]}"));
   IFS=$'\n';
   readarray -t MENU_ITEMS_ARRAY <<< "$MENU_ITEMS";
   IFS="$DELIMITER";
@@ -563,7 +588,7 @@ $PACKAGE_NAME.";
 # Associated with `menu_install_packages`.
 print_install_packages () {
   printf "\n"
-  printf "$(gum style --bold --underline 'Install Packages')\n";
+  print_section_heading "Install Packages";
   printf "$(gum style --italic 'Press ')";
   printf "$(gum style --bold --foreground '#E60000' 'x')";
   printf "$(gum style --italic ' to select packages to install')\n";
@@ -681,6 +706,23 @@ print_protip () {
   fi
 }
 
+# Prints the end of a section.
+#   `$1` - Width of the section's title, in characters.
+print_section_end () {
+  local WIDTH=$1;
+  for i in $(seq 1 $NUMBER); do
+    printf "$(gum style --bold '▔')";
+  done
+  printf "\n\n";
+}
+
+# prints the heading of a section.
+print_section_heading () {
+  local HEADING=$1;
+  printf "\n";
+  printf "$(gum style --bold --underline "$HEADING")\n";
+}
+
 # Prints an 'under construction' message.
 # Args:
 #   `$1` - Optional name of incomplete feature.
@@ -723,7 +765,7 @@ $(gum style --italic 'updated.')\n";
 # Associated with `menu_select_groups`.
 print_select_groups () {
   printf "\n";
-  printf "$(gum style --bold --underline 'Select Groups')\n";
+  print_section_heading "Select Groups";
   printf "$(gum style --italic 'Press ')";
   printf "$(gum style --bold --foreground '#E60000' 'x')";
   printf "$(gum style --italic ' to select package groups')\n";
@@ -980,7 +1022,7 @@ this.\n";
 
 # Installs a Node.js version manager.
 install_node_version_manager () {
-  printf "\n";
+  print_section_heading "Select Node.js Version Manager";
   printf "$(gum style --bold --underline 'Select Node.js Version Manager')\n";
   printf "$(gum style --italic 'Choose a') $(gum style --italic --bold \
 'Node.js version manager') $(gum style --italic 'to install:')\n";
@@ -998,20 +1040,26 @@ install_node_version_manager () {
   case $SELECTED in
     "nvm")
       install_node_version_manager_nvm;
-      return 0;
+      if [ $? == 0 ]; then
+        return 0;
+      else
+        return 1;
+      fi
       ;;
     "fnm")
       install_node_version_manager_fnm;
-      return 0;
+      if [ $? == 0 ]; then
+        return 0;
+      else
+        return 1;
+      fi
       ;;
     "None")
-      printf "\n";
-      printf "$(gum style --bold --underline 'Installing Packages')\n";
+      print_section_heading "Installing Packages";
       return 1;
       ;;
     *)
-      printf "\n";
-      printf "$(gum style --bold --underline 'Installing Packages')\n";
+      print_section_heading "Installing Packages";
       return 1;
       ;;
   esac 
@@ -1023,7 +1071,7 @@ install_node_version_manager () {
 #   `$1` - Node version manager used to install Node.js.
 install_node () {
   local NODE_VERSION_MANAGER=$1;
-  printf "\n";
+  print_section_heading "Select Node.js Version";
   printf "$(gum style --bold --underline "Select Node.js Version")\n";
   printf "$(gum style --italic "Which version of Node.js would you like") \
 $(gum style --italic --bold "$NODE_VERSION_MANAGER") \
@@ -1032,8 +1080,7 @@ $(gum style --italic "to install?")\n";
   printf "💻 $NODE_VERSION_MANAGER install $NODE_VERSION\n";
   $NODE_VERSION_MANAGER install $NODE_VERSION;
   if [ $? == 0 ]; then
-    printf "\n";
-    printf "$(gum style --bold --underline 'Installing Packages')\n";
+    print_section_heading "Installing Packages";
     return 0;
   else
     printf "❌ $(gum style --bold "$NODE_VERSION") \
@@ -1044,22 +1091,16 @@ is not a valid Node.js version.\n";
 
 # Installs nvm Node Version Manager.
 install_node_version_manager_nvm () {
-  printf "\n";
-  printf "$(gum style --bold --underline "Installing Node.js Version Manager: \
-nvm")\n";
+  print_section_heading "Installing Node.js Version Manager: nvm";
   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash;
+  print_section_end 39; 
+  print_section_heading "Installing Packages";
   if [ $? == 0 ]; then
-    printf "$(gum style --bold '▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔')\n";
-    printf "\n";
-    printf "$(gum style --bold --underline 'Installing Packages')\n";
     print_installed "nvm" "script @ https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh";
     NODE_VERSION_MANAGER_NEWLY_INSTALLED=true;
     NEWLY_INSTALLED_NODE_VERSION_MANAGER="nvm";
     return 0;
   else
-    printf "$(gum style --bold '▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔')\n";
-    printf "\n";
-    printf "$(gum style --bold --underline 'Installing Packages')\n";
     print_cannot_install "nvm";
     return 1;
   fi
@@ -1067,45 +1108,71 @@ nvm")\n";
 
 # Installs fnm Node Version Manager.
 install_node_version_manager_fnm () {
-  printf "\n";
-  printf "$(gum style --bold --underline "Installing Node.js Version Manager: \
-fnm")\n";
+  print_section_heading "Installing Node.js Version Manager: fnm";
   curl -fsSL https://fnm.vercel.app/install | bash;
+  print_section_end 39; 
+  print_section_heading "Installing Packages";
   if [ $? == 0 ]; then
-    printf "$(gum style --bold '▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔')\n";
-    printf "\n";
-    printf "$(gum style --bold --underline 'Installing Packages')\n";
     print_installed "fnm" "script @ https://fnm.vercel.app/install";
     NODE_VERSION_MANAGER_NEWLY_INSTALLED=true;
     NEWLY_INSTALLED_NODE_VERSION_MANAGER="fnm";
+    return 0;
+  else
+    print_cannot_install "nvm";
+    return 1;
   fi
 }
 
 # Installs pip.
 install_package_manager_pip () {
-  if $OS_IS_DEBIAN_BASED; then
-    install_package_apt "python3-pip" "pip";
-    if [ $? == 0 ]; then
-      return 0;
-    else
-      return 1;
+  printf "\n";
+  printf "$(gum style --bold --underline "Select pip to Install")\n";
+  printf "$(gum style --italic \
+"Which pip package manager would you like to install?")\n";
+  SELECTED=$(gum choose \
+    --cursor="$GUM_CHOOSE_CURSOR " \
+    --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
+    --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
+    "$(gum style --bold 'pip3 »') pip for Python 3.x" \
+    "$(gum style --bold 'pip2 »') pip for Python 2.7" \
+    "$(gum style --bold 'pip3 + pip2 »') both pip3 & pip" \
+    "$(gum style --bold 'None')");
+  SELECTED=$(echo "$SELECTED" | \
+    sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g" | \
+    awk -F " »" '{print $1}');
+  printf "💬 \"$SELECTED.\"\n"
+  INSTALL_PIP3=[ "$SELECTED" | grep -q "pip3" ];
+  INSTALL_PIP2=[ "$SELECTED" | grep -q "pip2" ];
+  if [ "$SELECTED" = "None" ]; then
+    return 1;
+  elif $OS_IS_DEBIAN_BASED; then
+    if $INSTALL_PIP3; then
+      install_package_apt "python3-pip" "pip3";
+    fi
+    if $INSTALL_PIP2; then
+      install_package_apt "python-pip" "pip2";
     fi
   elif $OS_IS_RHEL_BASED; then
-    install_package_dnf "python3-pip" "pip";
-    if [ $? == 0 ]; then
-      return 0;
-    else
-      return 1;
+    if $INSTALL_PIP3; then
+      install_package_dnf "python3-pip" "pip3";
+    fi
+    if $INSTALL_PIP2; then
+      if [ "$OS_NAME" = "CentOS Linux" ] || \
+        [ "$OS_NAME" = "Red Hat Enterprise Linux" ]; then
+        install_package_dnf \
+"epel-release" "Extra Packages for Enterprise Linux";
+      fi
+      install_package_dnf "python-pip";
     fi
   elif $OS_IS_ZYPPER_BASED; then
-    install_package_zypper "python3-pip" "pip";
-    if [ $? == 0 ]; then
-      return 0;
-    else
-      return 1;
+    if $INSTALL_PIP3; then
+      install_package_zypper "python3-pip" "pip3";
+    fi
+    if $INSTALL_PIP2; then
+      install_package_zypper "python2-pip" "pip2";
     fi
   else
-    print_cannot_install "pip" "Try instructions @ \
+    print_cannot_install "pip3" "Try instructions @ \
 https://pip.pypa.io/en/stable/installation/ \
 to install pip and $PACKAGE_NAME.";
     return 1;
@@ -1241,8 +1308,7 @@ get_installation_method () {
 # Args:
 #   `$@` - Array of packages to install.
 install_packages () {
-  printf "\n";
-  printf "$(gum style --bold --underline 'Installing Packages')\n";
+  print_section_heading "Installing Packages";
   local PACKAGES_TO_INSTALL=("$@");
   # For every PACKAGE...
   for PACKAGE in "${PACKAGES_TO_INSTALL[@]}"; do
@@ -1657,7 +1723,7 @@ install_package_npm () {
 install_package_pip () {
   local PACKAGE_ID=$1;
   local PACKAGE_NAME=$2;
-  local PIP="pip";
+  local PIP="pip3";
   if [ "$OS_NAME" = "CentOS Linux" ]; then
     PIP="pip3";
   fi
