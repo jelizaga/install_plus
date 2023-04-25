@@ -285,8 +285,8 @@ check_conf () {
   fi
   CONF_CURSOR=$(awk -F '=' '/^CURSOR=/ {print $2}' \
     "$INSTALLY_CONF");
-  if ! [ -z "$CONF_COLOR" ]; then
-    GUM_CURSOR="$CONF_CURSOR ";
+  if ! [ -z "$CONF_CURSOR" ]; then
+    GUM_CHOOSE_CURSOR="$CONF_CURSOR";
   fi
   CONF_CHOOSE_DEFAULT=$(awk -F '=' '/^CHOOSE_DEFAULT=/ {print $2}' \
     "$INSTALLY_CONF");
