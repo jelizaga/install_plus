@@ -22,8 +22,11 @@ OS_IS_DEBIAN_BASED=false;
 OS_IS_RHEL_BASED=false;
 OS_IS_SUSE_BASED=false;
 
-# Packages file
+# package.json
 PACKAGE_JSON="$HOME/.instally/package.json";
+
+# instally.conf
+INSTALLY_CONF="$HOME/.instally/instally.conf";
 
 # Packages
 PACKAGES_INSTALLED=0;
@@ -254,6 +257,32 @@ install_dependency_jq_using_binary () {
     chmod +x $HOME/.local/bin/jq;
     print_installed "jq" "downloaded binary \
 (https://stedolan.github.io/jq/download/)";
+  fi
+}
+
+# Config #######################################################################
+# Functions related to reading `instally`'s config file and setting configured
+# values.
+################################################################################
+
+# 
+check_conf () {
+  CONFIG_COLOR_ACTIVE=$(awk -F '=' '/^COLOR_ACTIVE=/ {print $2}' \
+    "$INSTALLY_CONF")
+  if ! [ -z "$CONFIG_COLOR_ACTIVE" ]; then
+    echo "$COLOR_ACTIVE";
+    COLOR_ACTIVE="$CONFIG_COLOR_ACTIVE";
+    echo "$COLOR_ACTIVE";
+    GUM_CHOOSE_CURSOR_FOREGROUND="$COLOR_ACTIVE";
+    GUM_CONFIRM_SELECTED_BACKGROUND="$COLOR_ACTIVE";
+  fi
+  CONFIG_COLOR_ACCENT=$(awk -F '=' '/^COLOR_ACCENT=/ {print $2}' \
+    "$INSTALLY_CONF")
+  if ! [ -z "$CONFIG_COLOR_ACCENT" ]; then
+    echo "$COLOR_ACCENT";
+    COLOR_ACCENT="$CONFIG_COLOR_ACCENT";
+    echo "$COLOR_ACCENT";
+    GUM_CHOOSE_SELECTED_FOREGROUND="$COLOR_ACCENT";
   fi
 }
 
@@ -590,13 +619,13 @@ print_install_packages () {
   printf "\n"
   print_section_heading "Install Packages";
   printf "$(gum style --italic 'Press ')";
-  printf "$(gum style --bold --foreground '#E60000' 'x')";
+  printf "$(gum style --bold --foreground "$COLOR_ACTIVE" 'x')";
   printf "$(gum style --italic ' to select packages to install')\n";
   printf "$(gum style --italic 'press ')"
-  printf "$(gum style --bold --foreground '#E60000' 'a')";
+  printf "$(gum style --bold --foreground "$COLOR_ACTIVE" 'a')";
   printf "$(gum style --italic ' to select all')\n";
   printf "$(gum style --italic 'press ')";
-  printf "$(gum style --bold --foreground '#E60000' 'enter')";
+  printf "$(gum style --bold --foreground "$COLOR_ACTIVE" 'enter')";
   printf "$(gum style --italic ' to confirm your selection:')\n";
 }
 
@@ -767,13 +796,13 @@ print_select_groups () {
   printf "\n";
   print_section_heading "Select Groups";
   printf "$(gum style --italic 'Press ')";
-  printf "$(gum style --bold --foreground '#E60000' 'x')";
+  printf "$(gum style --bold --foreground "$COLOR_ACTIVE" 'x')";
   printf "$(gum style --italic ' to select package groups')\n";
   printf "$(gum style --italic 'press ')"
-  printf "$(gum style --bold --foreground '#E60000' 'a')";
+  printf "$(gum style --bold --foreground "$COLOR_ACTIVE" 'a')";
   printf "$(gum style --italic ' to select all')\n"
   printf "$(gum style --italic 'press ')"
-  printf "$(gum style --bold --foreground '#E60000' 'enter')"
+  printf "$(gum style --bold --foreground "$COLOR_ACTIVE" 'enter')"
   printf "$(gum style --italic ' to confirm your selection:')\n"
 }
 
@@ -1957,6 +1986,7 @@ installation command in $PACKAGE_JSON is valid.\n";
 sudo -v
 check_os
 check_dependencies
+check_conf
 if [ $? == 0 ]; then
   menu_main
 fi
