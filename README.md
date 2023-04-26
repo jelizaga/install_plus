@@ -48,6 +48,8 @@ installing your favorite packages en masse.
     * [yum](#yum)
     * [zypper](#zypper)
 * [🔧 Troubleshooting](#-troubleshooting)
+    * [Where is package.json?](#where-is-packagejson)
+    * [Where is instally.conf?](#where-is-installyconf)
     * [gum is installed, but won't run](#gum-is-installed-but-wont-run)
 
 <!-- vim-markdown-toc -->
@@ -555,6 +557,18 @@ S | Name         | Summary                              | Type
 ```
 
 ## 🔧 Troubleshooting
+
+#### Where is package.json?
+
+`package.json` is in `~/.instally` (a directory called `.instally`, located in
+your home directory).
+
+If you're having trouble finding `/.instally`, try `ctrl+h` in your file manager
+to view hidden files.
+
+#### Where is instally.conf?
+
+`instally.conf` is in `~/.instally`, just like `package.json`.
 
 #### gum is installed, but won't run
 
