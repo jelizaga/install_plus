@@ -275,7 +275,7 @@ a field in the package object containing your OS's *full name*:
     "command": "wget -P ~/Downloads https://download.virtualbox.org/virtualbox/7.0.8/virtualbox-7.0_7.0.8-156879~Debian~bullseye_amd64.deb; sudo dpkg -i ~/Downloads/virtualbox-7.0_7.0.8-156879~Debian~bullseye_amd64.deb; rm ~/Downloads/virtualbox-7.0_7.0.8-156879~Debian~bullseye_amd64.deb;"
   },
   "Debian GNU/Linux 10 (buster)": {
-    "command": "wget -P ~/Downloads https://download.virtualbox.org/virtualbox/7.0.8/virtualbox-7.0_7.0.8-156879~Debian~bullseye_amd64.deb; sudo dpkg -i ~/Downloads/virtualbox-7.0_7.0.8-156879~Debian~bullseye_amd64.deb; rm ~/Downloads/virtualbox-7.0_7.0.8-156879~Debian~bullseye_amd64.deb;"
+    "command": "wget -P ~/Downloads https://download.virtualbox.org/virtualbox/7.0.8/virtualbox-7.0_7.0.8-156879~Debian~buster_amd64.deb; sudo dpkg -i ~/Downloads/virtualbox-7.0_7.0.8-156879~Debian~buster_amd64.deb; rm ~/Downloads/virtualbox-7.0_7.0.8-156879~Debian~buster_amd64.deb;"
   },
 }
 ```
