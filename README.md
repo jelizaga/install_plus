@@ -30,6 +30,7 @@ installing your favorite packages en masse.
       * [Installation by command](#installation-by-command)
       * [Preferring installation methods](#preferring-installation-methods)
       * [Specifying installation methods by OS](#specifying-installation-methods-by-os)
+        * [Specifying installation methods by OS version](#specifying-installation-methods-by-os-version)
       * [How does instally choose installation methods?](#how-does-instally-choose-installation-methods)
     * [Grouping packages](#grouping-packages)
     * [Installation order](#installation-order)
@@ -154,7 +155,6 @@ Here's a *simple example* of a `package.json`:
 
 Specify as few or as many installation methods for a package as you'd like.
 
-
 ##### Installation by package manager
 
 ```json
@@ -199,6 +199,10 @@ package.
 
 * ⚠ *Caution:* Make sure you know what you're doing. `instally` will run
   whatever is in the `"command"` field without sanitization or guardrails.
+* 👉 *Protip:* `instally` will choose other existing installation methods over
+  the `"command"` method due to its risk and inflexibility, so you may need to
+  `"prefer"` your `"command"` if other installation methods exist for the
+  package.
 * 👉 *Protip:* String together shell commands in sequence using `;` or `&&`.
 * 👉 *Protip:* You can use `"command"` to execute your own scripts.
 * 👉 *Protip:* Remember to delete downloaded files and install scripts if you
@@ -223,13 +227,13 @@ method using the `"prefer"` field:
 }
 ```
 
-Since `"prefer"` is `"flatpak"`, `instally` will install this package using
+↑ Since `"prefer"` is `"flatpak"`, `instally` will install this package using
 `flatpak` instead of `apt`.
 
 ##### Specifying installation methods by OS
 
 *Specify installation methods for a specific OS* by adding a field in the
-package object containing the OS's name:
+package object containing your OS's name:
 
 ```json
 {
@@ -237,10 +241,52 @@ package object containing the OS's name:
   "apt": {
     "id": "code"
   },
+  "Fedora Linux": {
+    "command": "sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc; sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'; dnf check-update; sudo dnf install code;"
+  },
+  "openSUSE Tumbleweed": {
+    "command": "sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc; sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/zypp/repos.d/vscode.repo'; sudo zypper refresh; sudo zypper install code;"
+  }
 }
 ```
 
-* 👉 *Protip:* You can find your current OS's name when you start `instally`:
+↑ On a Fedora Linux system, `instally` will try to install this package using
+the given `"command"` installation method under `"Fedora Linux"`. On an
+openSUSE Tumbleweed system, `instally` will use a totally different command to
+install the package.
+
+* 👉 *Protip:* You can check the `/etc/os-release` file for your OS's name (in
+  case you forgot it):
+  ```bash
+  # Linux: Get your OS's name:
+  echo $(grep '^NAME=' /etc/os-release | cut -d= -f2 | tr -d '"')
+  ```
+
+###### Specifying installation methods by OS version
+
+*Specify installation methods for a specific* ***version*** *of an OS* by adding
+a field in the package object containing your OS's *full name*:
+
+```json
+{
+  "name": "VirtualBox",
+  "apt": "virtualbox",
+  "Debian GNU/Linux 11 (bullseye)": {
+    "command": ""wget -P ~/Downloads https://download.virtualbox.org/virtualbox/7.0.8/virtualbox-7.0_7.0.8-156879~Debian~bullseye_amd64.deb; sudo dpkg -i ~/Downloads/virtualbox-7.0_7.0.8-156879~Debian~bullseye_amd64.deb; rm ~/Downloads/virtualbox-7.0_7.0.8-156879~Debian~bullseye_amd64.deb;"
+  },
+  "Debian GNU/Linux 10 (buster)": {
+    "command": "wget -P ~/Downloads https://download.virtualbox.org/virtualbox/7.0.8/virtualbox-7.0_7.0.8-156879~Debian~bullseye_amd64.deb; sudo dpkg -i ~/Downloads/virtualbox-7.0_7.0.8-156879~Debian~bullseye_amd64.deb; rm ~/Downloads/virtualbox-7.0_7.0.8-156879~Debian~bullseye_amd64.deb;"
+  },
+}
+```
+
+↑ `instally` will install this package using different commands specific to
+different versions of Debian, and use `apt` if it's ran on a system with `apt`
+available that isn't Debian 11 or Debian 10.
+
+* 👉 *Protip:* `instally` will choose version-specific installation methods
+  for a package over [OS-specific](#specifying-installation-methods-by-os) installation methods.
+* 👉 *Protip:* You can find your current OS's full name, including its version, at `instally`'s main menu:
 
   ![instally printing the OS name of the host machine.](https://i.imgur.com/E0ntWq9.jpeg)
 
@@ -340,15 +386,30 @@ user.
 
 Feel free to contribute and expand `instally`'s compatibility!
 
+* 👉 *Protip:* Hypothetically, `instally` could work on any distro by using the
+  flexible [`"command"` installation method](#installation-by-command).
+  Combine this technique with 
+  [OS-specific installation methods](#specifying-installation-methods-by-os)
+  for your enigmatic distro and you'll be good-to-go.
+* ⚠ *Warning:* `instally` does not currently run on macOS.
+
 *See also:* [Supported package managers](#supported-package-managers)
 
 ## 🎨 Configuration
 
-Configure `instally` by editing `~/.instally/instally.conf`:
+*Configure* `instally` by editing `~/.instally/instally.conf`:
 
 ```
-COLOR_ACTIVE="VALUE" # Active color; use a hex code.
-COLOR_ACCENT="VALUE" # Accent color; use a hex code.
+# Active color; use a hex code or ANSI color code:
+COLOR_ACTIVE=117
+# Accent color; use a hex code or ANSI color code:
+COLOR_ACCENT=#008000
+# Cursor used to point to menu items:
+CURSOR=→
+# Character symbolizing unselected menu items:
+CHOOSE_DEFAULT=-
+# Character symbolizing selected menu items:
+CHOOSE_SELECTED=✔
 ```
 
 ## 👉 Protips

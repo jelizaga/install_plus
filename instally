@@ -1391,8 +1391,24 @@ install_packages () {
 install_package () {
   local PACKAGE_DATA="$1";
   local PACKAGE_NAME=$(echo "$PACKAGE_DATA" | jq -r '.name' | tr -d '\n');
+  local HAS_OS_PRETTY_NAME_INSTALLATION_METHODS=$(echo "$PACKAGE_DATA" | \
+    jq --arg OS_PRETTY_NAME "$OS_PRETTY_NAME" 'has($OS_PRETTY_NAME)');
+  local HAS_OS_NAME_INSTALLATION_METHODS=$(echo "$PACKAGE_DATA" | \
+    jq --arg OS_NAME "$OS_NAME" 'has($OS_NAME)');
+  # Narrow package data to installation methods relevant to the OS,
+  # if specified in `package.json`:
+  if [ "$HAS_OS_PRETTY_NAME_INSTALLATION_METHODS" = "true" ]; then
+    PACKAGE_DATA=$(echo "$PACKAGE_DATA" | \
+      jq --arg OS_PRETTY_NAME \
+      "$OS_PRETTY_NAME" '.[$OS_PRETTY_NAME]');
+  elif [ "$HAS_OS_NAME_INSTALLATION_METHODS" = "true" ]; then
+    PACKAGE_DATA=$(echo "$PACKAGE_DATA" | \
+      jq --arg OS_NAME \
+      "$OS_NAME" '.[$OS_NAME]');
+  fi
+  # Determine the package's installation method;
   local INSTALLATION_METHOD="$(get_installation_method "$PACKAGE_DATA" 2>&1)";
-  # If an installation method exists, install the package.
+  # If an installation method exists, install the package:
   if [ -n "$INSTALLATION_METHOD" ] && [ "$INSTALLATION_METHOD" != $'\n' ]; then
     # If the preferred installation method is a command, execute the command.
     if [ "$INSTALLATION_METHOD" = "command" ]; then
@@ -1422,6 +1438,7 @@ install_package () {
         install_package_zypper "$PACKAGE_ID" "$PACKAGE_NAME";
       fi
     fi
+  # If there's no apparent installation method, say so.
   else
     print_cannot_install "$PACKAGE_NAME" "Installation method not found.";
     return 1;
@@ -1466,7 +1483,7 @@ as $PACKAGE_NAME's installation method instead.";
           print_updated "apt";
         else
           gum spin --spinner globe --title \
-            "Updating $(gum style --bold "apt") to install $PACKAGE_NAME..." \
+            "Updating $(gum style --bold "apt") to install $(gum style --bold "$PACKAGE_NAME")..." \
             -- sudo apt-get update -y;
         fi
         if [ $? == 0 ]; then
