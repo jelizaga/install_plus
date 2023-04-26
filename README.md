@@ -155,33 +155,63 @@ Here's a *simple example* of a `package.json`:
 
 #### Installation methods
 
-Specify as few or as many installation methods for a package as you'd like.
+Within a package object, you can specify as few or as many installation methods
+as you'd like. These are all valid installation methods:
+
+* [`apt`](#installation-by-package-manager)
+* [`command`](#installation-by-command)
+* [`dnf`](#installation-by-package-manager)
+* [`flatpak`](#installation-by-package-manager)
+* [`go`](#installation-by-package-manager)
+* [`npm`](#installation-by-package-manager)
+* [`pip`](#installation-by-package-manager)
+* [`snap`](#installation-by-package-manager)
+* [`yum`](#installation-by-package-manager)
+* [`zypper`](#installation-by-package-manager)
 
 ##### Installation by package manager
+
+`instally` currently supports ***10*** different package managers. 
+
+Here, we're using 3 of them:
 
 ```json
 {
   "name": "Vim",
-  "description": "your favorite text editor",
+  "description": "play the legendary text editing instrument like a cool kid",
   "apt": {
     "id": "vim-gtk3"
+  },
+  "dnf": {
+    "id": "vim-X11"
+  },
+  "zypper": {
+    "id": "vim"
   }
 }
 ```
+
+↑ On systems with `apt` `instally` will use `apt` to install `"vim-gtk3"`, and
+on systems with `dnf` `instally` will use `dnf` to install `"vim-x11"`, and so
+on.
 
 * 👉 *Protip:* See [getting package IDs](#getting-package-ids) for help getting
   the `"id"`s of your packages.
 
 ###### Supported package managers
 
-* `apt`
-* `dnf`
-* `flatpak`
-* `npm`
-* `pip`
-* `snap`
-* `yum`
-* `zypper`
+`instally` supports ***10*** package managers:
+
+* `apt` - needs an `"id"`
+* `dnf` - needs an `"id"`; falls back to `yum` automatically if `dnf` isn't
+  installed
+* `flatpak` - needs an `"id"`
+* `go` - needs an `"id"`
+* `npm` - needs an `"id"`
+* `pip` - needs an `"id"`
+* `snap` - needs an `"id"`
+* `yum` - needs an `"id"`
+* `zypper` - needs an `"id"`
 
 ##### Installation by command
 
