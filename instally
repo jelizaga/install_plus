@@ -270,34 +270,36 @@ install_dependency_jq_using_binary () {
 
 # Checks and applies the config file's user-customized values.
 check_conf () {
-  CONF_COLOR_ACTIVE=$(awk -F '=' '/^COLOR_ACTIVE=/ {print $2}' \
-    "$INSTALLY_CONF");
-  if ! [ -z "$CONF_COLOR_ACTIVE" ]; then
-    COLOR_ACTIVE="$CONF_COLOR_ACTIVE";
-    GUM_CHOOSE_CURSOR_FOREGROUND="$COLOR_ACTIVE";
-    GUM_CONFIRM_SELECTED_BACKGROUND="$COLOR_ACTIVE";
-  fi
-  CONF_COLOR_ACCENT=$(awk -F '=' '/^COLOR_ACCENT=/ {print $2}' \
-    "$INSTALLY_CONF");
-  if ! [ -z "$CONF_COLOR_ACCENT" ]; then
-    COLOR_ACCENT="$CONF_COLOR_ACCENT";
-    GUM_CHOOSE_SELECTED_FOREGROUND="$COLOR_ACCENT";
-  fi
-  CONF_CURSOR=$(awk -F '=' '/^CURSOR=/ {print $2}' \
-    "$INSTALLY_CONF");
-  if ! [ -z "$CONF_CURSOR" ]; then
-    GUM_CHOOSE_CURSOR="$CONF_CURSOR";
-  fi
-  CONF_CHOOSE_DEFAULT=$(awk -F '=' '/^CHOOSE_DEFAULT=/ {print $2}' \
-    "$INSTALLY_CONF");
-  if ! [ -z "$CONF_CHOOSE_DEFAULT" ]; then
-    GUM_CHOOSE_CURSOR_PREFIX="$CONF_CHOOSE_DEFAULT";
-    GUM_CHOOSE_UNSELECTED_PREFIX="$CONF_CHOOSE_DEFAULT";
-  fi
-  CONF_CHOOSE_SELECTED=$(awk -F '=' '/^CHOOSE_SELECTED=/ {print $2}' \
-    "$INSTALLY_CONF");
-  if ! [ -z "$CONF_CHOOSE_SELECTED" ]; then
-    GUM_CHOOSE_SELECTED_PREFIX="$CONF_CHOOSE_SELECTED";
+  if [ -e $INSTALLY_CONF ]; then
+    CONF_COLOR_ACTIVE=$(awk -F '=' '/^COLOR_ACTIVE=/ {print $2}' \
+      "$INSTALLY_CONF");
+    if ! [ -z "$CONF_COLOR_ACTIVE" ]; then
+      COLOR_ACTIVE="$CONF_COLOR_ACTIVE";
+      GUM_CHOOSE_CURSOR_FOREGROUND="$COLOR_ACTIVE";
+      GUM_CONFIRM_SELECTED_BACKGROUND="$COLOR_ACTIVE";
+    fi
+    CONF_COLOR_ACCENT=$(awk -F '=' '/^COLOR_ACCENT=/ {print $2}' \
+      "$INSTALLY_CONF");
+    if ! [ -z "$CONF_COLOR_ACCENT" ]; then
+      COLOR_ACCENT="$CONF_COLOR_ACCENT";
+      GUM_CHOOSE_SELECTED_FOREGROUND="$COLOR_ACCENT";
+    fi
+    CONF_CURSOR=$(awk -F '=' '/^CURSOR=/ {print $2}' \
+      "$INSTALLY_CONF");
+    if ! [ -z "$CONF_CURSOR" ]; then
+      GUM_CHOOSE_CURSOR="$CONF_CURSOR";
+    fi
+    CONF_CHOOSE_DEFAULT=$(awk -F '=' '/^CHOOSE_DEFAULT=/ {print $2}' \
+      "$INSTALLY_CONF");
+    if ! [ -z "$CONF_CHOOSE_DEFAULT" ]; then
+      GUM_CHOOSE_CURSOR_PREFIX="$CONF_CHOOSE_DEFAULT";
+      GUM_CHOOSE_UNSELECTED_PREFIX="$CONF_CHOOSE_DEFAULT";
+    fi
+    CONF_CHOOSE_SELECTED=$(awk -F '=' '/^CHOOSE_SELECTED=/ {print $2}' \
+      "$INSTALLY_CONF");
+    if ! [ -z "$CONF_CHOOSE_SELECTED" ]; then
+      GUM_CHOOSE_SELECTED_PREFIX="$CONF_CHOOSE_SELECTED";
+    fi
   fi
 }
 
@@ -347,7 +349,7 @@ update_instally_conf () {
   local VALUE=$2;
   if [ -e $INSTALLY_CONF ]; then
     if grep -q "$FIELD" $INSTALLY_CONF; then
-      sed -i "s/^COLOR_ACCENT=.*/${FIELD}=${VALUE}/" $INSTALLY_CONF;
+      sed -i "s/^${FIELD}=.*/${FIELD}=${VALUE}/" $INSTALLY_CONF;
     else
       echo "$FIELD=$VALUE" >> $INSTALLY_CONF;
     fi
@@ -544,9 +546,63 @@ $(gum style --foreground $COLOR_ACTIVE "$COLOR_ACTIVE")\n";
     esac
 }
 
-# Menu wherein the user can customize `instally`'s interface.
+# Menu wherein the user can customize `instally`'s interface elements.
 menu_customize_interface () {
-  print_todo "Customizing interface";
+  print_section_heading "Settings / Customize Appearance / Interface";
+  local SELECTED=$(gum choose \
+    --cursor="$GUM_CHOOSE_CURSOR " \
+    --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
+    --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
+    "Cursor" \
+    "Default Menu Item" \
+    "Selected Menu Item" \
+    "Back");
+  print_input_selection "$SELECTED";
+  case $SELECTED in
+    "Cursor")
+      print_section_heading "Cursor";
+      printf "$(gum style --italic "Enter a new cursor.")\n";
+      printf "$(gum style --bold "Old cursor:") $GUM_CHOOSE_CURSOR\n";
+      NEW_CURSOR=$(gum input --placeholder ">");
+      if ! [ -z "$NEW_CURSOR" ]; then
+        GUM_CHOOSE_CURSOR=$NEW_CURSOR;
+        update_instally_conf "CURSOR" "$GUM_CHOOSE_CURSOR";
+      fi
+      printf "$(gum style --bold "New cursor:") $GUM_CHOOSE_CURSOR\n";
+      menu_customize_interface;
+      ;;
+    "Default Menu Item")
+      print_section_heading "Default Menu Item";
+      printf "$(gum style --italic "Enter a new default menu item prefix.")\n";
+      printf "$(gum style --bold "Old default menu item prefix:") \
+$GUM_CHOOSE_CURSOR_PREFIX\n";
+      NEW_DEFAULT_MENU_ITEM_PREFIX=$(gum input --placeholder "n");
+      if ! [ -z "$NEW_DEFAULT_MENU_ITEM_PREFIX" ]; then
+        GUM_CHOOSE_CURSOR_PREFIX=$NEW_DEFAULT_MENU_ITEM_PREFIX;
+        GUM_CHOOSE_UNSELECTED_PREFIX=$NEW_DEFAULT_MENU_ITEM_PREFIX;
+        update_instally_conf "CHOOSE_DEFAULT" "$GUM_CHOOSE_CURSOR_PREFIX";
+      fi
+      printf "$(gum style --bold "New default menu item prefix:") \
+$GUM_CHOOSE_CURSOR_PREFIX\n";
+      menu_customize_interface;
+      ;;
+    "Selected Menu Item")
+      print_section_heading "Selected Menu Item";
+      printf "$(gum style --italic "Enter a new selected menu item prefix.")\n";
+      printf "$(gum style --bold "Old selected menu item prefix:") \
+$GUM_CHOOSE_SELECTED_PREFIX\n";
+      NEW_SELECTED_MENU_ITEM_PREFIX=$(gum input --placeholder "y");
+      if ! [ -z "$NEW_SELECTED_MENU_ITEM_PREFIX" ]; then
+        GUM_CHOOSE_SELECTED_PREFIX=$NEW_SELECTED_MENU_ITEM_PREFIX;
+        update_instally_conf "CHOOSE_SELECTED" "$GUM_CHOOSE_SELECTED_PREFIX";
+      fi
+      printf "$(gum style --bold "New unselected menu item prefix:") \
+$GUM_CHOOSE_SELECTED_PREFIX\n";
+      menu_customize_interface;
+      ;;
+    "Back")
+      menu_customize_appearance;
+  esac
 }
 
 # Menu used to select groups of packages for installation.
