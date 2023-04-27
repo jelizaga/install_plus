@@ -354,6 +354,7 @@ menu_main () {
     "Install Packages" \
     "Settings" \
     "Quit");
+    print_input_selection "$SELECTED";
   case $SELECTED in
     "Install Packages")
       menu_select_groups;
@@ -372,7 +373,67 @@ menu_main () {
 
 # Settings menu where `instally` can be configured.
 menu_settings () {
-  print_error "To be complete.";
+  print_section_heading "Settings";
+  SELECTED=$(gum choose \
+    --cursor="$GUM_CHOOSE_CURSOR " \
+    --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
+    --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
+    "package.json" \
+    "Customize Interface" \
+    "Back");
+  print_input_selection "$SELECTED";
+  case $SELECTED in
+    "package.json")
+      menu_package_json;
+      ;;
+    "Customize Interface")
+      menu_customize_interface;
+      ;;
+    "Back")
+      menu_main;
+      ;;
+    *)
+      exit 1;
+  esac
+}
+
+menu_package_json () {
+  print_section_heading "Settings / package.json";
+  SELECTED=$(gum choose \
+    --cursor="$GUM_CHOOSE_CURSOR " \
+    --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
+    --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
+    "Edit package.json" \
+    "Select package.json" \
+    "Back");
+  print_input_selection "$SELECTED";
+  case $SELECTED in
+    "Edit package.json")
+      if [ -z $EDITOR ]; then
+        nano $PACKAGE_JSON;
+      elif [ -n $EDITOR ]; then
+        $EDITOR $PACKAGE_JSON;
+      fi
+      menu_package_json;
+      ;;
+    "Select package.json")
+      print_section_heading "Select package.json";
+      printf "$(gum style --italic "Enter the path to the") \
+$(gum style --bold --italic "package.json") \
+$(gum style --italic "file you would like to use.")\n";
+      printf "$(gum style --bold "Current package.json:") $PACKAGE_JSON\n";
+      NEW_PACKAGE_JSON=$(gum input --placeholder "/path/to/package.json/file");
+      #NEW_PACKAGE_JSON=$(gum file $HOME);
+      PACKAGE_JSON=$NEW_PACKAGE_JSON;
+      printf "$(gum style --bold "New package.json:") $PACKAGE_JSON\n";
+      menu_package_json;
+      ;;
+    "Back")
+      menu_settings;
+      ;;
+    *)
+      exit 1;
+  esac
 }
 
 # Menu used to select groups of packages for installation.
@@ -644,6 +705,20 @@ print_install_packages () {
   printf "$(gum style --italic ' to confirm your selection:')\n";
 }
 
+# Prints user input, as if the user had said it themselves.
+# Args:
+#   `$1` - Input to print.
+print_input_speech () {
+  local INPUT=$1;
+  printf "💬 \"$INPUT\"\n";
+}
+
+print_input_selection () {
+  local SELECTION=$1;
+  printf "$(gum style --foreground "$COLOR_ACCENT" "$GUM_CHOOSE_CURSOR") \
+$SELECTION\n";
+}
+
 # Prints declaration that a package has been successfully installed.
 # Args:
 #   `$1` - Name of the installed package.
@@ -685,6 +760,37 @@ using $INSTALLATION_METHOD...\n"
 ($(gum style --italic "$PACKAGE_ID")) \
 using $(gum style --bold "$INSTALLATION_METHOD")...";
   fi
+}
+
+# Prints declaration that a package cannot be installed due to a missing "id".
+# Args:
+#   `$1` - Name of the package being installed.
+#   `$2` - Name of the installation method used to install the package.
+print_missing_id () {
+  local PACKAGE_NAME=$1;
+  local INSTALLATION_METHOD=$1;
+  print_cannot_install "$PACKAGE_NAME" \
+    "$(gum style --bold "$INSTALLATION_METHOD") was chosen \
+to install $PACKAGE_NAME, \
+but $PACKAGE_NAME doesn't have an \"id\" for \"$INSTALLATION_METHOD\".";
+  print_protip "Try adding an \"id\" to $PACKAGE_NAME's \
+\"$INSTALLATION_METHOD\" installation method.";
+}
+
+
+# Prints declaration that a package cannot be installed due to a missing "id".
+# Args:
+#   `$1` - Name of the package being installed.
+#   `$2` - Name of the installation method used to install the package.
+print_missing_path () {
+  local PACKAGE_NAME=$1;
+  local INSTALLATION_METHOD=$1;
+  print_cannot_install "$PACKAGE_NAME" \
+    "$(gum style --bold "$INSTALLATION_METHOD") was chosen \
+to install $PACKAGE_NAME, \
+but $PACKAGE_NAME doesn't have a \"path\" for \"$INSTALLATION_METHOD\".";
+  print_protip "Try adding a \"path\" to $PACKAGE_NAME's \
+\"$INSTALLATION_METHOD\" installation method.";
 }
 
 # Prints warning that an expected package is missing.
@@ -781,15 +887,27 @@ print_todo () {
 
 # Prints install+'s title.
 print_title () {
-  printf "\n";
-  printf "$(gum style --italic '        welcome to')\n";
-  printf "   \"                    m           \"\"#    \"\"#          \n";
-  printf " mmm    m mm    mmm   mm#mm   mmm     #      #    m   m\n";
-  printf "   #    #\"  #  #   \"    #    \"   #    #      #    \"m m\" \n";
-  printf "   #    #   #   \"\"\"m    #    m\"\"\"#    #      #     #m#  \n";
-  printf " mm#mm  #   #  \"mmm\"    \"mm  \"mm\"#    \"mm    \"mm   \"#  \n";
-  printf "                                                   m\"   \n";
-  printf "                                                  \"\"    \n";
+  if ! package_is_installed gum; then
+    printf "\n";
+    printf "        welcome to\n";
+    printf "   \"                    m           \"\"#    \"\"#          \n";
+    printf " mmm    m mm    mmm   mm#mm   mmm     #      #    m   m\n";
+    printf "   #    #\"  #  #   \"    #    \"   #    #      #    \"m m\" \n";
+    printf "   #    #   #   \"\"\"m    #    m\"\"\"#    #      #     #m#  \n";
+    printf " mm#mm  #   #  \"mmm\"    \"mm  \"mm\"#    \"mm    \"mm   \"#  \n";
+    printf "                                                   m\"   \n";
+    printf "                                                  \"\"    \n";
+  else
+    printf "\n";
+    printf "$(gum style --italic --foreground "$COLOR_ACCENT" '        welcome to')\n";
+    printf "$(gum style --bold --foreground "$COLOR_ACCENT" '   \"                    m           \"\"#    \"\"#          ')\n";
+    printf "$(gum style --bold --foreground "$COLOR_ACCENT" ' mmm    m mm    mmm   mm#mm   mmm     #      #    m   m')\n";
+    printf "$(gum style --bold --foreground "$COLOR_ACCENT" '   #    #\"  #  #   \"    #    \"   #    #      #    \"m m\" ')\n";
+    printf "$(gum style --bold --foreground "$COLOR_ACCENT" '   #    #   #   \"\"\"m    #    m\"\"\"#    #      #     #m#  ')\n";
+    printf "$(gum style --bold --foreground "$COLOR_ACCENT" ' mm#mm  #   #  \"mmm\"    \"mm  \"mm\"#    \"mm    \"mm   \"#  ')\n";
+    printf "$(gum style --bold --foreground "$COLOR_ACCENT" '                                                   m\"   \n')";
+    printf "$(gum style --bold --foreground "$COLOR_ACCENT" '                                                  \"\"    ')\n";
+  fi
 }
 
 # Prints declaration that a package manager has been successfully updated.
@@ -1262,6 +1380,7 @@ get_installation_method () {
   APT=$(echo "$PACKAGE_DATA" | jq 'has("apt")');
   DNF=$(echo "$PACKAGE_DATA" | jq 'has("dnf")');
   FLATPAK=$(echo "$PACKAGE_DATA" | jq 'has("flatpak")');
+  GO=$(echo "$PACKAGE_DATA" | jq 'has("go")');
   NPM=$(echo "$PACKAGE_DATA" | jq 'has("npm")');
   PIP=$(echo "$PACKAGE_DATA" | jq 'has("pip")');
   SNAP=$(echo "$PACKAGE_DATA" | jq 'has("snap")');
@@ -1282,6 +1401,8 @@ get_installation_method () {
       INSTALLATION_METHOD="apt";
     elif [ "$FLATPAK" = "true" ]; then
       INSTALLATION_METHOD="flatpak";
+    elif [ "$GO" = "true" ]; then
+      INSTALLATION_METHOD="go";
     elif [ "$NPM" = "true" ]; then
       INSTALLATION_METHOD="npm";
     elif [ "$PIP" = "true" ]; then
@@ -1307,6 +1428,8 @@ get_installation_method () {
       INSTALLATION_METHOD="yum";
     elif [ "$FLATPAK" = "true" ]; then
       INSTALLATION_METHOD="flatpak";
+    elif [ "$GO" = "true" ]; then
+      INSTALLATION_METHOD="go";
     elif [ "$NPM" = "true" ]; then
       INSTALLATION_METHOD="npm";
     elif [ "$PIP" = "true" ]; then
@@ -1328,6 +1451,8 @@ get_installation_method () {
       INSTALLATION_METHOD="zypper";
     elif [ "$FLATPAK" = "true" ]; then
       INSTALLATION_METHOD="flatpak";
+    elif [ "$GO" = "true" ]; then
+      INSTALLATION_METHOD="go";
     elif [ "$NPM" = "true" ]; then
       INSTALLATION_METHOD="npm";
     elif [ "$PIP" = "true" ]; then
@@ -1336,12 +1461,12 @@ get_installation_method () {
       INSTALLATION_METHOD="snap";
     elif [ "$COMMAND" = "true" ]; then
       INSTALLATION_METHOD="command";
-    elif [ "$APT" = "true" ]; then
-      INSTALLATION_METHOD="apt";
     elif [ "$DNF" = "true" ]; then
       INSTALLATION_METHOD="dnf";
     elif [ "$YUM" = "true" ]; then
       INSTALLATION_METHOD="yum";
+    elif [ "$APT" = "true" ]; then
+      INSTALLATION_METHOD="apt";
     fi
   fi
   # Report the preferred installation method.
@@ -1417,15 +1542,27 @@ install_package () {
     # Otherwise, capture the `PACKAGE_ID` for the `INSTALLATION_METHOD`
     # and install the package using said `INSTALLATION_METHOD`.
     else
-      local PACKAGE_ID=$(echo "$PACKAGE_DATA" | \
-        jq -r --arg INSTALLATION_METHOD "$INSTALLATION_METHOD" \
-        ".$INSTALLATION_METHOD.id");
+      local PACKAGE_ID="";
+      if [ "$INSTALLATION_METHOD" = "go" ]; then
+        PACKAGE_ID=$(echo "$PACKAGE_DATA" | \
+          jq -r --arg INSTALLATION_METHOD "$INSTALLATION_METHOD" \
+          ".$INSTALLATION_METHOD.path" || \
+          print_missing_path "$PACKAGE_NAME" "$INSTALLATION_METHOD");
+        return 1;
+      else
+        PACKAGE_ID=$(echo "$PACKAGE_DATA" | \
+          jq -r --arg INSTALLATION_METHOD "$INSTALLATION_METHOD" \
+          ".$INSTALLATION_METHOD.id" || \
+          print_missing_id "$PACKAGE_NAME" "$INSTALLATION_METHOD");
+      fi
       if [ "$INSTALLATION_METHOD" = "apt" ]; then
         install_package_apt "$PACKAGE_ID" "$PACKAGE_NAME";
       elif [ "$INSTALLATION_METHOD" = "dnf" ]; then
         install_package_dnf "$PACKAGE_ID" "$PACKAGE_NAME";
       elif [ "$INSTALLATION_METHOD" = "flatpak" ]; then
         install_package_flatpak "$PACKAGE_ID" "$PACKAGE_NAME";
+      elif [ "$INSTALLATION_METHOD" = "go" ]; then
+        install_package_go "$PACKAGE_ID" "$PACKAGE_NAME";
       elif [ "$INSTALLATION_METHOD" = "npm" ]; then
         install_package_npm "$PACKAGE_ID" "$PACKAGE_NAME";
       elif [ "$INSTALLATION_METHOD" = "pip" ]; then
@@ -1441,7 +1578,7 @@ install_package () {
   # If there's no apparent installation method, say so.
   else
     print_cannot_install "$PACKAGE_NAME" "Installation method not found.";
-    return 1;
+    return 2;
   fi
 }
 
@@ -1666,14 +1803,14 @@ be downloaded from remote repository.";
 #   `$1` - Valid package ID.
 #   `$2` - Package name.
 install_package_go () {
-  local PACKAGE_ID=$1;
+  local PACKGE_PATH=$1;
   local PACKAGE_NAME=$2;
   # If go isn't installed, try installing go.
   if ! package_is_installed go; then
     print_not_installed "go" "install $PACKAGE_NAME";
     install_package_manager_go;
     if [ $? == 0 ]; then
-      install_package_go "$PACKAGE_ID" "$PACKAGE_NAME";
+      install_package_go "$PACKAGE_PATH" "$PACKAGE_NAME";
     else
       print_installation_method_missing "$PACKAGE_NAME" "go";
       return 2;
@@ -1686,13 +1823,13 @@ install_package_go () {
     # And install the package.
     else
       if ! package_is_installed gum; then
-        print_installing "$PACKAGE_NAME" "$PACKAGE_ID" "go";
-        go install $PACKAGE_ID;
+        print_installing "$PACKAGE_NAME" "$PACKAGE_PATH" "go";
+        go install $PACKAGE_PATH;
       else
         gum spin \
           --spinner globe \
-          --title "$(print_installing "$PACKAGE_NAME" "$PACKAGE_ID" "go")" \
-          -- go install $PACKAGE_ID;
+          --title "$(print_installing "$PACKAGE_NAME" "$PACKAGE_PATH" "go")" \
+          -- go install $PACKAGE_PATH;
       fi
       # If the package is successfully installed, say so.
       if [ $? == 0 ]; then

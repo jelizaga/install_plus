@@ -3,14 +3,12 @@
 > `instally` is a portable interactive CLI for conveniently & consistently 
 installing your favorite packages en masse.
 
-*See also:* [.dotfiles](https://github.com/jelizaga/.dotfiles)
-
 * ⛺ **Minimal dependencies:** Owing to its simplicity, you can bring `instally`
   to any[\*](#os-compatibility) machine that's capable of running Bash and `jq`.
 * 🚚 **JSON-driven flexibility:** Specify packages for `instally` to install
   using JSON and enjoy support for grouping, preferred methods of installation, 
-  fallback methods, multiple package managers, and even running your own
-  installation commands.
+  fallback methods, ***10*** different package managers, and even running your
+  own installation commands.
 * 💼 **Super portable:** With `instally` and your own custom `package.json`
   file, you can bring your favorite packages to
   [(almost) any distro](#os-compatibility) and install them right away.
@@ -34,7 +32,7 @@ installing your favorite packages en masse.
       * [How does instally choose installation methods?](#how-does-instally-choose-installation-methods)
     * [Grouping packages](#grouping-packages)
     * [Installation order](#installation-order)
-  * [OS Compatibility](#os-compatibility)
+  * [💻 OS Compatibility](#-os-compatibility)
 * [🎨 Configuration](#-configuration)
 * [👉 Protips](#-protips)
   * [Setting your default package.json editor](#setting-your-default-packagejson-editor)
@@ -156,18 +154,20 @@ Here's a *simple example* of a `package.json`:
 #### Installation methods
 
 Within a package object, you can specify as few or as many installation methods
-as you'd like. These are all valid installation methods:
+as you'd like. 
 
-* [`apt`](#installation-by-package-manager)
-* [`command`](#installation-by-command)
-* [`dnf`](#installation-by-package-manager)
-* [`flatpak`](#installation-by-package-manager)
-* [`go`](#installation-by-package-manager)
-* [`npm`](#installation-by-package-manager)
-* [`pip`](#installation-by-package-manager)
-* [`snap`](#installation-by-package-manager)
-* [`yum`](#installation-by-package-manager)
-* [`zypper`](#installation-by-package-manager)
+These are all valid installation methods:
+
+* [`"apt"`](#installation-by-package-manager)
+* [`"command"`](#installation-by-command)
+* [`"dnf"`](#installation-by-package-manager)
+* [`"flatpak"`](#installation-by-package-manager)
+* [`"go"`](#installation-by-package-manager)
+* [`"npm"`](#installation-by-package-manager)
+* [`"pip"`](#installation-by-package-manager)
+* [`"snap"`](#installation-by-package-manager)
+* [`"yum"`](#installation-by-package-manager)
+* [`"zypper"`](#installation-by-package-manager)
 
 ##### Installation by package manager
 
@@ -206,7 +206,7 @@ on.
 * `dnf` - needs an `"id"`; falls back to `yum` automatically if `dnf` isn't
   installed
 * `flatpak` - needs an `"id"`
-* `go` - needs an `"id"`
+* `go` - needs a `"path"` containing the URL or path to the package
 * `npm` - needs an `"id"`
 * `pip` - needs an `"id"`
 * `snap` - needs an `"id"`
@@ -215,7 +215,7 @@ on.
 
 ##### Installation by command
 
-*Install packages using commands* with the `"command"` field in a package
+*Install packages using shell commands* with the `"command"` field in a package
 object:
 
 ```json
@@ -324,12 +324,11 @@ available that isn't Debian 11 or Debian 10.
 
 ##### How does instally choose installation methods?
 
-`instally` will automatically chose whatever methods are appropriate for your OS,
-unless you [prefer an installation method](#preferring-installation-methods).
-
-If `flatpak`, `npm`, or `pip` are missing but are specified to be used for
-installing a package, `instally` will automatically attempt to install them for
-you during the installation run.
+1. `instally` will automatically chose whatever methods are appropriate for
+   your OS, unless you 
+   [prefer an installation method](#preferring-installation-methods).
+2. If OS-specific installation methods are specified for a package, `instally`
+   will only choose from installation methods for the encountered OS.
 
 #### Grouping packages
 
@@ -401,7 +400,7 @@ user.
 * 👉 *Protip:* Using [grouping](#grouping-packages), you can bundle packages
   together with their dependencies.
 
-### OS Compatibility
+### 💻 OS Compatibility
 
 `instally` has been successfully tested and ran on:
 
