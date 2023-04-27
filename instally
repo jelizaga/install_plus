@@ -326,16 +326,35 @@ check_package_json () {
   fi
 }
 
+# Creates `~/.instally/package.json` and reports this action.
+create_package_json () {
+  touch $HOME/.instally/package.json;
+  print_created "~/.instally/package.json" "📒";
+}
+
 # Creates `~/.instally` and reports this action.
 create_instally_dir () {
   mkdir $HOME/.instally;
   print_created "~/.instally" "📁";
 }
 
-# Creates `~/.instally/package.json` and reports this action.
-create_package_json () {
-  touch $HOME/.instally/package.json;
-  print_created "~/.instally/package.json" "📒";
+# Updates a field in `instally.conf`.
+# Args:
+#   `$1` - Field to be updated.
+#   `$2` - Value with which to update the field.
+update_instally_conf () {
+  local FIELD=$1;
+  local VALUE=$2;
+  if [ -e $INSTALLY_CONF ]; then
+    if grep -q "$FIELD" $INSTALLY_CONF; then
+      sed -i "s/^COLOR_ACCENT=.*/${FIELD}=${VALUE}/" $INSTALLY_CONF;
+    else
+      echo "$FIELD=$VALUE" >> $INSTALLY_CONF;
+    fi
+  else
+    touch $INSTALLY_CONF;
+    echo "$FIELD=$VALUE" >> $INSTALLY_CONF;
+  fi
 }
 
 # Menus ########################################################################
@@ -347,7 +366,7 @@ menu_main () {
   print_title
   print_os
   printf "\n"
-  SELECTED=$(gum choose \
+  local SELECTED=$(gum choose \
     --cursor="$GUM_CHOOSE_CURSOR " \
     --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
     --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
@@ -374,20 +393,20 @@ menu_main () {
 # Settings menu where `instally` can be configured.
 menu_settings () {
   print_section_heading "Settings";
-  SELECTED=$(gum choose \
+  local SELECTED=$(gum choose \
     --cursor="$GUM_CHOOSE_CURSOR " \
     --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
     --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
     "package.json" \
-    "Customize Interface" \
+    "Customize Appearance" \
     "Back");
   print_input_selection "$SELECTED";
   case $SELECTED in
     "package.json")
       menu_package_json;
       ;;
-    "Customize Interface")
-      menu_customize_interface;
+    "Customize Appearance")
+      menu_customize_appearance;
       ;;
     "Back")
       menu_main;
@@ -397,9 +416,10 @@ menu_settings () {
   esac
 }
 
+# Menu wherein the user can configure package.json-related things.
 menu_package_json () {
   print_section_heading "Settings / package.json";
-  SELECTED=$(gum choose \
+  local SELECTED=$(gum choose \
     --cursor="$GUM_CHOOSE_CURSOR " \
     --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
     --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
@@ -409,8 +429,8 @@ menu_package_json () {
   print_input_selection "$SELECTED";
   case $SELECTED in
     "Edit package.json")
+      print_section_heading "Edit package.json";
       OLD_MODIFY=$(stat -L $PACKAGE_JSON | grep "Modify");
-      sleep 2;
       if [ -z $EDITOR ]; then
         nano $PACKAGE_JSON;
       elif [ -n $EDITOR ]; then
@@ -433,7 +453,9 @@ $(gum style --italic "file you would like to use.")\n";
       printf "$(gum style --bold "Current package.json:") $PACKAGE_JSON\n";
       NEW_PACKAGE_JSON=$(gum input --placeholder "/path/to/package.json/file");
       #NEW_PACKAGE_JSON=$(gum file $HOME);
-      PACKAGE_JSON=$NEW_PACKAGE_JSON;
+      if ! [ -z "$NEW_PACKAGE_JSON" ]; then
+        PACKAGE_JSON=$NEW_PACKAGE_JSON;
+      fi
       printf "$(gum style --bold "New package.json:") $PACKAGE_JSON\n";
       menu_package_json;
       ;;
@@ -443,6 +465,88 @@ $(gum style --italic "file you would like to use.")\n";
     *)
       exit 1;
   esac
+}
+
+# Menu wherein the user can choose what parts of `instally`'s appearance to
+# customize.
+menu_customize_appearance () {
+  print_section_heading "Settings / Customize Appearance";
+  local SELECTED=$(gum choose \
+    --cursor="$GUM_CHOOSE_CURSOR " \
+    --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
+    --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
+    "Customize Colors" \
+    "Customize Interface" \
+    "Back");
+  print_input_selection "$SELECTED";
+  case $SELECTED in
+    "Customize Colors")
+      menu_customize_colors;
+      ;;
+    "Customize Interface")
+      menu_customize_interface;
+      ;;
+    "Back")
+      menu_settings;
+  esac
+}
+
+# Menu wherein the user can customize `instally`'s colors.
+menu_customize_colors () {
+  print_section_heading "Settings / Customize Appearance / Colors";
+  local SELECTED=$(gum choose \
+    --cursor="$GUM_CHOOSE_CURSOR " \
+    --cursor.foreground="$GUM_CHOOSE_CURSOR_FOREGROUND" \
+    --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
+    "Accent Color" \
+    "Active Color" \
+    "Back");
+  print_input_selection "$SELECTED";
+  case $SELECTED in
+    "Accent Color")
+      print_section_heading "Accent Color";
+      printf "$(gum style --italic "Enter a new accent color.")\n";
+      printf "$(gum style --bold "Current") \
+$(gum style --bold "accent color:") \
+$(gum style --foreground $COLOR_ACCENT "$COLOR_ACCENT")\n";
+      NEW_COLOR_ACCENT=$(gum input --placeholder "010");
+      if ! [ -z "$NEW_COLOR_ACCENT" ]; then
+        COLOR_ACCENT=$NEW_COLOR_ACCENT;
+        GUM_CHOOSE_SELECTED_FOREGROUND="$COLOR_ACCENT";
+        update_instally_conf "COLOR_ACCENT" "$COLOR_ACCENT";
+      fi
+      printf "$(gum style --bold "New") \
+$(gum style --bold "accent color:") \
+$(gum style --foreground $COLOR_ACCENT "$COLOR_ACCENT")\n";
+      menu_customize_colors;
+      ;;
+    "Active Color")
+      print_section_heading "Active Color";
+      printf "$(gum style --italic "Enter a new active color.")\n";
+      printf "$(gum style --bold "Current") \
+$(gum style --bold "active color:") \
+$(gum style --foreground $COLOR_ACTIVE "$COLOR_ACTIVE")\n";
+      NEW_COLOR_ACTIVE=$(gum input --placeholder "010");
+      if ! [ -z "$NEW_COLOR_ACTIVE" ]; then
+        COLOR_ACTIVE=$NEW_COLOR_ACTIVE;
+        GUM_CHOOSE_CURSOR_FOREGROUND="$COLOR_ACTIVE";
+        GUM_CONFIRM_SELECTED_BACKGROUND="$COLOR_ACTIVE";
+        update_instally_conf "COLOR_ACTIVE" "$COLOR_ACTIVE";
+      fi
+      printf "$(gum style --bold "New") \
+$(gum style --bold "active color:") \
+$(gum style --foreground $COLOR_ACTIVE "$COLOR_ACTIVE")\n";
+      menu_customize_colors;
+      ;;
+    "Back")
+      menu_customize_appearance;
+      ;;
+    esac
+}
+
+# Menu wherein the user can customize `instally`'s interface.
+menu_customize_interface () {
+  print_todo "Customizing interface";
 }
 
 # Menu used to select groups of packages for installation.
@@ -935,7 +1039,6 @@ $(gum style --italic 'updated.')\n";
 # Prompts user to select package groups and provides instructions.
 # Associated with `menu_select_groups`.
 print_select_groups () {
-  printf "\n";
   print_section_heading "Select Groups";
   printf "$(gum style --italic 'Press ')";
   printf "$(gum style --bold --foreground "$COLOR_ACTIVE" 'x')";
