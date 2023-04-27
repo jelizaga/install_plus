@@ -33,6 +33,7 @@ INSTALLY_CONF="$HOME/.instally/instally.conf";
 
 # Packages
 PACKAGES_INSTALLED=0;
+ACTIVE_GROUP="";
 
 # apt
 APT_IS_UPDATED=false;
@@ -1148,6 +1149,7 @@ get_grouped_menu_items () {
   local GROUP_COUNT=0;
   # For every given package group,
   for GROUP in "${GROUPS_ARRAY[@]}"; do
+    ACTIVE_GROUP="$GROUP";
     ((GROUP_COUNT++));
     # Get an array of packages found in that group in `PACKAGE_JSON`,
     PACKAGES_IN_GROUP=$(jq -r --arg GROUP "$GROUP" \
@@ -1169,6 +1171,7 @@ get_grouped_menu_items () {
 # `PACKAGE_JSON`.
 # Items are `\n` separated.
 get_ungrouped_menu_items () {
+  ACTIVE_GROUP="";
   # Get all ungrouped packages from `PACKAGE_JSON`,
   local UNGROUPED_PACKAGES=$(jq -r '.packages' \
     $PACKAGE_JSON);
@@ -1200,10 +1203,18 @@ get_menu_items_from_array () {
     PACKAGE_HAS_DESCRIPTION=$(echo "$PACKAGE" | jq -r 'has("description")');
     if [ "$PACKAGE_HAS_DESCRIPTION" = "true" ]; then
       PACKAGE_DESCRIPTION=$(echo "$PACKAGE" | jq -r '.description');
-      MENU_ITEM="$(gum style --bold "$PACKAGE_NAME »") $PACKAGE_DESCRIPTION";
+      if ! [ -z "$ACTIVE_GROUP" ]; then
+        MENU_ITEM="$(gum style --bold "$ACTIVE_GROUP / $PACKAGE_NAME »") $PACKAGE_DESCRIPTION";
+      else
+        MENU_ITEM="$(gum style --bold "$PACKAGE_NAME »") $PACKAGE_DESCRIPTION";
+      fi
       MENU_ITEMS_ARRAY+=("$MENU_ITEM");
     else
-      MENU_ITEM="$(gum style --bold "$PACKAGE_NAME")"
+      if ! [ -z "$ACTIVE_GROUP" ]; then
+        MENU_ITEM="$(gum style --bold "$ACTIVE_GROUP / $PACKAGE_NAME")"
+      else
+        MENU_ITEM="$(gum style --bold "$PACKAGE_NAME")"
+      fi
       MENU_ITEMS_ARRAY+=("$MENU_ITEM");
     fi
   done
@@ -1652,7 +1663,7 @@ install_packages () {
     # Capture the actual `PACKAGE_NAME` from the array and remove styling.
     PACKAGE_NAME=$(echo "$PACKAGE" | \
       sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g" | \
-      awk -F " »" '{print $1}');
+      awk -F "/ " '{print $NF}' | awk -F " »" '{print $(NF-1)}');
     local PACKAGE_DATA="";
     local HAS_UNGROUPED_PACKAGES=$(jq 'has("packages")' $PACKAGE_JSON);
     local HAS_GROUPED_PACKAGES=$(jq 'has("groups")' $PACKAGE_JSON);
