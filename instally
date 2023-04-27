@@ -409,10 +409,19 @@ menu_package_json () {
   print_input_selection "$SELECTED";
   case $SELECTED in
     "Edit package.json")
+      OLD_MODIFY=$(stat -L $PACKAGE_JSON | grep "Modify");
+      sleep 2;
       if [ -z $EDITOR ]; then
         nano $PACKAGE_JSON;
       elif [ -n $EDITOR ]; then
         $EDITOR $PACKAGE_JSON;
+      fi
+      sleep 2;
+      NEW_MODIFY=$(stat -L $PACKAGE_JSON | grep "Modify");
+      if [ "$OLD_MODIFY" != "$NEW_MODIFY" ]; then
+        printf "💾 package.json edits saved.\n";
+      else
+        printf "No package.json edits made.\n";
       fi
       menu_package_json;
       ;;
