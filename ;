@@ -646,13 +646,33 @@ menu_select_groups () {
       && [[ ${SELECTED_GROUPS_ARRAY[0]} == "" ]]; then
       printf "No groups selected.\n";
       menu_install_packages;
+    elif [ "${#SELECTED_GROUPS_ARRAY[@]}" -eq 1 ]; then
+      print_input_selection "$(get_group_name "${SELECTED_GROUPS_ARRAY[0]}").";
+      menu_install_packages "${SELECTED_GROUPS_ARRAY[@]}";
     else
-      print_input_selection $(print_list "${SELECTED_GROUPS_ARRAY[@]}");
+      local INPUT="";
+      local SELECTED_GROUPS_ARRAY_LENGTH=${#SELECTED_GROUPS_ARRAY[@]};
+      for (( i=0; i<$((${#SELECTED_GROUPS_ARRAY[@]} - 1)); i++ )); do
+        local GROUP_NAME=$(get_group_name "${SELECTED_GROUPS_ARRAY[i]}");
+        INPUT+="$GROUP_NAME, ";
+      done
+      INPUT+="and $(get_group_name "${SELECTED_GROUPS_ARRAY[-1]}").";
+      print_input_selection "$INPUT";
       menu_install_packages "${SELECTED_GROUPS_ARRAY[@]}";
     fi
   else
     menu_install_packages;
   fi
+}
+
+get_group_name () {
+  local GROUP_NAME=$(echo "$1" | \
+    sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g" | \
+    awk -F " »" '{print $1}');
+  echo "$GROUP_NAME";
+}
+
+get_package_name () {
 }
 
 # Menu used to select packages for installation.
@@ -662,7 +682,7 @@ menu_install_packages () {
   local SELECTED_GROUPS_ARRAY=("$@");
   local GROUP_NAMES=();
   for GROUP in "${SELECTED_GROUPS_ARRAY[@]}"; do
-    local GROUP_NAME=$(print_selected_menu_item "$GROUP");
+    local GROUP_NAME=$(get_group_name "$GROUP");
     GROUP_NAMES+=("$GROUP_NAME");
   done
   # Get the eligible package menu items for display, given the selected package
@@ -691,7 +711,6 @@ menu_install_packages () {
     menu_main;
   # Otherwise, install the selected packages.
   else
-    print_input_selection "$(print_list "${SELECTED_PACKAGES_ARRAY[@]}")";
     install_packages "${SELECTED_PACKAGES_ARRAY[@]}";
   fi
 }
@@ -932,27 +951,6 @@ using $(gum style --bold "$INSTALLATION_METHOD")...";
   fi
 }
 
-# Prints the given array of items as a comma-separated list.
-# Args:
-#   `$@` - Array of items to print.
-print_list () {
-  local ARRAY=("$@");
-  local LIST="";
-  if [ "${#ARRAY[@]}" -eq 1 ]; then
-    print_input_selection "$(print_selected_menu_item "${ARRAY[0]}").";
-    menu_install_packages "${ARRAY[@]}";
-  else
-    local INPUT="";
-    local SELECTED_GROUPS_ARRAY_LENGTH=${#ARRAY[@]};
-    for (( i=0; i<$((${#ARRAY[@]} - 1)); i++ )); do
-      local GROUP_NAME=$(print_selected_menu_item "${ARRAY[i]}");
-      LIST+="$GROUP_NAME, ";
-    done
-    LIST+="and $(print_selected_menu_item "${ARRAY[-1]}").";
-    printf "$LIST";
-  fi
-}
-
 # Prints declaration that a package cannot be installed due to a missing "id".
 # Args:
 #   `$1` - Name of the package being installed.
@@ -1062,25 +1060,6 @@ print_section_heading () {
   local HEADING=$1;
   printf "\n";
   printf "$(gum style --bold --underline "$HEADING")\n";
-}
-
-# Prints the string preceding » in a menu item, sanitized of ANSI styling.
-# Args:
-#   `$1` - Menu item.
-print_selected_menu_item () {
-  local SELECTION=$(echo "$1" | \
-    sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g" | \
-    awk -F " »" '{print $1}');
-  echo "$SELECTION";
-}
-
-# Prints the name of a package, given its menu item string.
-#   `$1` - Menu item of a package.
-print_selected_package_name () {
-  local PACKAGE_NAME=$(echo "$1" | \
-    sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g" | \
-    awk -F "/ " '{print $NF}' | awk -F " »" '{print $(NF-1)}');
-  echo "$PACKAGE_NAME";
 }
 
 # Prints an 'under construction' message.
@@ -1699,12 +1678,13 @@ install_packages () {
   local PACKAGES_TO_INSTALL=("$@");
   # For every PACKAGE...
   for PACKAGE in "${PACKAGES_TO_INSTALL[@]}"; do
-    # Capture the actual `PACKAGE_NAME` from the array and remove styling,
-    PACKAGE_NAME=$(print_selected_package_name "$PACKAGE");
+    # Capture the actual `PACKAGE_NAME` from the array and remove styling.
+    PACKAGE_NAME=$(echo "$PACKAGE" | \
+      sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g" | \
+      awk -F "/ " '{print $NF}' | awk -F " »" '{print $(NF-1)}');
     local PACKAGE_DATA="";
     local HAS_UNGROUPED_PACKAGES=$(jq 'has("packages")' $PACKAGE_JSON);
     local HAS_GROUPED_PACKAGES=$(jq 'has("groups")' $PACKAGE_JSON);
-    # Capture the package's data,
     if [ "$HAS_UNGROUPED_PACKAGES" = "true" ]; then
       UNGROUPED_PACKAGE_DATA=$(jq --arg PACKAGE_NAME "$PACKAGE_NAME" \
         '.packages[] | select(.name == $PACKAGE_NAME)' \
@@ -1721,7 +1701,6 @@ install_packages () {
     else
       PACKAGE_DATA="$UNGROUPED_PACKAGE_DATA";
     fi
-    # And install the package.
     install_package "$PACKAGE_DATA";
   done
   print_packages_installed;
