@@ -647,7 +647,7 @@ menu_select_groups () {
       printf "No groups selected.\n";
       menu_install_packages;
     else
-      print_list "${SELECTED_GROUPS_ARRAY[@]}";
+      print_input_selection $(print_list "${SELECTED_GROUPS_ARRAY[@]}");
       menu_install_packages "${SELECTED_GROUPS_ARRAY[@]}";
     fi
   else
@@ -691,7 +691,7 @@ menu_install_packages () {
     menu_main;
   # Otherwise, install the selected packages.
   else
-    print_list "${SELECTED_PACKAGES_ARRAY[@]}";
+    print_input_selection $(print_list "${SELECTED_PACKAGES_ARRAY[@]}");
     install_packages "${SELECTED_PACKAGES_ARRAY[@]}";
   fi
 }
@@ -939,7 +939,8 @@ print_list () {
   local ARRAY=("$@");
   local LIST="";
   if [ "${#ARRAY[@]}" -eq 1 ]; then
-    print_input_selection "$(print_selected_menu_item "${ARRAY[0]}").";
+    #print_input_selection "$(print_selected_menu_item "${ARRAY[0]}").";
+    printf "$(print_selected_menu_item "${ARRAY[0]}").";
   else
     local INPUT="";
     local SELECTED_GROUPS_ARRAY_LENGTH=${#ARRAY[@]};
@@ -948,6 +949,7 @@ print_list () {
       LIST+="$GROUP_NAME, ";
     done
     LIST+="and $(print_selected_menu_item "${ARRAY[-1]}").";
+    #print_input_selection "$LIST";
     printf "$LIST";
   fi
 }
@@ -1070,7 +1072,7 @@ print_selected_menu_item () {
   local SELECTION=$(echo "$1" | \
     sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g" | \
     awk -F " »" '{print $1}');
-  echo "$SELECTION";
+  printf "$SELECTION\n";
 }
 
 # Prints the name of a package, given its menu item string.
@@ -1694,8 +1696,9 @@ get_installation_method () {
 # Args:
 #   `$@` - Array of packages to install.
 install_packages () {
-  print_section_heading "Installing Packages";
   local PACKAGES_TO_INSTALL=("$@");
+  PACKAGES_PENDING=${#PACKAGES_TO_INSTALL[@]};
+  print_section_heading "Installing $PACKAGES_PENDING Packages";
   # For every PACKAGE...
   for PACKAGE in "${PACKAGES_TO_INSTALL[@]}"; do
     # Capture the actual `PACKAGE_NAME` from the array and remove styling,
