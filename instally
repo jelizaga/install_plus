@@ -647,7 +647,7 @@ menu_select_groups () {
       printf "No groups selected.\n";
       menu_install_packages;
     else
-      print_input_selection $(print_list "${SELECTED_GROUPS_ARRAY[@]}");
+      print_list "${SELECTED_GROUPS_ARRAY[@]}";
       menu_install_packages "${SELECTED_GROUPS_ARRAY[@]}";
     fi
   else
@@ -691,7 +691,7 @@ menu_install_packages () {
     menu_main;
   # Otherwise, install the selected packages.
   else
-    print_input_selection "$(print_list "${SELECTED_PACKAGES_ARRAY[@]}")";
+    print_list "${SELECTED_PACKAGES_ARRAY[@]}";
     install_packages "${SELECTED_PACKAGES_ARRAY[@]}";
   fi
 }
@@ -940,7 +940,6 @@ print_list () {
   local LIST="";
   if [ "${#ARRAY[@]}" -eq 1 ]; then
     print_input_selection "$(print_selected_menu_item "${ARRAY[0]}").";
-    menu_install_packages "${ARRAY[@]}";
   else
     local INPUT="";
     local SELECTED_GROUPS_ARRAY_LENGTH=${#ARRAY[@]};
