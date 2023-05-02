@@ -63,12 +63,15 @@ they're missing upon initial run:
   fallback installation method.
 * [`gum`](https://github.com/charmbracelet/gum) - For interactivity.
 * [`jq`](https://github.com/stedolan/jq) - For reading your 
-  [`package.json`](#-packagesjson) file and installing packages.
+  [`package.json`](#-packagejson) file and installing packages.
+
+You can install `curl`, `gum`, and `jq` using whatever installation methods you
+prefer, if you'd rather not have `instally` install them for you.
 
 ## 🙂 Usage
 
 1. Specify the packages you'd like to be installed in the 
-   [`package.json`](#-packagesjson) file.
+   [`package.json`](#-packagejson) file.
 2. Run `instally`. `instally` will read `package.json` and provide an
    interactive CLI for package selection and installation.
 
@@ -81,7 +84,8 @@ install your favorite packages on (almost) anything!
 `package.json`, you can configure:
 
 * What packages `instally` can install,
-* Installation methods and fallback installation methods,
+* Installation methods, fallback installation methods, and OS-specific
+  installation methods,
 * Grouping of packages,
 * What order packages are installed in.
 
@@ -93,18 +97,28 @@ Here's a *simple example* of a `package.json`:
 {
   "packages": [
     {
-      "name": "curl",
+      "name": "Sensors",
+      "description": "hardware health monitoring",
       "apt": {
-        "id": "curl"
+        "id": "lm-sensors"
       },
       "dnf": {
-        "id": "curl"
+        "id": "lm_sensors"
+      },
+      "zypper": {
+        "id": "sensors"
       }
     },
     {
       "name": "Vim",
       "apt": {
         "id": "vim-gtk3"
+      },
+      "dnf": {
+        "id": "vim-X11"
+      },
+      "zypper": {
+        "id": "vim"
       }
     },
     {
@@ -116,6 +130,72 @@ Here's a *simple example* of a `package.json`:
       "dnf": {
         "id": "task"
       }
+    }
+  ],
+  "groups": [
+    {
+      "group": "🎨 Graphics",
+      "packages": [
+        {
+          "name": "Blender",
+          "description": "legendary FOSS 3D computer graphics suite",
+          "prefer": "flatpak",
+          "apt": {
+            "id": "blender"
+          },
+          "dnf": {
+            "id": "blender"
+          },
+          "flatpak": {
+            "id": "org.blender.Blender"
+          },
+          "zypper": {
+            "id": "blender"
+          }
+        }
+      ]
+    },
+    {
+      "group": "🐮 Goofy",
+      "description": "very important superfluous extras",
+      "packages": [
+        {
+          "name": "cmatrix",
+          "description": "cascading text in your terminal, just like the Matrix",
+          "apt": {
+            "id": "cmatrix"
+          },
+          "dnf": {
+            "id": "cmatrix"
+          },
+        },
+        {
+          "name": "figlet",
+          "description": "generate ASCII text on the fly in all sorts of fun fonts",
+          "apt": {
+            "id": "figlet"
+          },
+          "dnf": {
+            "id": "figlet"
+          },
+          "zypper": {
+            "id": "zypper"
+          }
+        },
+        {
+          "name": "cowsay",
+          "description": "cow that speaks wisdom",
+          "apt" {
+            "id": "cowsay"
+          },
+          "dnf": {
+            "id": "cowsay"
+          },
+          "zypper" {
+            "id": "cowsay"
+          }
+        }
+      ]
     }
   ]
 }

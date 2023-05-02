@@ -41,6 +41,7 @@ PACKAGES_ALREADY_INSTALLED_COUNT=0;
 PACKAGES_AMBIGUOUSLY_INSTALLED=();
 PACKAGES_AMBIGUOUSLY_INSTALLED_COUNT=0;
 PACKAGES_PENDING=0;
+PACKAGES_DONE=0;
 ACTIVE_GROUP="";
 
 # apt
@@ -894,6 +895,11 @@ print_input_selection () {
 "$GUM_CHOOSE_CURSOR") $SELECTION\n";
 }
 
+# Prints the ratio of packages 'done' to the packages to be installed.
+print_installation_ratio () {
+  printf "$PACKAGES_DONE/$PACKAGES_PENDING";
+}
+
 # Prints declaration that a package has been successfully installed.
 # Args:
 #   `$1` - Name of the installed package.
@@ -1512,11 +1518,11 @@ install_node_version_manager () {
       fi
       ;;
     "None")
-      print_section_heading "Installing Packages";
+      print_section_heading "Installing $PACKAGES_PENDING Packages...";
       return 1;
       ;;
     *)
-      print_section_heading "Installing Packages";
+      print_section_heading "Installing $PACKAGES_PENDING Packages...";
       return 1;
       ;;
   esac 
@@ -1538,7 +1544,7 @@ $(gum style --italic "to install?")\n";
   if [ $? == 0 ]; then
     printf "🎁 Node $NODE_VERSION installed.";
     ((PACKAGES_INSTALLED_COUNT++));
-    print_section_heading "Installing Packages";
+    print_section_heading "Installing $PACKAGES_PENDING Packages...";
     return 0;
   else
     printf "❌ $(gum style --bold "$NODE_VERSION") \
@@ -1551,7 +1557,7 @@ is not a valid Node.js version.\n";
 install_node_version_manager_nvm () {
   print_section_heading "Installing Node.js Version Manager: nvm";
   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash;
-  print_section_heading "Installing Packages";
+  print_section_heading "Installing $PACKAGES_PENDING Packages...";
   if [ $? == 0 ]; then
     print_installed "nvm" "script @ https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh";
     NODE_VERSION_MANAGER_NEWLY_INSTALLED=true;
@@ -1567,7 +1573,7 @@ install_node_version_manager_nvm () {
 install_node_version_manager_fnm () {
   print_section_heading "Installing Node.js Version Manager: fnm";
   curl -fsSL https://fnm.vercel.app/install | bash;
-  print_section_heading "Installing Packages";
+  print_section_heading "Installing $PACKAGES_PENDING Packages...";
   if [ $? == 0 ]; then
     print_installed "fnm" "script @ https://fnm.vercel.app/install";
     NODE_VERSION_MANAGER_NEWLY_INSTALLED=true;
@@ -1671,11 +1677,13 @@ reset_package_count () {
   PACKAGES_ALREADY_INSTALLED_COUNT=0;
   PACKAGES_AMBIGUOUSLY_INSTALLED_COUNT=0;
   PACKAGES_PENDING=0;
+  PACKAGES_DONE=0;
 }
 
 package_installed () {
   local PACKAGE=$1;
   local INSTALLATION_METHOD=$2;
+  ((PACKAGES_DONE++));
   if [ -n "$2" ]; then
     print_installed "$PACKAGE" "$INSTALLATION_METHOD";
   else
@@ -1687,6 +1695,7 @@ package_installed () {
 
 package_not_installed () {
   local PACKAGE=$1;
+  ((PACKAGES_DONE++));
   if [ -n "$2" ]; then
     local REASON=$2;
     print_cannot_install "$PACKAGE" "$REASON";
@@ -1699,6 +1708,7 @@ package_not_installed () {
 
 package_already_installed () {
   local PACKAGE=$1;
+  ((PACKAGES_DONE++));
   print_already_installed "$PACKAGE";
   PACKAGES_ALREADY_INSTALLED+=("$PACKAGE");
   ((PACKAGES_ALREADY_INSTALLED_COUNT++));
@@ -1706,6 +1716,7 @@ package_already_installed () {
 
 package_ambiguously_installed () {
   local PACKAGE=$1;
+  ((PACKAGES_DONE++));
   PACKAGES_AMBIGUOUSLY_INSTALLED+=("$PACKAGE");
   ((PACKAGES_AMBIGUOUSLY_INSTALLED_COUNT++));
 }
