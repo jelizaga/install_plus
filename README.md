@@ -185,13 +185,13 @@ Here's a *simple example* of a `package.json`:
         {
           "name": "cowsay",
           "description": "cow that speaks wisdom",
-          "apt" {
+          "apt": {
             "id": "cowsay"
           },
           "dnf": {
             "id": "cowsay"
           },
-          "zypper" {
+          "zypper": {
             "id": "cowsay"
           }
         }
