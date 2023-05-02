@@ -32,10 +32,14 @@ PACKAGE_JSON="$HOME/.instally/package.json";
 INSTALLY_CONF="$HOME/.instally/instally.conf";
 
 # Packages
-PACKAGES_INSTALLED=0;
-PACKAGES_NOT_INSTALLED=0;
-PACKAGES_ALREADY_INSTALLED=0;
-PACKAGES_AMBIGUOUSLY_INSTALLED=0;
+PACKAGES_INSTALLED=();
+PACKAGES_INSTALLED_COUNT=0;
+PACKAGES_NOT_INSTALLED=();
+PACKAGES_NOT_INSTALLED_COUNT=0;
+PACKAGES_ALREADY_INSTALLED=();
+PACKAGES_ALREADY_INSTALLED_COUNT=0;
+PACKAGES_AMBIGUOUSLY_INSTALLED=();
+PACKAGES_AMBIGUOUSLY_INSTALLED_COUNT=0;
 PACKAGES_PENDING=0;
 ACTIVE_GROUP="";
 
@@ -614,7 +618,7 @@ $GUM_CHOOSE_SELECTED_PREFIX\n";
 # Invokes `menu_package_select` after user selects (or doesn't select)
 # groups of packages.
 menu_select_groups () {
-  PACKAGES_INSTALLED=0;
+  PACKAGES_INSTALLED_COUNT=0;
   check_package_json;
   local HAS_GROUPS=$(jq 'has("groups")' $PACKAGE_JSON);
   if [ "$HAS_GROUPS" = "true" ]; then
@@ -879,14 +883,10 @@ print_install_packages () {
   printf "$(gum style --italic ' to confirm your selection:')\n";
 }
 
-# Prints user input, as if the user had said it themselves.
+# Prints input prefixed with a selection cursor, indicating a selection made
+# by the user.
 # Args:
-#   `$1` - Input to print.
-print_input_speech () {
-  local INPUT=$1;
-  printf "💬 \"$INPUT\"\n";
-}
-
+#   `$1` - Selection to print.
 print_input_selection () {
   local SELECTION=$1;
   printf "$(gum style --foreground "$COLOR_ACCENT" "$GUM_CHOOSE_CURSOR") \
@@ -1029,47 +1029,87 @@ print_package_json_missing_field () {
 found in $(gum style --bold "$PACKAGE_JSON").\n";
 }
 
+# Prints a report with a count and a list of packages that have been installed.
+print_packages_installed () {
+  if [ $PACKAGES_INSTALLED_COUNT  -gt 1 ]; then
+    printf "🎁 $(gum style --bold --foreground $COLOR_ACCENT \
+"$PACKAGES_INSTALLED_COUNT") packages \
+$(gum style --italic "installed"):\n"
+    print_list ${PACKAGES_INSTALLED[@]};
+    printf "\n";
+  elif [ $PACKAGES_INSTALLED_COUNT -eq 1 ]; then
+    printf "🎁 $(gum style --bold --foreground $COLOR_ACCENT \
+"$PACKAGES_INSTALLED_COUNT") package \
+$(gum style --italic "installed"):\n"
+    print_list ${PACKAGES_INSTALLED[@]};
+    printf "\n";
+  fi
+}
+
+# Prints a report with a count and a list of packages that have already been
+# installed.
+print_packages_already_installed () {
+  if [ $PACKAGES_ALREADY_INSTALLED_COUNT -gt 1 ]; then
+    printf "👍 $(gum style --bold --foreground $COLOR_ACCENT \
+"$PACKAGES_ALREADY_INSTALLED_COUNT") packages were \
+$(gum style --italic "already installed"):\n";
+    print_list ${PACKAGES_ALREADY_INSTALLED[@]};
+    printf "\n";
+  elif [ $PACKAGES_ALREADY_INSTALLED_COUNT -eq 1 ]; then
+    printf "👍 $(gum style --bold --foreground $COLOR_ACCENT \
+"$PACKAGES_ALREADY_INSTALLED_COUNT") package was \
+$(gum style --italic "already installed"):\n";
+    print_list ${PACKAGES_ALREADY_INSTALLED[@]};
+    printf "\n";
+  fi
+}
+
+# Prints a report with a count and list of packages that might have been
+# installed.
+print_packages_ambiguously_installed () {
+  if [ $PACKAGES_AMBIGUOUSLY_INSTALLED_COUNT -gt 1 ]; then
+    printf "❓ $(gum style --bold --foreground $COLOR_ACCENT \
+"$PACKAGES_AMBIGUOUSLY_INSTALLED_COUNT") packages \
+$(gum style --italic "might (or might not) have been installed"):\n";
+    print_list ${PACKAGES_AMBIGUOUSLY_INSTALLED[@]};
+    printf "\n";
+  elif [ $PACKAGES_AMBIGUOUSLY_INSTALLED_COUNT -eq 1 ]; then
+    printf "❓ $(gum style --bold --foreground $COLOR_ACCENT \
+"$PACKAGES_AMBIGUOUSLY_INSTALLED_COUNT") package \
+$(gum style --italic "might (or might not) have been installed"):\n";
+    print_list ${PACKAGES_AMBIGUOUSLY_INSTALLED[@]};
+    printf "\n";
+  fi
+}
+
+# Prints a report with a count and list of packages that could not be installed.
+print_packages_not_installed () {
+  if [ $PACKAGES_NOT_INSTALLED_COUNT -gt 1 ]; then
+    printf "❗ $(gum style --bold --foreground $COLOR_ACCENT \
+"$PACKAGES_NOT_INSTALLED_COUNT") packages were \
+$(gum style --italic "not installed"):\n";
+    print_list ${PACKAGES_NOT_INSTALLED[@]};
+    printf "\n";
+  elif [ $PACKAGES_NOT_INSTALLED_COUNT -eq 1 ]; then
+    printf "❗ $(gum style --bold --foreground $COLOR_ACCENT \
+"$PACKAGES_NOT_INSTALLED_COUNT") package was \
+$(gum style --italic "not installed"):\n";
+    print_list ${PACKAGES_NOT_INSTALLED[@]};
+    printf "\n";
+  fi
+}
+
 # Prints the amount of packages installed.
 print_packages_report () {
+  printf "\n";
+  printf "$(gum style --bold --underline --foreground $COLOR_ACCENT \
+"Installation Complete!")\n";
   print_packages_installed;
   print_packages_already_installed;
   print_packages_not_installed;
   print_packages_ambiguously_installed;
-}
-
-print_packages_installed () {
-  if [ $PACKAGES_INSTALLED  -gt 1 ]; then
-    printf "🏡🚛 $PACKAGES_INSTALLED packages installed.\n"
-  elif [ $PACKAGES_INSTALLED -eq 1 ]; then
-    printf "🏡🚚 $PACKAGES_INSTALLED package installed.\n"
-  else
-    printf "🏡🛻 No packages installed.\n"
-  fi
-}
-
-print_packages_already_installed () {
-  if [ $PACKAGES_ALREADY_INSTALLED -gt 1 ]; then
-    printf "👍 $PACKAGES_ALREADY_INSTALLED packages were already installed.\n";
-  elif [ $PACKAGES_ALREADY_INSTALLED -eq 1 ]; then
-    printf "👍 $PACKAGES_ALREADY_INSTALLED package was already installed.\n";
-  fi
-}
-
-print_packages_not_installed () {
-  if [ $PACKAGES_NOT_INSTALLED -gt 1 ]; then
-    printf "❗ $PACKAGES_NOT_INSTALLED packages was not installed.\n";
-  elif [ $PACKAGES_NOT_INSTALLED -eq 1 ]; then
-    printf "❗ $PACKAGES_NOT_INSTALLED package was not installed.\n";
-  fi
-}
-print_packages_ambiguously_installed () {
-  if [ $PACKAGES_AMBIGUOUSLY_INSTALLED -gt 1 ]; then
-    printf "❓ $PACKAGES_AMBIGUOUSLY_INSTALLED packages might (or might not) have \
-been installed.\n";
-  elif [ $PACKAGES_AMBIGUOUSLY_INSTALLED -eq 1 ]; then
-    printf "❓ $PACKAGES_AMBIGUOUSLY_INSTALLED might (or might not) have been \
-installed.\n";
-  fi
+  printf "$(gum style --bold --foreground $COLOR_ACCENT \
+"▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔")\n";
 }
 
 # Prints a useful protip.
@@ -1498,7 +1538,7 @@ $(gum style --italic "to install?")\n";
   $NODE_VERSION_MANAGER install $NODE_VERSION;
   if [ $? == 0 ]; then
     printf "🎁 Node $NODE_VERSION installed.";
-    ((PACKAGES_INSTALLED++));
+    ((PACKAGES_INSTALLED_COUNT++));
     print_section_heading "Installing Packages";
     return 0;
   else
@@ -1627,11 +1667,48 @@ install_package_manager_snap () {
 # Resets the counts of packages to install, packages installed, and packages
 # not installed.
 reset_package_count () {
-  PACKAGES_INSTALLED=0;
-  PACKAGES_NOT_INSTALLED=0;
-  PACKAGES_ALREADY_INSTALLED=0;
-  PACKAGES_AMBIGUOUSLY_INSTALLED=0;
+  PACKAGES_INSTALLED_COUNT=0;
+  PACKAGES_NOT_INSTALLED_COUNT=0;
+  PACKAGES_ALREADY_INSTALLED_COUNT=0;
+  PACKAGES_AMBIGUOUSLY_INSTALLED_COUNT=0;
   PACKAGES_PENDING=0;
+}
+
+package_installed () {
+  local PACKAGE=$1;
+  local INSTALLATION_METHOD=$2;
+  if [ -n "$2" ]; then
+    print_installed "$PACKAGE" "$INSTALLATION_METHOD";
+  else
+    print_installed "$PACKAGE";
+  fi
+  PACKAGES_INSTALLED+=("$PACKAGE");
+  ((PACKAGES_INSTALLED_COUNT++));
+}
+
+package_not_installed () {
+  local PACKAGE=$1;
+  if [ -n "$2" ]; then
+    local REASON=$2;
+    print_cannot_install "$PACKAGE" "$REASON";
+  else
+    print_cannot_install "$PACKAGE";
+  fi
+  PACKAGES_NOT_INSTALLED+=("$PACKAGE");
+  ((PACKAGES_NOT_INSTALLED_COUNT++));
+}
+
+package_already_installed () {
+  local PACKAGE=$1;
+  print_already_installed "$PACKAGE";
+  PACKAGES_ALREADY_INSTALLED+=("$PACKAGE");
+  ((PACKAGES_ALREADY_INSTALLED_COUNT++));
+}
+
+package_ambiguously_installed () {
+  local PACKAGE=$1;
+  PACKAGES_AMBIGUOUSLY_INSTALLED+=("$PACKAGE");
+  ((PACKAGES_AMBIGUOUSLY_INSTALLED_COUNT++));
 }
 
 # Determines and `echo`s the install method of a package, given `PACKAGE_DATA`
@@ -1744,7 +1821,7 @@ get_installation_method () {
 install_packages () {
   local PACKAGES_TO_INSTALL=("$@");
   PACKAGES_PENDING=${#PACKAGES_TO_INSTALL[@]};
-  print_section_heading "Installing $PACKAGES_PENDING Packages";
+  print_section_heading "Installing $PACKAGES_PENDING Packages...";
   # For every PACKAGE...
   for PACKAGE in "${PACKAGES_TO_INSTALL[@]}"; do
     # Capture the actual `PACKAGE_NAME` from the array and remove styling,
@@ -1844,8 +1921,7 @@ install_package () {
     fi
   # If there's no apparent installation method, say so.
   else
-    print_cannot_install "$PACKAGE_NAME" "Installation method not found.";
-    ((PACKAGES_NOT_INSTALLED++));
+    package_not_installed "$PACKAGE_NAME" "Installation method not found.";
     return 2;
   fi
 }
@@ -1877,8 +1953,7 @@ as $PACKAGE_NAME's installation method instead.";
   else
     # If package is already installed, say so.
     if dpkg -s $PACKAGE_ID >/dev/null 2>&1; then
-      print_already_installed "$PACKAGE_NAME";
-      ((PACKAGES_ALREADY_INSTALLED++));
+      package_already_installed "$PACKAGE_NAME";
     # Otherwise,
     else
       # Update apt if it isn't already updated,
@@ -1911,40 +1986,39 @@ as $PACKAGE_NAME's installation method instead.";
       fi
       # If package is successfully installed, say so.
       if [ $? == 0 ]; then
-        print_installed "$PACKAGE_NAME" "apt";
-        ((PACKAGES_INSTALLED++));
+        package_installed "$PACKAGE_NAME" "apt";
         return 0;
       # Otherwise, print error messages.
       elif [ $? == 1 ] || [ $? == 100 ]; then
-        print_cannot_install "$PACKAGE_NAME" "Package not found. \
+        package_not_installed "$PACKAGE_NAME" "Package not found. \
 Is $PACKAGE_ID the correct id?";
-        ((PACKAGES_NOT_INSTALLED++));
+        ((PACKAGES_NOT_INSTALLED_COUNT++));
         return 1;
       elif [ $? == 101 ]; then
-        print_cannot_install "$PACKAGE_NAME" "Download interrupted.";
-        ((PACKAGES_NOT_INSTALLED++));
+        package_not_installed "$PACKAGE_NAME" "Download interrupted.";
+        ((PACKAGES_NOT_INSTALLED_COUNT++));
         return 101;
       elif [ $? == 102 ]; then
-        print_cannot_install "$PACKAGE_NAME" "Error encountered while \
+        package_not_installed "$PACKAGE_NAME" "Error encountered while \
 unpacking package.";
-        ((PACKAGES_NOT_INSTALLED++));
+        ((PACKAGES_NOT_INSTALLED_COUNT++));
         return 102;
       elif [ $? == 103 ]; then
-        print_cannot_install "$PACKAGE_NAME" "Error encountered while \
+        package_not_installed "$PACKAGE_NAME" "Error encountered while \
 configuring package.";
-        ((PACKAGES_NOT_INSTALLED++));
+        ((PACKAGES_NOT_INSTALLED_COUNT++));
         return 103;
       elif [ $? == 104 ]; then
         print_already_installed "$PACKAGE_NAME";
-        ((PACKAGES_NOT_INSTALLED++));
+        ((PACKAGES_NOT_INSTALLED_COUNT++));
         return 104;
       elif [ $? == 106 ]; then
-        print_cannot_install "$PACKAGE_NAME" "Unsatisfied dependencies.";
-        ((PACKAGES_NOT_INSTALLED++));
+        package_not_installed "$PACKAGE_NAME" "Unsatisfied dependencies.";
+        ((PACKAGES_NOT_INSTALLED_COUNT++));
         return 106;
       elif [ $? == 130 ]; then
-        print_cannot_install "$PACKAGE_NAME" "Installation interrupted by user.";
-        ((PACKAGES_NOT_INSTALLED++));
+        package_not_installed "$PACKAGE_NAME" "Installation interrupted by user.";
+        ((PACKAGES_NOT_INSTALLED_COUNT++));
         return 130;
       fi
     fi
@@ -1975,8 +2049,7 @@ instead.\n"
   else
     # Check if the package is already installed using dnf,
     if dnf list installed | grep -q "$PACKAGE_ID"; then
-      print_already_installed "$PACKAGE_NAME";
-      ((PACKAGES_ALREADY_INSTALLED++));
+      package_already_installed "$PACKAGE_NAME";
     # Otherwise, install the package.
     else
       if ! package_is_installed gum; then
@@ -1990,13 +2063,11 @@ instead.\n"
       fi
       # If the package is successfully installed, say so.
       if [ $? == 0 ]; then
-        print_installed "$PACKAGE_NAME" "dnf";
-        ((PACKAGES_INSTALLED++));
+        package_installed "$PACKAGE_NAME" "dnf";
         return 0;
       # Otherwise, tell 'em the package can't be installed.
       else
-        print_cannot_install "$PACKAGE_NAME";
-        ((PACKAGES_NOT_INSTALLED++));
+        package_not_installed "$PACKAGE_NAME"
         return 1;
       fi
     fi
@@ -2024,8 +2095,7 @@ install_package_flatpak () {
   else
     # Check if the package is already installed using flatpak,
     if flatpak list | grep -q "$PACKAGE_ID"; then
-      print_already_installed "$PACKAGE_NAME";
-      ((PACKAGES_ALREADY_INSTALLED++));
+      package_already_installed "$PACKAGE_NAME";
       return 0;
     # Otherwise, install package.
     else
@@ -2040,45 +2110,36 @@ install_package_flatpak () {
       fi
       # If package is successfully installed, say so.
       if [ $? == 0 ]; then
-        print_installed "$PACKAGE_NAME" "flatpak";
-        ((PACKAGES_INSTALLED++));
+        package_installed "$PACKAGE_NAME" "flatpak";
         return 0;
       # Otherwise, print error messages.
       elif [ $? == 1 ]; then
-        print_cannot_install "$PACKAGE_NAME" \
+        package_not_installed "$PACKAGE_NAME" \
 "Installation interrupted by user.";
-        ((PACKAGES_NOT_INSTALLED++));
         return 1;
       elif [ $? == 3 ]; then
-        print_cannot_install "$PACKAGE_NAME" "User does not have permission \
+        package_not_installed "$PACKAGE_NAME" "User does not have permission \
 to install packages with Flatpak."
-        ((PACKAGES_NOT_INSTALLED++));
         return 3;
       elif [ $? == 4 ]; then
-        print_cannot_install "$PACKAGE_NAME" "Unresolvable dependencies. \
+        package_not_installed "$PACKAGE_NAME" "Unresolvable dependencies. \
 Try installing $(gum style --bold "$PACKAGE_NAME") manually.";
-        ((PACKAGES_NOT_INSTALLED++));
         return 4;
       elif [ $? == 5 ]; then
-        print_already_installed "$PACKAGE_NAME";
-        ((PACKAGES_ALREADY_INSTALLED++));
+        package_already_installed "$PACKAGE_NAME";
         return 5;
       elif [ $? == 6 ]; then
-        print_cannot_install "$PACKAGE_NAME" "Incompatible architecture.";
-        ((PACKAGES_NOT_INSTALLED++));
+        package_not_installed "$PACKAGE_NAME" "Incompatible architecture.";
         return 6;
       elif [ $? == 7 ]; then
-        print_cannot_install "$PACKAGE_NAME" "Remote repository unavailable.";
-        ((PACKAGES_NOT_INSTALLED++));
+        package_not_installed "$PACKAGE_NAME" "Remote repository unavailable.";
         return 7;
       elif [ $? == 8 ]; then
-        print_cannot_install "$PACKAGE_NAME" "No such remote repository.";
-        ((PACKAGES_NOT_INSTALLED++));
+        package_not_installed "$PACKAGE_NAME" "No such remote repository.";
         return 8;
       elif [ $? == 9 ]; then
-        print_cannot_install "$PACKAGE_NAME" "Could not \
+        package_not_installed "$PACKAGE_NAME" "Could not \
 be downloaded from remote repository.";
-        ((PACKAGES_NOT_INSTALLED++));
         return 9;
       fi
     fi
@@ -2106,8 +2167,7 @@ install_package_go () {
   else
     # Check if the package is already installed using go,
     if go list | grep -q "$PACKAGE_ID"; then
-      print_already_installed "$PACKAGE_NAME";
-      ((PACKAGES_ALREADY_INSTALLED++));
+      package_already_installed "$PACKAGE_NAME";
     # And install the package.
     else
       if ! package_is_installed gum; then
@@ -2121,13 +2181,11 @@ install_package_go () {
       fi
       # If the package is successfully installed, say so.
       if [ $? == 0 ]; then
-        print_installed "$PACKAGE_NAME" "go";
-        ((PACKAGES_INSTALLED++));
+        package_installed "$PACKAGE_NAME" "go";
         return 0;
       # Otherwise, tell 'em the package cannot be installed.
       else
-        print_cannot_install "$PACKAGE_NAME";
-        ((PACKAGES_NOT_INSTALLED++));
+        package_not_installed "$PACKAGE_NAME";
         return 1;
       fi
     fi
@@ -2177,8 +2235,7 @@ install_package_npm () {
   else
     # Check if the package is already installed,
     if npm list -g --depth 0 | grep -q "$PACKAGE_ID"; then
-      print_already_installed "$PACKAGE_NAME";
-      ((PACKAGES_ALREADY_INSTALLED++));
+      package_already_installed "$PACKAGE_NAME";
     # And install the package.
     else
       if ! package_is_installed gum; then
@@ -2192,13 +2249,11 @@ install_package_npm () {
       fi
       # If the package was successfully installed, say so.
       if [ $? == 0 ]; then
-        print_installed "$PACKAGE_NAME" "npm";
-        ((PACKAGES_INSTALLED++));
+        package_installed "$PACKAGE_NAME" "npm";
         return 0;
       # Otherwise, tell 'em the package can't be installed.
       else
-        print_cannot_install "$PACKAGE_NAME";
-        ((PACKAGES_NOT_INSTALLED++));
+        package_not_installed "$PACKAGE_NAME";
         return 1;
       fi
     fi
@@ -2232,9 +2287,8 @@ install_package_pip () {
     # (why `pip list` won't `grep` normally, I have no idea.)
     $PIP list --format=freeze > $HOME/.instally/pip_list_$PACKAGE_ID.temp;
     if grep -q "$PACKAGE_ID" $HOME/.instally/pip_list_$PACKAGE_ID.temp; then
-      print_already_installed "$PACKAGE_NAME";
+      package_already_installed "$PACKAGE_NAME";
       rm $HOME/.instally/pip_list_$PACKAGE_ID.temp;
-      ((PACKAGES_ALREADY_INSTALLED++));
     # And install the package.
     else
       rm $HOME/.instally/pip_list_$PACKAGE_ID.temp;
@@ -2249,13 +2303,11 @@ install_package_pip () {
       fi
       # If the package is successfully installed, then say so.
       if [ $? == 0 ]; then
-        print_installed "$PACKAGE_NAME" "pip";
-        ((PACKAGES_INSTALLED++));
+        package_installed "$PACKAGE_NAME" "pip";
         return 0;
       # Otherwise, tell 'em the package could not be installed.
       else
-        print_cannot_install "$PACKAGE_NAME";
-        ((PACKAGES_NOT_INSTALLED++));
+        package_not_installed "$PACKAGE_NAME";
         return 1;
       fi 
     fi
@@ -2288,20 +2340,17 @@ to install snap and $PACKAGE_NAME.";
   else
     # Check if the package is already installed using snap,
     if snap list | grep -q "$PACKAGE_ID"; then
-      print_already_installed "$PACKAGE_NAME";
-      ((PACKAGES_ALREADY_INSTALLED++));
+      package_already_installed "$PACKAGE_NAME";
     # And install the package.
     else
       snap install $PACKAGE_ID;
       # If the package was successfully installed, then say so.
       if [ $? == 0 ]; then
-        print_installed "$PACKAGE_NAME" "snap";
-        ((PACKAGES_INSTALLED++));
+        package_installed "$PACKAGE_NAME" "snap";
         return 0;
       # Otherwise, tell 'em the package can't be installed.
       else
-        print_cannot_install "$PACKAGE_NAME";
-        ((PACKAGES_NOT_INSTALLED++));
+        package_not_installed "$PACKAGE_NAME";
         return 1;
       fi
     fi
@@ -2336,8 +2385,7 @@ as $PACKAGE_NAME's installation method instead.";
   else
     # Check if the package is installed using yum,
     if yum list installed | grep -q "$PACKAGE_ID"; then
-      print_already_installed "$PACKAGE_NAME";
-      ((PACKAGES_ALREADY_INSTALLED++));
+      package_already_installed "$PACKAGE_NAME";
     # And install the package.
     else
       if ! package_is_installed gum; then
@@ -2351,13 +2399,11 @@ as $PACKAGE_NAME's installation method instead.";
       fi
       # If the package was successfully installed, say so.
       if [ $? == 0 ]; then
-        print_installed "$PACKAGE_NAME" "yum";
-        ((PACKAGES_INSTALLED++));
+        package_installed "$PACKAGE_NAME" "yum";
         return 0;
       # Otherwise, tell 'em the package can't be installed.
       else
-        print_cannot_install "$PACKAGE_NAME";
-        ((PACKAGES_NOT_INSTALLED++));
+        package_not_installed "$PACKAGE_NAME";
         return 1;
       fi
     fi
@@ -2392,8 +2438,7 @@ zypper.\n  Try reinstalling zypper.";
   else
     # Check if the package is already installed using zypper,
     if zypper pa -i | grep -q "$PACKAGE_ID"; then
-      print_already_installed "$PACKAGE_NAME";
-      ((PACKAGES_ALREADY_INSTALLED++));
+      package_already_installed "$PACKAGE_NAME";
     # And install the package.
     else
       if ! package_is_installed gum; then
@@ -2407,13 +2452,11 @@ zypper.\n  Try reinstalling zypper.";
       fi
       # If the package was successfully installed, say so.
       if [ $? == 0 ]; then
-        print_installed "$PACKAGE_NAME" "zypper";
-        ((PACKAGES_INSTALLED++));
+        package_installed "$PACKAGE_NAME" "zypper";
         return 0;
       # Otherwise, tell 'em the package cannot be installed.
       else
-        print_cannot_install "$PACKAGE_NAME";
-        ((PACKAGES_NOT_INSTALLED++));
+        package_not_installed "$PACKAGE_NAME";
       fi
     fi
   fi
@@ -2433,8 +2476,8 @@ using $(gum style --italic 'command').";
   eval $COMMAND;
   # If command exited 0, assume the package was successfully installed.
   if [ $? == 0 ]; then
-    print_installed "$PACKAGE_NAME";
-    ((PACKAGES_INSTALLED++));
+    print_installed "$PACKAGE_NAME" "command";
+    package_ambiguously_installed "$PACKAGE_NAME";
   else
     print_warning "The last command exited with non-0 status.";
     printf "  $(gum style --bold "$PACKAGE_NAME") \
@@ -2444,7 +2487,7 @@ Check if $(gum style --bold "$PACKAGE_NAME") is installed.\n";
     printf "  $(gum style --bold "2.") \
 Confirm that the $(gum style --bold "$PACKAGE_NAME") \
 installation command in $PACKAGE_JSON is valid.\n";
-    ((PACKAGES_AMBIGUOUSLY_INSTALLED++));
+    package_ambiguously_installed "$PACKAGE_NAME";
   fi
 }
 
