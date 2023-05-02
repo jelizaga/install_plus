@@ -57,10 +57,11 @@ GUM_CHOOSE_SELECTED_PREFIX="x";
 GUM_CHOOSE_UNSELECTED_PREFIX="·";
 
 # Colors
-COLOR_ACTIVE="#E60000";
-COLOR_ACCENT="#2CB0C4";
+COLOR_ACTIVE=1;
+COLOR_ACCENT=6;
+COLOR_SELECTED=2;
 GUM_CHOOSE_CURSOR_FOREGROUND="$COLOR_ACTIVE";
-GUM_CHOOSE_SELECTED_FOREGROUND="$COLOR_ACCENT";
+GUM_CHOOSE_SELECTED_FOREGROUND="$COLOR_SELECTED";
 GUM_CONFIRM_SELECTED_BACKGROUND="$COLOR_ACTIVE";
 
 # Delimiter
@@ -889,8 +890,8 @@ print_install_packages () {
 #   `$1` - Selection to print.
 print_input_selection () {
   local SELECTION=$1;
-  printf "$(gum style --foreground "$COLOR_ACCENT" "$GUM_CHOOSE_CURSOR") \
-$SELECTION\n";
+  printf "$(gum style --foreground "$GUM_CHOOSE_SELECTED_FOREGROUND" \
+"$GUM_CHOOSE_CURSOR") $SELECTION\n";
 }
 
 # Prints declaration that a package has been successfully installed.
@@ -943,7 +944,6 @@ print_list () {
   local ARRAY=("$@");
   local LIST="";
   if [ "${#ARRAY[@]}" -eq 1 ]; then
-    #print_input_selection "$(print_selected_menu_item "${ARRAY[0]}").";
     printf "$(print_selected_menu_item "${ARRAY[0]}").";
   else
     local INPUT="";
@@ -953,7 +953,6 @@ print_list () {
       LIST+="$GROUP_NAME, ";
     done
     LIST+="and $(print_selected_menu_item "${ARRAY[-1]}").";
-    #print_input_selection "$LIST";
     printf "$LIST";
   fi
 }
@@ -2495,10 +2494,10 @@ installation command in $PACKAGE_JSON is valid.\n";
 ################################################################################
 ################################################################################
 
-sudo -v
-check_os
-check_dependencies
-check_conf
+sudo -v;
+check_os;
+check_dependencies;
+check_conf;
 if [ $? == 0 ]; then
-  menu_main
+  menu_main;
 fi
