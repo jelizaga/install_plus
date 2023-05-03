@@ -282,6 +282,17 @@ install_dependency_jq_using_binary () {
 # Checks and applies the config file's user-customized values.
 check_conf () {
   if [ -e $INSTALLY_CONF ]; then
+    CONF_PACKAGE_JSON=$(awk -F '=' '/^PACKAGE_JSON=/ {print $2}' \
+      "$INSTALLY_CONF");
+    if ! [ -z "$CONF_PACKAGE_JSON" ]; then
+      PACKAGE_JSON="$CONF_PACKAGE_JSON";
+    fi
+    CONF_COLOR_SELECTED=$(awk -F '=' '/^COLOR_SELECTED=/ {print $2}' \
+      "$INSTALLY_CONF");
+    if ! [ -z "$CONF_COLOR_SELECTED" ]; then
+      COLOR_SELECTED="$CONF_COLOR_SELECTED";
+      GUM_CHOOSE_SELECTED_FOREGROUND="$COLOR_SELECTED";
+    fi
     CONF_COLOR_ACTIVE=$(awk -F '=' '/^COLOR_ACTIVE=/ {print $2}' \
       "$INSTALLY_CONF");
     if ! [ -z "$CONF_COLOR_ACTIVE" ]; then
@@ -360,7 +371,7 @@ update_instally_conf () {
   local VALUE=$2;
   if [ -e $INSTALLY_CONF ]; then
     if grep -q "$FIELD" $INSTALLY_CONF; then
-      sed -i "s/^${FIELD}=.*/${FIELD}=${VALUE}/" $INSTALLY_CONF;
+      sed -i "s|^${FIELD}=.*|${FIELD}=${VALUE}|" $INSTALLY_CONF;
     else
       echo "$FIELD=$VALUE" >> $INSTALLY_CONF;
     fi
@@ -465,9 +476,9 @@ $(gum style --bold --italic "package.json") \
 $(gum style --italic "file you would like to use.")\n";
       printf "$(gum style --bold "Current package.json:") $PACKAGE_JSON\n";
       NEW_PACKAGE_JSON=$(gum input --placeholder "/path/to/package.json/file");
-      #NEW_PACKAGE_JSON=$(gum file $HOME);
       if ! [ -z "$NEW_PACKAGE_JSON" ]; then
         PACKAGE_JSON=$NEW_PACKAGE_JSON;
+        update_instally_conf "PACKAGE_JSON" "$PACKAGE_JSON";
       fi
       printf "$(gum style --bold "New package.json:") $PACKAGE_JSON\n";
       menu_package_json;
@@ -513,6 +524,7 @@ menu_customize_colors () {
     --selected.foreground="$GUM_CHOOSE_SELECTED_FOREGROUND" \
     "Accent Color" \
     "Active Color" \
+    "Selected Color" \
     "Back");
   print_input_selection "$SELECTED";
   case $SELECTED in
@@ -522,7 +534,7 @@ menu_customize_colors () {
       printf "$(gum style --bold "Current") \
 $(gum style --bold "accent color:") \
 $(gum style --foreground $COLOR_ACCENT "$COLOR_ACCENT")\n";
-      NEW_COLOR_ACCENT=$(gum input --placeholder "010");
+      local NEW_COLOR_ACCENT=$(gum input --placeholder "010");
       if ! [ -z "$NEW_COLOR_ACCENT" ]; then
         COLOR_ACCENT=$NEW_COLOR_ACCENT;
         GUM_CHOOSE_SELECTED_FOREGROUND="$COLOR_ACCENT";
@@ -539,7 +551,7 @@ $(gum style --foreground $COLOR_ACCENT "$COLOR_ACCENT")\n";
       printf "$(gum style --bold "Current") \
 $(gum style --bold "active color:") \
 $(gum style --foreground $COLOR_ACTIVE "$COLOR_ACTIVE")\n";
-      NEW_COLOR_ACTIVE=$(gum input --placeholder "010");
+      local NEW_COLOR_ACTIVE=$(gum input --placeholder "010");
       if ! [ -z "$NEW_COLOR_ACTIVE" ]; then
         COLOR_ACTIVE=$NEW_COLOR_ACTIVE;
         GUM_CHOOSE_CURSOR_FOREGROUND="$COLOR_ACTIVE";
@@ -549,6 +561,23 @@ $(gum style --foreground $COLOR_ACTIVE "$COLOR_ACTIVE")\n";
       printf "$(gum style --bold "New") \
 $(gum style --bold "active color:") \
 $(gum style --foreground $COLOR_ACTIVE "$COLOR_ACTIVE")\n";
+      menu_customize_colors;
+      ;;
+    "Selected Color")
+      print_selection_heading "Selected Color";
+      printf "$(gum style --italic "Enter a new selected color.")\n";
+      printf "$(gum style --bold "Current") \
+$(gum style --bold "active color:") \
+$(gum style --foreground $COLOR_SELECTED "$COLOR_SELECTED")\n";
+      local NEW_COLOR_SELECTED=$(gum input --placeholder "010");
+      if ! [ -z "$NEW_COLOR_SELECTED" ]; then
+        COLOR_SELECTED=$NEW_COLOR_SELECTED;
+        GUM_CHOOSE_SELECTED_FOREGROUND="$COLOR_SELECTED";
+        update_instally_conf "COLOR_SELECTED" "$COLOR_SELECTED";
+      fi
+      printf "$(gum style --bold "New") \
+$(gum style --bold "active color:") \
+$(gum style --foreground $COLOR_SELECTED "$COLOR_SELECTED")\n";
       menu_customize_colors;
       ;;
     "Back")
