@@ -429,6 +429,9 @@ available that isn't Debian 11 or Debian 10.
 
 #### Grouping packages
 
+![Package groups as displayed by instally.](https://i.imgur.com/hfSmQrb.png
+"Choosing packages to install from chosen groups.")
+
 *Group packages* using the `"groups"` field to create an
 *array of groups*:
 
