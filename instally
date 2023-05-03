@@ -280,7 +280,7 @@ install_dependency_jq_using_binary () {
 ################################################################################
 
 # Checks and applies the config file's user-customized values.
-check_conf () {
+check_instally_conf () {
   if [ -e $INSTALLY_CONF ]; then
     CONF_PACKAGE_JSON=$(awk -F '=' '/^PACKAGE_JSON=/ {print $2}' \
       "$INSTALLY_CONF");
@@ -325,6 +325,25 @@ check_conf () {
   fi
 }
 
+# Updates a field in `instally.conf`.
+# Args:
+#   `$1` - Field to be updated.
+#   `$2` - Value with which to update the field.
+update_instally_conf () {
+  local FIELD=$1;
+  local VALUE=$2;
+  if [ -e $INSTALLY_CONF ]; then
+    if grep -q "$FIELD" $INSTALLY_CONF; then
+      sed -i "s|^${FIELD}=.*|${FIELD}=${VALUE}|" $INSTALLY_CONF;
+    else
+      echo "$FIELD=$VALUE" >> $INSTALLY_CONF;
+    fi
+  else
+    touch $INSTALLY_CONF;
+    echo "$FIELD=$VALUE" >> $INSTALLY_CONF;
+  fi
+}
+
 # File system ##################################################################
 # Functions related to `instally`'s interactions with the file system.
 ################################################################################
@@ -360,25 +379,6 @@ create_package_json () {
 create_instally_dir () {
   mkdir $HOME/.instally;
   print_created "~/.instally" "📁";
-}
-
-# Updates a field in `instally.conf`.
-# Args:
-#   `$1` - Field to be updated.
-#   `$2` - Value with which to update the field.
-update_instally_conf () {
-  local FIELD=$1;
-  local VALUE=$2;
-  if [ -e $INSTALLY_CONF ]; then
-    if grep -q "$FIELD" $INSTALLY_CONF; then
-      sed -i "s|^${FIELD}=.*|${FIELD}=${VALUE}|" $INSTALLY_CONF;
-    else
-      echo "$FIELD=$VALUE" >> $INSTALLY_CONF;
-    fi
-  else
-    touch $INSTALLY_CONF;
-    echo "$FIELD=$VALUE" >> $INSTALLY_CONF;
-  fi
 }
 
 # Menus ########################################################################
@@ -2537,7 +2537,7 @@ installation command in $PACKAGE_JSON is valid.\n";
 sudo -v;
 check_os;
 check_dependencies;
-check_conf;
+check_instally_conf;
 if [ $? == 0 ]; then
   menu_main;
 fi

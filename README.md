@@ -55,6 +55,8 @@ installing your favorite packages en masse.
 
 ## 💽 Installation
 
+1. Download `instally`'s [latest release].
+
 ### 🔩 Dependencies
 
 `instally` checks for and automatically installs its own dependencies if
@@ -235,10 +237,11 @@ installation methods.
   spelled in any way.
 * `"description"` - *Optional* description of the package.
 * [*Installation methods*](#installation-methods) - `"apt"`, `"dnf"`
-  `"flatpak"`, `"yum"`, and `"zypper"` are all valid installation methods using
+  `"flatpak"`, `"go"`, `"npm"`, `"pip"`, `"snap"`, `"yum"`, and `"zypper"` are
+  all valid installation methods using
   [package managers](#installation-by-package-manager). `instally` can also 
   install packages using
-  [custom shell commands](#installation-by-command).
+  [custom shell commands](#installation-by-command) (`"command"`).
 * `"prefer"` - *Optional* preferred installation method. See
   [preferring installation methods](#preferring-installation-methods).
 
@@ -380,6 +383,7 @@ install the package.
 
 * 👉 *Protip:* You can check the `/etc/os-release` file for your OS's name (in
   case you forgot it):
+
   ```bash
   # Linux: Get your OS's name:
   echo $(grep '^NAME=' /etc/os-release | cut -d= -f2 | tr -d '"')
@@ -408,8 +412,10 @@ different versions of Debian, and use `apt` if it's ran on a system with `apt`
 available that isn't Debian 11 or Debian 10.
 
 * 👉 *Protip:* `instally` will choose version-specific installation methods
-  for a package over [OS-specific](#specifying-installation-methods-by-os) installation methods.
-* 👉 *Protip:* You can find your current OS's full name, including its version, at `instally`'s main menu:
+  for a package over [OS-specific](#specifying-installation-methods-by-os) 
+  installation methods.
+* 👉 *Protip:* You can find your current OS's full name, including its version,
+  at `instally`'s main menu:
 
   ![instally printing the OS name of the host machine.](https://i.imgur.com/E0ntWq9.jpeg)
 
@@ -553,10 +559,10 @@ installed operating systems over a matter of days (or weeks),
 the time it takes to load your system with all the software you need.
 
 There's some up-front cost in writing your `package.json`, but with your
-`package.json` version-controlled, easily accessible, and polished to accomodate
-the different operating systems and package managers you'll be using, it can be
-a really flexible and foolproof way to create consistent experiences across
-systems.
+`package.json` version-controlled, easily accessible, and polished to 
+accommodate the different operating systems and package managers you'll be 
+using, it can be a really flexible and foolproof way to install consistent 
+experiences across systems.
 
 ### 👉 Setting your default package.json editor
 
@@ -705,8 +711,8 @@ S | Name         | Summary                              | Type
 `package.json` is in `~/.instally` (a directory called `.instally`, located in
 your home directory).
 
-If you're having trouble finding `/.instally`, try `ctrl+h` in your file manager
-to view hidden files.
+If you're having trouble finding `/.instally`, try the `ctrl+h` shortcut in your
+file manager to view hidden files.
 
 #### 🔧 Where is instally.conf?
 
