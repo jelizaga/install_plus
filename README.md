@@ -527,7 +527,7 @@ Feel free to contribute and expand `instally`'s compatibility!
 
 *Configure* `instally` in "Settings":
 
-![instally being configured via "Settings."](https://i.imgur.com/RqP1UQi.gif)
+![instally being configured via "Settings."](https://i.imgur.com/hfLeATt.gif)
 
 Alternatively, you can configure `instally` by editing 
 `~/.instally/instally.conf`:
