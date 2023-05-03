@@ -35,8 +35,9 @@ installing your favorite packages en masse.
   * [💻 OS Compatibility](#-os-compatibility)
 * [🎨 Configuration](#-configuration)
 * [👉 Protips](#-protips)
-  * [Setting your default package.json editor](#setting-your-default-packagejson-editor)
-  * [Getting package IDs](#getting-package-ids)
+  * [👉 Getting the most out of instally](#-getting-the-most-out-of-instally)
+  * [👉 Setting your default package.json editor](#-setting-your-default-packagejson-editor)
+  * [👉 Getting package IDs](#-getting-package-ids)
     * [apt](#apt)
     * [dnf](#dnf)
     * [flatpak](#flatpak)
@@ -46,9 +47,9 @@ installing your favorite packages en masse.
     * [yum](#yum)
     * [zypper](#zypper)
 * [🔧 Troubleshooting](#-troubleshooting)
-    * [Where is package.json?](#where-is-packagejson)
-    * [Where is instally.conf?](#where-is-installyconf)
-    * [gum is installed, but won't run](#gum-is-installed-but-wont-run)
+    * [🔧 Where is package.json?](#-where-is-packagejson)
+    * [🔧 Where is instally.conf?](#-where-is-installyconf)
+    * [🔧 gum is installed, but won't run](#-gum-is-installed-but-wont-run)
 
 <!-- vim-markdown-toc -->
 
@@ -208,6 +209,10 @@ Here's a *simple example* of a `package.json`:
 
 #### Package objects
 
+Package objects are the atomic pieces of your `instally` experience; each
+package object represents a package you'd like to install and its different
+installation methods.
+
 `instally` *package objects* are shaped like so:
 
 ```json
@@ -216,6 +221,12 @@ Here's a *simple example* of a `package.json`:
   "description": "your favorite text editor",
   "apt": {
     "id": "vim-gtk3"
+  },
+  "dnf": {
+    "id": "vim-X11"
+  },
+  "zypper": {
+    "id": "vim"
   }
 }
 ```
@@ -508,9 +519,14 @@ Feel free to contribute and expand `instally`'s compatibility!
 
 ## 🎨 Configuration
 
-*Configure* `instally` by editing `~/.instally/instally.conf`:
+*Configure* `instally` in "Settings":
+
+Alternatively, you can configure `instally` by editing 
+`~/.instally/instally.conf`:
 
 ```
+# package.json path:
+PACKAGE_JSON=/path/to/desired/package.json/file
 # Active color; use a hex code or ANSI color code:
 COLOR_ACTIVE=117
 # Accent color; use a hex code or ANSI color code:
@@ -525,7 +541,24 @@ CHOOSE_SELECTED=✔
 
 ## 👉 Protips
 
-### Setting your default package.json editor
+### 👉 Getting the most out of instally
+
+`package.json` and `instally.conf` can be saved in a `git` repo and taken to any
+machine with `instally` installed, making bringing your favorite packages and
+environment to any distro pretty trivial. 
+
+If you find yourself constantly recalling and reinstalling packages on freshly
+installed operating systems over a matter of days (or weeks), 
+`instally`'s the thing for you: It can massively reduce your cognitive load and
+the time it takes to load your system with all the software you need.
+
+There's some up-front cost in writing your `package.json`, but with your
+`package.json` version-controlled, easily accessible, and polished to accomodate
+the different operating systems and package managers you'll be using, it can be
+a really flexible and foolproof way to create consistent experiences across
+systems.
+
+### 👉 Setting your default package.json editor
 
 `instally` uses your `$EDITOR` to determine what application to edit
 `package.json` in. If your `$EDITOR` isn't set, `instally` will open
@@ -541,7 +574,7 @@ echo 'export EDITOR=gedit' >> ~/.bashrc
 echo 'export EDITOR=gedit' >> ~/.zshrc
 ```
 
-### Getting package IDs
+### 👉 Getting package IDs
 
 #### apt
 
@@ -667,7 +700,7 @@ S | Name         | Summary                              | Type
 
 ## 🔧 Troubleshooting
 
-#### Where is package.json?
+#### 🔧 Where is package.json?
 
 `package.json` is in `~/.instally` (a directory called `.instally`, located in
 your home directory).
@@ -675,11 +708,11 @@ your home directory).
 If you're having trouble finding `/.instally`, try `ctrl+h` in your file manager
 to view hidden files.
 
-#### Where is instally.conf?
+#### 🔧 Where is instally.conf?
 
 `instally.conf` is in `~/.instally`, just like `package.json`.
 
-#### gum is installed, but won't run
+#### 🔧 gum is installed, but won't run
 
 If you encounter an error like this:
 
