@@ -417,7 +417,7 @@ available that isn't Debian 11 or Debian 10.
 * 👉 *Protip:* You can find your current OS's full name, including its version,
   at `instally`'s main menu:
 
-  ![instally printing the OS name of the host machine.](https://i.imgur.com/E0ntWq9.jpeg)
+  ![instally printing the OS name of the host machine.](https://i.imgur.com/uOx1Zgf.jpg "instally's main menu, where the OS of the host machine is visible.")
 
 ##### How does instally choose installation methods?
 
@@ -430,7 +430,7 @@ available that isn't Debian 11 or Debian 10.
 #### Grouping packages
 
 ![Package groups as displayed by instally.](https://i.imgur.com/hfSmQrb.png
-"Choosing packages to install from chosen groups.")
+"Choosing grouped packages to install.")
 
 *Group packages* using the `"groups"` field to create an
 *array of groups*:
