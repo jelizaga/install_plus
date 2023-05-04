@@ -1626,9 +1626,8 @@ $(gum style --italic "to install?")\n";
   NODE_VERSION=$(gum input --placeholder "19");
   $NODE_VERSION_MANAGER install $NODE_VERSION;
   if [ $? == 0 ]; then
-    printf "🎁 Node $NODE_VERSION installed.";
-    ((PACKAGES_INSTALLED_COUNT++));
     print_section_heading "Installing $PACKAGES_PENDING Packages...";
+    package_installed "$NODE_VERSION" "$NODE_VERSION_MANAGER";
     return 0;
   else
     printf "❌ $(gum style --bold "$NODE_VERSION") \
