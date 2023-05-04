@@ -2032,7 +2032,7 @@ as $PACKAGE_NAME's installation method instead.";
       # Otherwise, print error messages.
       elif [ $? == 1 ]; then
         package_not_installed "$PACKAGE_NAME" "Package not found. \
-#Is $PACKAGE_ID the correct id?";
+Is $PACKAGE_ID the correct id?";
         ((PACKAGES_NOT_INSTALLED_COUNT++));
       elif [ $? == 100 ]; then
         sudo apt --fix-broken install -y;
