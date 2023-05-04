@@ -69,6 +69,11 @@ GUM_CONFIRM_SELECTED_BACKGROUND="$COLOR_ACTIVE";
 DELIMITER="|";
 IFS="$DELIMITER";
 
+# Gotta source `nvm` if it's installed.
+if [ -e $HOME/.nvm ]; then
+  source $HOME/.nvm/nvm.sh;
+fi
+
 # OS Detection #################################################################
 # Functions related to detecting the OS in order to determine the default
 # package manager available.
