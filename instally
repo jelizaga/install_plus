@@ -1530,6 +1530,7 @@ $(gum style --italic --bold "Node.js") $(gum style --italic "?")\n";
           ;;
         "Neither")
           return 1;
+          ;;
       esac
     elif package_is_installed nvm
       install_node "nvm";
