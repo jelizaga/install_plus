@@ -1,14 +1,19 @@
 # instally
 
-> `instally` is a portable interactive CLI for conveniently & consistently 
-installing your favorite packages en masse.
+> `instally` is a portable interactive CLI script for conveniently & 
+consistently installing packages en masse.
 
-* ⛺ **Minimal dependencies:** Owing to its simplicity, you can bring `instally`
-  to any[\*](#-os-compatibility) machine that's capable of running Bash and `jq`.
 * 🚚 **JSON-driven flexibility:** Specify packages for `instally` to install
-  using JSON and enjoy support for grouping, preferred methods of installation, 
-  fallback methods, ***10*** different package managers, and even running your
-  own installation commands.
+  using JSON and enjoy support for:
+    * organizing packages in groups,
+    * preferred methods of installation, 
+    * fallback installation methods, 
+    * OS-specific installation methods,
+    * ***10*** different package managers, 
+    * and even running your own installation commands.
+* ⛺ **Minimal dependencies:** Owing to its simplicity, you can bring `instally`
+  to any[\*](#-os-compatibility) machine that's capable of running Bash and 
+  `jq`.
 * 💼 **Super portable:** With `instally` and your own custom `package.json`
   file, you can bring your favorite packages to
   [(almost) any distro](#-os-compatibility) and install them right away.
@@ -57,15 +62,15 @@ installing your favorite packages en masse.
 
 1. Download `instally`'s [latest release](https://github.com/jelizaga/instally/releases/).
 2. Un-archive the downloaded release one of these ways:
-  * Double-click the downloaded file.
-  * *For* `.tar.gz` - `tar -zxvf instally.tar.gz`
-  * *For* `instally.zip` - `unzip instally.zip`
-3. Run `instally`! There's a few different ways:
-  * `→ bash instally`
-  * `→ ./instally` (you may need to `→ chmod +x instally` first)
-  * *To install* `instally` *and make it accesible from anywhere in your
-    terminal,* try moving the `instally` script to `~/local/bin`. Now you can
-    run `instally` like so: `→ instally`.
+    * Double-click the downloaded file.
+    * *For* `.tar.gz` - `tar -zxvf instally.tar.gz`
+    * *For* `instally.zip` - `unzip instally.zip`
+3. Start `instally`! There's a few different ways to start `instally`:
+    * `→ bash instally`
+    * `→ ./instally` (you may need to `→ chmod +x instally` first)
+    * *To install* `instally` *and make it accesible from anywhere in your
+      terminal,* try moving the `instally` script to `~/.local/bin`. Now you can
+      run `instally` like so: `→ instally`.
 
 ### 🔩 Dependencies
 
@@ -85,15 +90,19 @@ prefer, if you'd rather not have `instally` install them for you.
 
 ![instally installing some software.](https://i.imgur.com/ShTUofz.png "instally installing some packages.")
 
-1. Specify the packages you'd like to be installed in the 
-   [`package.json`](#-packagejson) file.
-2. Run `instally`. `instally` will read `package.json` and provide an
+1. Start `instally`.
+2. You'll need to specify the packages you'd like to be installed in the 
+   [`package.json`](#-packagejson) file. Don't worry—`instally` will create and
+   open this file for you.
+3. `instally` will read your `package.json` and provide an
    interactive CLI for package selection and installation.
 
 Now you can take your custom `package.json` file anywhere with `instally`, and
 install your favorite packages on (almost) anything!
 
 ### 📒 package.json
+
+![Editing package.json and running instally.](https://i.imgur.com/xqyDiTf.png "Editing package.json while running instally.")
 
 `package.json` is the brains behind your `instally` experience. Using
 `package.json`, you can configure:
