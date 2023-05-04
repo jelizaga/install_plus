@@ -1519,7 +1519,7 @@ $(gum style --italic --bold "Node.js") $(gum style --italic "?")\n";
         "$(gum style --bold 'Neither')");
       SELECTED=$(echo "$SELECTED" | \
       sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g" | \
-      awk -F " »" '{print $1}');
+        awk -F " »" '{print $1}');
       print_input_selection "$SELECTED";
       case $SELECTED in
         "nvm")
@@ -1532,9 +1532,9 @@ $(gum style --italic --bold "Node.js") $(gum style --italic "?")\n";
           return 1;
           ;;
       esac
-    elif package_is_installed nvm
+    elif package_is_installed nvm; then
       install_node "nvm";
-    elif package_is_installed fnm
+    elif package_is_installed fnm; then
       install_node "fnm";
     else
       install_node_version_manager;
