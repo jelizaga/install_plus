@@ -1382,7 +1382,7 @@ get_menu_items_from_array () {
 # Args:
 #   `$1` - Command used by the package.
 package_is_installed () {
-  command -v $1 >& /dev/null
+  type $1 >& /dev/null
   if [ $? == 1 ]; then
     false
   else
@@ -2297,8 +2297,7 @@ install_package_npm () {
   local PACKAGE_NAME=$2;
   # If Node.js's npm isn't installed...
   if ! package_is_installed npm; then
-    print_not_installed "npm" "install $(gum style --bold \ 
-      "$PACKAGE_NAME")";
+    print_not_installed "npm" "install $(gum style --bold "$PACKAGE_NAME")";
     install_package_manager_npm;
     if [ $? == 0 ]; then
       install_package_npm "$PACKAGE_ID" "$PACKAGE_NAME";
