@@ -55,7 +55,17 @@ installing your favorite packages en masse.
 
 ## 💽 Installation
 
-1. Download `instally`'s [latest release].
+1. Download `instally`'s [latest release](https://github.com/jelizaga/instally/releases/).
+2. Un-archive the downloaded release one of these ways:
+  * Double-click the downloaded file.
+  * *For* `.tar.gz` - `tar -zxvf instally.tar.gz`
+  * *For* `instally.zip` - `unzip instally.zip`
+3. Run `instally`! There's a few different ways:
+  * `→ bash instally`
+  * `→ ./instally` (you may need to `→ chmod +x instally` first)
+  * *To install* `instally` *and make it accesible from anywhere in your
+    terminal,* try moving the `instally` script to `~/local/bin`. Now you can
+    run `instally` like so: `→ instally`.
 
 ### 🔩 Dependencies
 
@@ -308,6 +318,10 @@ on.
 * `snap` - needs an `"id"`
 * `yum` - needs an `"id"`
 * `zypper` - needs an `"id"`
+
+![instally resolving a dependency for Node.js](https://i.imgur.com/kCSEonl.png "instally will install a Node.js version manager if Node.js is needed to install an npm package.")
+
+![instally resolving a dependency for Node.js](https://i.imgur.com/sMtWi1Z.png "instally will install Node.js with fnm or nvm, depending on which version manager is available.")
 
 ##### Installation by command
 
