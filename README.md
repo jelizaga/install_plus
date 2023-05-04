@@ -73,8 +73,7 @@ prefer, if you'd rather not have `instally` install them for you.
 
 ## 🙂 Usage
 
-![instally installing some software.](https://i.imgur.com/ShTUofz.png "instally
-installing some packages.")
+![instally installing some software.](https://i.imgur.com/ShTUofz.png "instally installing some packages.")
 
 1. Specify the packages you'd like to be installed in the 
    [`package.json`](#-packagejson) file.

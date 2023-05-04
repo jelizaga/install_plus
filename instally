@@ -1515,7 +1515,6 @@ this.\n";
 # Installs a Node.js version manager.
 install_node_version_manager () {
   print_section_heading "Select Node.js Version Manager";
-  printf "$(gum style --bold --underline 'Select Node.js Version Manager')\n";
   printf "$(gum style --italic 'Choose a') $(gum style --italic --bold \
 'Node.js version manager') $(gum style --italic 'to install:')\n";
   local SELECTED=$(gum choose \
@@ -1564,7 +1563,6 @@ install_node_version_manager () {
 install_node () {
   local NODE_VERSION_MANAGER=$1;
   print_section_heading "Select Node.js Version";
-  printf "$(gum style --bold --underline "Select Node.js Version")\n";
   printf "$(gum style --italic "Which version of Node.js would you like") \
 $(gum style --italic --bold "$NODE_VERSION_MANAGER") \
 $(gum style --italic "to install?")\n";
