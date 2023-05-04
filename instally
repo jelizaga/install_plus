@@ -1630,8 +1630,12 @@ install_package_manager_pip () {
     sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g" | \
     awk -F " »" '{print $1}');
   print_input_selection "$SELECTED";
-  local INSTALL_PIP3=[ "$SELECTED" | grep -q "pip3" ];
-  local INSTALL_PIP2=[ "$SELECTED" | grep -q "pip2" ];
+  local INSTALL_PIP3=$(echo "$SELECTED" | \
+    grep -q "pip3" && echo true || echo false);
+  local INSTALL_PIP2=$(echo "$SELECTED" | \
+    grep -q "pip2" && echo true || echo false);
+  #local INSTALL_PIP3=[ "$SELECTED" | grep -q "pip3" ];
+  #local INSTALL_PIP2=[ "$SELECTED" | grep -q "pip2" ];
   if [ "$SELECTED" = "None" ]; then
     return 1;
   elif $OS_IS_DEBIAN_BASED; then
