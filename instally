@@ -2026,10 +2026,13 @@ as $PACKAGE_NAME's installation method instead.";
         package_installed "$PACKAGE_NAME" "apt";
         return 0;
       # Otherwise, print error messages.
-      elif [ $? == 1 ] || [ $? == 100 ]; then
+      elif [ $? == 1 ]; then
         package_not_installed "$PACKAGE_NAME" "Package not found. \
-Is $PACKAGE_ID the correct id?";
+#Is $PACKAGE_ID the correct id?";
         ((PACKAGES_NOT_INSTALLED_COUNT++));
+      elif [ $? == 100 ]; then
+        sudo apt --fix-broken install -y;
+        install_package_apt "$PACKAGE_ID" "$PACKAGE_NAME";
         return 1;
       elif [ $? == 101 ]; then
         package_not_installed "$PACKAGE_NAME" "Download interrupted.";
