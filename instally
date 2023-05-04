@@ -1082,6 +1082,8 @@ $(gum style --italic "installed"):\n"
 $(gum style --italic "installed"):\n"
     print_list ${PACKAGES_INSTALLED[@]};
     printf "\n";
+  else
+    printf "🎁 No packages installed.\n";
   fi
 }
 
@@ -1627,7 +1629,7 @@ $(gum style --italic "to install?")\n";
   $NODE_VERSION_MANAGER install $NODE_VERSION;
   if [ $? == 0 ]; then
     print_section_heading "Installing $PACKAGES_PENDING Packages...";
-    package_installed "$NODE_VERSION" "$NODE_VERSION_MANAGER";
+    package_installed "Node.js $NODE_VERSION" "$NODE_VERSION_MANAGER";
     return 0;
   else
     printf "❌ $(gum style --bold "$NODE_VERSION") \
@@ -1642,7 +1644,7 @@ install_node_version_manager_nvm () {
   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash;
   print_section_heading "Installing $PACKAGES_PENDING Packages...";
   if [ $? == 0 ]; then
-    print_installed "nvm" "script @ https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh";
+    package_installed "nvm" "script @ https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh";
     NODE_VERSION_MANAGER_NEWLY_INSTALLED=true;
     NEWLY_INSTALLED_NODE_VERSION_MANAGER="nvm";
     return 0;
@@ -1658,7 +1660,7 @@ install_node_version_manager_fnm () {
   curl -fsSL https://fnm.vercel.app/install | bash;
   print_section_heading "Installing $PACKAGES_PENDING Packages...";
   if [ $? == 0 ]; then
-    print_installed "fnm" "script @ https://fnm.vercel.app/install";
+    package_installed "fnm" "script @ https://fnm.vercel.app/install";
     NODE_VERSION_MANAGER_NEWLY_INSTALLED=true;
     NEWLY_INSTALLED_NODE_VERSION_MANAGER="fnm";
     return 0;
