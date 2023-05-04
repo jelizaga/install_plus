@@ -189,10 +189,11 @@ install_dependency_gum () {
   if $OS_IS_DEBIAN_BASED; then
     sudo mkdir -p /etc/apt/keyrings;
     curl -fsSL https://repo.charm.sh/apt/gpg.key | \
-      sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg;
+      sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg
     echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | \
       sudo tee /etc/apt/sources.list.d/charm.list;
-    install_package_apt gum gum;
+    sudo apt update && sudo apt install gum
+    #install_package_apt gum gum;
   # If OS is RHEL-based,
   elif $OS_IS_RHEL_BASED; then
     echo "[charm]
