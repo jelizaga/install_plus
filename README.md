@@ -1,5 +1,10 @@
 # instally
 
+<video width="1100" height="720" autoplay loop muted>
+  <source src="https://streamable.com/w0pu05" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
 > `instally` is a portable interactive CLI script for conveniently & 
 consistently installing packages en masse.
 
