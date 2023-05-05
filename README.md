@@ -7,6 +7,8 @@
 
 ![A loop demonstrating instally's basic functionality.](https://streamable.com/l2owjq)
 
+<div style="width:100%;height:0px;position:relative;padding-bottom:65.455%;"><iframe src="https://streamable.com/e/2wiy9q?autoplay=1&nocontrols=1" frameborder="0" width="100%" height="100%" allowfullscreen allow="autoplay" style="width:100%;height:100%;position:absolute;left:0px;top:0px;overflow:hidden;"></iframe></div>
+
 > `instally` is a portable interactive CLI script for conveniently & 
 consistently installing packages en masse.
 
