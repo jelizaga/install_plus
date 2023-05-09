@@ -9,7 +9,7 @@ consistently installing packages en masse.
     * preferred methods of installation, 
     * fallback installation methods, 
     * OS-specific installation methods,
-    * ***10*** different package managers, 
+    * ***9*** different package managers, 
     * and even running your own installation commands.
 * ⛺ **Minimal dependencies:** Owing to its simplicity, you can bring `instally`
   to any[\*](#-os-compatibility) machine that's capable of running Bash and 
@@ -286,7 +286,7 @@ These are all valid installation methods:
 
 ##### Installation by package manager
 
-`instally` currently supports ***10*** different package managers. 
+`instally` currently supports ***9*** different package managers. 
 
 Here, we're using 3 of them:
 
