@@ -1626,6 +1626,7 @@ install_node () {
 $(gum style --italic --bold "$NODE_VERSION_MANAGER") \
 $(gum style --italic "to install?")\n";
   NODE_VERSION=$(gum input --placeholder "19");
+  print_input_selection "$NODE_VERSION";
   $NODE_VERSION_MANAGER install $NODE_VERSION;
   if [ $? == 0 ]; then
     print_section_heading "Installing $PACKAGES_PENDING Packages...";
@@ -1697,13 +1698,23 @@ install_package_manager_pip () {
   if [ "$SELECTED" = "None" ]; then
     return 1;
   elif $OS_IS_DEBIAN_BASED; then
+    print_section_heading "Installing $PACKAGES_PENDING Packages...";
     if $INSTALL_PIP3; then
       install_package_apt "python3-pip" "pip3";
+      if [ $? == 0 ]; then
+        print_section_heading "Installing $PACKAGES_PENDING Packages...";
+        return 0;
+      fi
     fi
     if $INSTALL_PIP2; then
       install_package_apt "python-pip" "pip2";
+      if [ $? == 0 ]; then
+        print_section_heading "Installing $PACKAGES_PENDING Packages...";
+        return 0;
+      fi
     fi
   elif $OS_IS_RHEL_BASED; then
+    print_section_heading "Installing $PACKAGES_PENDING Packages...";
     if $INSTALL_PIP3; then
       install_package_dnf "python3-pip" "pip3";
     fi
@@ -1716,6 +1727,7 @@ install_package_manager_pip () {
       install_package_dnf "python-pip";
     fi
   elif $OS_IS_ZYPPER_BASED; then
+    print_section_heading "Installing $PACKAGES_PENDING Packages...";
     if $INSTALL_PIP3; then
       install_package_zypper "python3-pip" "pip3";
     fi
@@ -1726,6 +1738,7 @@ install_package_manager_pip () {
     print_cannot_install "pip3" "Try instructions @ \
 https://pip.pypa.io/en/stable/installation/ \
 to install pip and $PACKAGE_NAME.";
+    print_section_heading "Installing $PACKAGES_PENDING Packages...";
     return 1;
   fi
 }
